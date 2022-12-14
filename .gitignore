@@ -1,0 +1,16 @@
+*.log
+*.jou
+Vivado/.Xil/
+Vivado/*.str
+Vivado/*_mipi/
+Vitis/*_app/
+Vitis/*_app_*/
+Vitis/.*/
+Vitis/.*
+Vitis/boot/
+Vitis/embeddedsw/
+Vitis/RemoteSystemsTempFiles/
+PetaLinux/*_mipi/
+docs/build/
+HLS/*/*/
+Packages/
