@@ -13,7 +13,7 @@
 #          source build.tcl -notrace
 #
 # The valid target names are:
-#   * zcu104       * zcu102_hpc0  * zcu102_hpc1  * zcu106_hpc0   * zcu106_hpc1 
+#   * zcu104       * zcu102_hpc0  * zcu102_hpc1  * zcu106_hpc0
 #   * pynqzu       * genesyszu    * uzev
 #
 #*****************************************************************************************
@@ -37,7 +37,6 @@ dict set target_dict zcu104 { xczu7ev-ffvc1156-2-e xilinx.com:zcu104:part0:1.1 4
 dict set target_dict zcu102_hpc0 { xczu9eg-ffvb1156-2-e xilinx.com:zcu102:part0:3.4 4 zynqmp }
 dict set target_dict zcu102_hpc1 { xczu9eg-ffvb1156-2-e xilinx.com:zcu102:part0:3.4 2 zynqmp }
 dict set target_dict zcu106_hpc0 { xc7z045ffg900-2 xilinx.com:zcu106:part0:2.6 4 zynqmp }
-dict set target_dict zcu106_hpc1 { xc7z045ffg900-2 xilinx.com:zcu106:part0:2.6 2 zynqmp }
 dict set target_dict pynqzu { xczu5eg-sfvc784-1-e tul.com.tw:pynqzu:part0:1.1 4 zynqmp }
 dict set target_dict genesyszu { xczu5ev-sfvc784-1-e digilentinc.com:gzu_5ev:part0:1.1 4 zynqmp }
 dict set target_dict uzev { xczu7ev-fbvb900-1-i avnet.com:ultrazed_7ev_cc:part0:1.4 4 zynqmp }
@@ -55,7 +54,7 @@ if { $argc == 1 } {
   }
   puts "The build script requires one argument to specify the design to build."
   puts "Possible values are:"
-  puts "   * zcu104       * zcu102_hpc0  * zcu102_hpc1  * zcu106_hpc0   * zcu106_hpc1"
+  puts "   * zcu104       * zcu102_hpc0  * zcu102_hpc1  * zcu106_hpc0"
   puts "   * pynqzu       * genesyszu    * uzev"
   puts ""
   puts "Example 1 (from the Windows command line):"

@@ -1,13 +1,15 @@
+set_property UNAVAILABLE_DURING_CALIBRATION TRUE [get_ports iic_0_scl_io]
+
 # I2C signals for MIPI 0
-set_property PACKAGE_PIN V2 [get_ports iic_0_scl_io]; # LA02_P
-set_property PACKAGE_PIN V1 [get_ports iic_0_sda_io]; # LA02_N
+set_property PACKAGE_PIN Y2 [get_ports iic_0_scl_io]; # LA03_P
+set_property PACKAGE_PIN Y1 [get_ports iic_0_sda_io]; # LA03_N
 set_property IOSTANDARD LVCMOS12 [get_ports iic_0_*]
 set_property SLEW SLOW [get_ports iic_0_*]
 set_property DRIVE 4 [get_ports iic_0_*]
 
 # I2C signals for MIPI 1
-set_property PACKAGE_PIN AB3 [get_ports iic_1_scl_io]; # LA05_P
-set_property PACKAGE_PIN AC3 [get_ports iic_1_sda_io]; # LA05_N
+set_property PACKAGE_PIN AA2 [get_ports iic_1_scl_io]; # LA04_P
+set_property PACKAGE_PIN AA1 [get_ports iic_1_sda_io]; # LA04_N
 set_property IOSTANDARD LVCMOS12 [get_ports iic_1_*]
 set_property SLEW SLOW [get_ports iic_1_*]
 set_property DRIVE 4 [get_ports iic_1_*]
@@ -27,42 +29,39 @@ set_property SLEW SLOW [get_ports iic_3_*]
 set_property DRIVE 4 [get_ports iic_3_*]
 
 # PIN_SWAP signals
-set_property PACKAGE_PIN U5 [get_ports {pin_swap[0]}]; # LA07_P
+set_property PACKAGE_PIN AB3 [get_ports {pin_swap[0]}]; # LA05_P
 set_property IOSTANDARD LVCMOS12 [get_ports {pin_swap[0]}]
 
-set_property PACKAGE_PIN U4 [get_ports {pin_swap[1]}]; # LA07_N
+set_property PACKAGE_PIN AC3 [get_ports {pin_swap[1]}]; # LA05_N
 set_property IOSTANDARD LVCMOS12 [get_ports {pin_swap[1]}]
 
-set_property PACKAGE_PIN L15 [get_ports {pin_swap[2]}]; # LA26_P
-set_property IOSTANDARD LVCMOS12 [get_ports {pin_swap[2]}]
-
 # GPIOs for MIPI camera 0
-set_property PACKAGE_PIN Y10 [get_ports {gpio_0_tri_o[0]}]; # LA15_P
-set_property PACKAGE_PIN Y9 [get_ports {gpio_0_tri_o[1]}]; # LA15_N
+set_property PACKAGE_PIN U5 [get_ports {gpio_0_tri_o[0]}]; # LA07_P
+set_property PACKAGE_PIN U4 [get_ports {gpio_0_tri_o[1]}]; # LA07_N
 set_property IOSTANDARD LVCMOS12 [get_ports {gpio_0_tri_o[*]}]
 
 # GPIOs for MIPI camera 1
-set_property PACKAGE_PIN Y12 [get_ports {gpio_1_tri_o[0]}]; # LA16_P
-set_property PACKAGE_PIN AA12 [get_ports {gpio_1_tri_o[1]}]; # LA16_N
+set_property PACKAGE_PIN W2 [get_ports {gpio_1_tri_o[0]}]; # LA09_P
+set_property PACKAGE_PIN W1 [get_ports {gpio_1_tri_o[1]}]; # LA09_N
 set_property IOSTANDARD LVCMOS12 [get_ports {gpio_1_tri_o[*]}]
 
 # GPIOs for MIPI camera 2
-set_property PACKAGE_PIN T7 [get_ports {gpio_2_tri_o[0]}]; # LA28_P
-set_property PACKAGE_PIN T6 [get_ports {gpio_2_tri_o[1]}]; # LA28_N
+set_property PACKAGE_PIN M15 [get_ports {gpio_2_tri_o[0]}]; # LA22_P
+set_property PACKAGE_PIN M14 [get_ports {gpio_2_tri_o[1]}]; # LA22_N
 set_property IOSTANDARD LVCMOS12 [get_ports {gpio_2_tri_o[*]}]
 
 # GPIOs for MIPI camera 3
-set_property PACKAGE_PIN U9 [get_ports {gpio_3_tri_o[0]}]; # LA29_P
-set_property PACKAGE_PIN U8 [get_ports {gpio_3_tri_o[1]}]; # LA29_N
+set_property PACKAGE_PIN M11 [get_ports {gpio_3_tri_o[0]}]; # LA25_P
+set_property PACKAGE_PIN L11 [get_ports {gpio_3_tri_o[1]}]; # LA25_N
 set_property IOSTANDARD LVCMOS12 [get_ports {gpio_3_tri_o[*]}]
 
 # MIPI interface 0
 set_property PACKAGE_PIN Y4 [get_ports {mipi_phy_if_0_clk_p}]; # LA00_CC_P
 set_property PACKAGE_PIN Y3 [get_ports {mipi_phy_if_0_clk_n}]; # LA00_CC_N
-set_property PACKAGE_PIN Y2 [get_ports {mipi_phy_if_0_data_p[0]}]; # LA03_P
-set_property PACKAGE_PIN Y1 [get_ports {mipi_phy_if_0_data_n[0]}]; # LA03_N
-set_property PACKAGE_PIN AA2 [get_ports {mipi_phy_if_0_data_p[1]}]; # LA04_P
-set_property PACKAGE_PIN AA1 [get_ports {mipi_phy_if_0_data_n[1]}]; # LA04_N
+set_property PACKAGE_PIN V2 [get_ports {mipi_phy_if_0_data_p[0]}]; # LA02_P
+set_property PACKAGE_PIN V1 [get_ports {mipi_phy_if_0_data_n[0]}]; # LA02_N
+set_property PACKAGE_PIN AC2 [get_ports {mipi_phy_if_0_data_p[1]}]; # LA06_P
+set_property PACKAGE_PIN AC1 [get_ports {mipi_phy_if_0_data_n[1]}]; # LA06_N
 
 set_property IOSTANDARD MIPI_DPHY_DCI [get_ports mipi_phy_if_0_clk_p]
 set_property IOSTANDARD MIPI_DPHY_DCI [get_ports mipi_phy_if_0_clk_n]
@@ -77,10 +76,10 @@ set_property DIFF_TERM_ADV TERM_100 [get_ports mipi_phy_if_0_data_n[*]]
 # MIPI interface 1
 set_property PACKAGE_PIN AB4 [get_ports {mipi_phy_if_1_clk_p}]; # LA01_CC_P
 set_property PACKAGE_PIN AC4 [get_ports {mipi_phy_if_1_clk_n}]; # LA01_CC_N
-set_property PACKAGE_PIN W7 [get_ports {mipi_phy_if_1_data_p[0]}]; # LA12_P
-set_property PACKAGE_PIN W6 [get_ports {mipi_phy_if_1_data_n[0]}]; # LA12_N
-set_property PACKAGE_PIN AB8 [get_ports {mipi_phy_if_1_data_p[1]}]; # LA13_P
-set_property PACKAGE_PIN AC8 [get_ports {mipi_phy_if_1_data_n[1]}]; # LA13_N
+set_property PACKAGE_PIN AC7 [get_ports {mipi_phy_if_1_data_p[0]}]; # LA14_P
+set_property PACKAGE_PIN AC6 [get_ports {mipi_phy_if_1_data_n[0]}]; # LA14_N
+set_property PACKAGE_PIN Y10 [get_ports {mipi_phy_if_1_data_p[1]}]; # LA15_P
+set_property PACKAGE_PIN Y9 [get_ports {mipi_phy_if_1_data_n[1]}]; # LA15_N
 
 set_property IOSTANDARD MIPI_DPHY_DCI [get_ports mipi_phy_if_1_clk_p]
 set_property IOSTANDARD MIPI_DPHY_DCI [get_ports mipi_phy_if_1_clk_n]
@@ -95,10 +94,10 @@ set_property DIFF_TERM_ADV TERM_100 [get_ports mipi_phy_if_1_data_n[*]]
 # MIPI interface 2
 set_property PACKAGE_PIN N9 [get_ports {mipi_phy_if_2_clk_p}]; # LA18_CC_P
 set_property PACKAGE_PIN N8 [get_ports {mipi_phy_if_2_clk_n}]; # LA18_CC_N
-set_property PACKAGE_PIN L12 [get_ports {mipi_phy_if_2_data_p[0]}]; # LA24_P
-set_property PACKAGE_PIN K12 [get_ports {mipi_phy_if_2_data_n[0]}]; # LA24_N
-set_property PACKAGE_PIN M11 [get_ports {mipi_phy_if_2_data_p[1]}]; # LA25_P
-set_property PACKAGE_PIN L11 [get_ports {mipi_phy_if_2_data_n[1]}]; # LA25_N
+set_property PACKAGE_PIN P11 [get_ports {mipi_phy_if_2_data_p[0]}]; # LA17_CC_P
+set_property PACKAGE_PIN N11 [get_ports {mipi_phy_if_2_data_n[0]}]; # LA17_CC_N
+set_property PACKAGE_PIN L12 [get_ports {mipi_phy_if_2_data_p[1]}]; # LA24_P
+set_property PACKAGE_PIN K12 [get_ports {mipi_phy_if_2_data_n[1]}]; # LA24_N
 
 set_property IOSTANDARD MIPI_DPHY_DCI [get_ports mipi_phy_if_2_clk_p]
 set_property IOSTANDARD MIPI_DPHY_DCI [get_ports mipi_phy_if_2_clk_n]
@@ -113,10 +112,10 @@ set_property DIFF_TERM_ADV TERM_100 [get_ports mipi_phy_if_2_data_n[*]]
 # MIPI interface 3
 set_property PACKAGE_PIN V8 [get_ports {mipi_phy_if_3_clk_p}]; # LA31_P
 set_property PACKAGE_PIN V7 [get_ports {mipi_phy_if_3_clk_n}]; # LA31_N
-set_property PACKAGE_PIN V12 [get_ports {mipi_phy_if_3_data_p[0]}]; # LA33_P
-set_property PACKAGE_PIN V11 [get_ports {mipi_phy_if_3_data_n[0]}]; # LA33_N
-set_property PACKAGE_PIN M15 [get_ports {mipi_phy_if_3_data_p[1]}]; # LA22_P
-set_property PACKAGE_PIN M14 [get_ports {mipi_phy_if_3_data_n[1]}]; # LA22_N
+set_property PACKAGE_PIN T7 [get_ports {mipi_phy_if_3_data_p[0]}]; # LA28_P
+set_property PACKAGE_PIN T6 [get_ports {mipi_phy_if_3_data_n[0]}]; # LA28_N
+set_property PACKAGE_PIN V12 [get_ports {mipi_phy_if_3_data_p[1]}]; # LA33_P
+set_property PACKAGE_PIN V11 [get_ports {mipi_phy_if_3_data_n[1]}]; # LA33_N
 
 set_property IOSTANDARD MIPI_DPHY_DCI [get_ports mipi_phy_if_3_clk_p]
 set_property IOSTANDARD MIPI_DPHY_DCI [get_ports mipi_phy_if_3_clk_n]

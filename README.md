@@ -9,7 +9,7 @@ At the moment, we intend to support the following boards:
 
 * ZCU104 (LPC: 4x cameras)
 * ZCU102 (HPC0: 4x cameras, HPC1: 2x camera)
-* ZCU106 (HPC0: 4x cameras, HPC1: 2x camera)
+* ZCU106 (HPC0: 4x cameras)
 * PYNQ-ZU (LPC: 4x cameras)
 * Genesys-ZU (LPC: 4x cameras)
 * UltraZed EV carrier (HPC: 4x cameras)
