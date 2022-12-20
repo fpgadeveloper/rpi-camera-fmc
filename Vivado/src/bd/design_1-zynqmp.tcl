@@ -162,13 +162,6 @@ proc create_mipi_pipe { index loc_dict } {
     CONFIG.MAX_ROWS {1080} \
   ] $v_gamma_lut
   
-  # # Add and configure the AXIS Subset Converter
-  # set subset_conv_1 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axis_subset_converter subset_conv_1 ]
-  # set_property -dict [ list \
-  #  CONFIG.M_TDATA_NUM_BYTES.VALUE_SRC PROPAGATED \
-  #  CONFIG.S_TDATA_NUM_BYTES.VALUE_SRC PROPAGATED \
-  # ] $subset_conv_1
-  
   # Add and configure the Pixel packer
   # set pixel_pack_0 [create_bd_cell -type ip -vlnv xilinx.com:hls:pixel_pack:1.0 pixel_pack_0]
  
@@ -379,20 +372,27 @@ set concat_0 [create_bd_cell -type ip -vlnv xilinx.com:ip:xlconcat xlconcat_0]
 # lappend axi_lite_ports [list "axi_intc_0/s_axi" "clk_wiz_0/clk_out2" "rst_ps_axi_150M/peripheral_aresetn"]
 connect_bd_net [get_bd_pins xlconcat_0/dout] [get_bd_pins zynq_ultra_ps_e_0/pl_ps_irq0]
 
-# Add constant for the PIN_SWAP pin (11 for UltraZed-EV Carrier and 10 for Genesys ZU, 00 for all other boards)
-if { $target != "zcu102_hpc1" } {
-  set pin_swap [create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant pin_swap]
-  set_property -dict [list CONFIG.CONST_WIDTH {2}] $pin_swap
-  if { $target == "uzev" } {
-    set_property -dict [list CONFIG.CONST_VAL {0x03}] $pin_swap
-  } elseif { $target == "genesyszu" } {
-    set_property -dict [list CONFIG.CONST_VAL {0x02}] $pin_swap
-  } else {
-    set_property -dict [list CONFIG.CONST_VAL {0x00}] $pin_swap
-  }
-  create_bd_port -dir O pin_swap
-  connect_bd_net [get_bd_ports pin_swap] [get_bd_pins pin_swap/dout]
+# Add constant for the PIN_SWAP pin (11b for UltraZed-EV Carrier and 10b for Genesys ZU, 00b for all other boards)
+set pin_swap [create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant pin_swap]
+set_property -dict [list CONFIG.CONST_WIDTH {2}] $pin_swap
+if { $target == "uzev" } {
+  set_property -dict [list CONFIG.CONST_VAL {0x03}] $pin_swap
+} elseif { $target == "genesyszu" } {
+  set_property -dict [list CONFIG.CONST_VAL {0x02}] $pin_swap
+} else {
+  set_property -dict [list CONFIG.CONST_VAL {0x00}] $pin_swap
 }
+create_bd_port -dir O pin_swap
+connect_bd_net [get_bd_ports pin_swap] [get_bd_pins pin_swap/dout]
+
+# Add and configure GPIO for the reserved GPIOs
+set rsvd_gpio [create_bd_cell -type ip -vlnv xilinx.com:ip:axi_gpio rsvd_gpio]
+set_property -dict [list CONFIG.C_GPIO_WIDTH {12} CONFIG.C_ALL_OUTPUTS {1}] $rsvd_gpio
+connect_bd_net [get_bd_pins clk_wiz_0/clk_out2] [get_bd_pins rsvd_gpio/s_axi_aclk]
+connect_bd_net [get_bd_pins rst_ps_axi_150M/peripheral_aresetn] [get_bd_pins rsvd_gpio/s_axi_aresetn]
+lappend axi_lite_ports [list "rsvd_gpio/S_AXI" "clk_wiz_0/clk_out2" "rst_ps_axi_150M/peripheral_aresetn"]
+create_bd_intf_port -mode Master -vlnv xilinx.com:interface:gpio_rtl:1.0 rsvd_gpio
+connect_bd_intf_net [get_bd_intf_pins rsvd_gpio/GPIO] [get_bd_intf_ports rsvd_gpio]
 
 # Add the AXI SmartConnect for the VDMAs
 create_bd_cell -type ip -vlnv xilinx.com:ip:smartconnect smartconnect_0

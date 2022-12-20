@@ -1,3 +1,5 @@
+
+# As we use LA03_P, we need the following constraint
 set_property UNAVAILABLE_DURING_CALIBRATION TRUE [get_ports iic_0_scl_io]
 
 # I2C signals for MIPI 0
@@ -46,14 +48,29 @@ set_property PACKAGE_PIN W1 [get_ports {gpio_1_tri_o[1]}]; # LA09_N
 set_property IOSTANDARD LVCMOS12 [get_ports {gpio_1_tri_o[*]}]
 
 # GPIOs for MIPI camera 2
-set_property PACKAGE_PIN M15 [get_ports {gpio_2_tri_o[0]}]; # LA22_P
-set_property PACKAGE_PIN M14 [get_ports {gpio_2_tri_o[1]}]; # LA22_N
+set_property PACKAGE_PIN V6 [get_ports {gpio_2_tri_o[0]}]; # LA30_P
+set_property PACKAGE_PIN U6 [get_ports {gpio_2_tri_o[1]}]; # LA30_N
 set_property IOSTANDARD LVCMOS12 [get_ports {gpio_2_tri_o[*]}]
 
 # GPIOs for MIPI camera 3
-set_property PACKAGE_PIN M11 [get_ports {gpio_3_tri_o[0]}]; # LA25_P
-set_property PACKAGE_PIN L11 [get_ports {gpio_3_tri_o[1]}]; # LA25_N
+set_property PACKAGE_PIN U11 [get_ports {gpio_3_tri_o[0]}]; # LA32_P
+set_property PACKAGE_PIN T11 [get_ports {gpio_3_tri_o[1]}]; # LA32_N
 set_property IOSTANDARD LVCMOS12 [get_ports {gpio_3_tri_o[*]}]
+
+# Reserved GPIOs
+set_property PACKAGE_PIN W7 [get_ports {rsvd_gpio_tri_o[0]}]; # LA12_P
+set_property PACKAGE_PIN W6 [get_ports {rsvd_gpio_tri_o[1]}]; # LA12_N
+set_property PACKAGE_PIN AB8 [get_ports {rsvd_gpio_tri_o[2]}]; # LA13_P
+set_property PACKAGE_PIN AC8 [get_ports {rsvd_gpio_tri_o[3]}]; # LA13_N
+set_property PACKAGE_PIN M15 [get_ports {rsvd_gpio_tri_o[4]}]; # LA22_P
+set_property PACKAGE_PIN M14 [get_ports {rsvd_gpio_tri_o[5]}]; # LA22_N
+set_property PACKAGE_PIN M11 [get_ports {rsvd_gpio_tri_o[6]}]; # LA25_P
+set_property PACKAGE_PIN L11 [get_ports {rsvd_gpio_tri_o[7]}]; # LA25_N
+set_property PACKAGE_PIN M10 [get_ports {rsvd_gpio_tri_o[8]}]; # LA27_P
+set_property PACKAGE_PIN L10 [get_ports {rsvd_gpio_tri_o[9]}]; # LA27_N
+set_property PACKAGE_PIN U9 [get_ports {rsvd_gpio_tri_o[10]}]; # LA29_P
+set_property PACKAGE_PIN U8 [get_ports {rsvd_gpio_tri_o[11]}]; # LA29_N
+set_property IOSTANDARD LVCMOS12 [get_ports {rsvd_gpio_tri_o[*]}]
 
 # MIPI interface 0
 set_property PACKAGE_PIN Y4 [get_ports {mipi_phy_if_0_clk_p}]; # LA00_CC_P

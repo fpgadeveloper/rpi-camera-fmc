@@ -44,14 +44,29 @@ set_property PACKAGE_PIN K1 [get_ports {gpio_1_tri_o[1]}]; # LA09_N
 set_property IOSTANDARD LVCMOS12 [get_ports {gpio_1_tri_o[*]}]
 
 # GPIOs for MIPI camera 2
-set_property PACKAGE_PIN AB1 [get_ports {gpio_2_tri_o[0]}]; # LA22_P
-set_property PACKAGE_PIN AC1 [get_ports {gpio_2_tri_o[1]}]; # LA22_N
+set_property PACKAGE_PIN AE9 [get_ports {gpio_2_tri_o[0]}]; # LA30_P
+set_property PACKAGE_PIN AE8 [get_ports {gpio_2_tri_o[1]}]; # LA30_N
 set_property IOSTANDARD LVCMOS12 [get_ports {gpio_2_tri_o[*]}]
 
 # GPIOs for MIPI camera 3
-set_property PACKAGE_PIN AH2 [get_ports {gpio_3_tri_o[0]}]; # LA25_P
-set_property PACKAGE_PIN AH1 [get_ports {gpio_3_tri_o[1]}]; # LA25_N
+set_property PACKAGE_PIN AF8 [get_ports {gpio_3_tri_o[0]}]; # LA32_P
+set_property PACKAGE_PIN AG8 [get_ports {gpio_3_tri_o[1]}]; # LA32_N
 set_property IOSTANDARD LVCMOS12 [get_ports {gpio_3_tri_o[*]}]
+
+# Reserved GPIOs
+set_property PACKAGE_PIN M6 [get_ports {rsvd_gpio_tri_o[0]}]; # LA12_P
+set_property PACKAGE_PIN L5 [get_ports {rsvd_gpio_tri_o[1]}]; # LA12_N
+set_property PACKAGE_PIN R6 [get_ports {rsvd_gpio_tri_o[2]}]; # LA13_P
+set_property PACKAGE_PIN T6 [get_ports {rsvd_gpio_tri_o[3]}]; # LA13_N
+set_property PACKAGE_PIN AB1 [get_ports {rsvd_gpio_tri_o[4]}]; # LA22_P
+set_property PACKAGE_PIN AC1 [get_ports {rsvd_gpio_tri_o[5]}]; # LA22_N
+set_property PACKAGE_PIN AH2 [get_ports {rsvd_gpio_tri_o[6]}]; # LA25_P
+set_property PACKAGE_PIN AH1 [get_ports {rsvd_gpio_tri_o[7]}]; # LA25_N
+set_property PACKAGE_PIN AE3 [get_ports {rsvd_gpio_tri_o[8]}]; # LA27_P
+set_property PACKAGE_PIN AF3 [get_ports {rsvd_gpio_tri_o[9]}]; # LA27_N
+set_property PACKAGE_PIN AG4 [get_ports {rsvd_gpio_tri_o[10]}]; # LA29_P
+set_property PACKAGE_PIN AH4 [get_ports {rsvd_gpio_tri_o[11]}]; # LA29_N
+set_property IOSTANDARD LVCMOS12 [get_ports {rsvd_gpio_tri_o[*]}]
 
 # MIPI interface 0
 set_property PACKAGE_PIN L7 [get_ports {mipi_phy_if_0_clk_p}]; # LA00_CC_P
