@@ -372,22 +372,22 @@ set concat_0 [create_bd_cell -type ip -vlnv xilinx.com:ip:xlconcat xlconcat_0]
 # lappend axi_lite_ports [list "axi_intc_0/s_axi" "clk_wiz_0/clk_out2" "rst_ps_axi_150M/peripheral_aresetn"]
 connect_bd_net [get_bd_pins xlconcat_0/dout] [get_bd_pins zynq_ultra_ps_e_0/pl_ps_irq0]
 
-# Add constant for the PIN_SWAP pin (11b for UltraZed-EV Carrier and 10b for Genesys ZU, 00b for all other boards)
-set pin_swap [create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant pin_swap]
-set_property -dict [list CONFIG.CONST_WIDTH {2}] $pin_swap
+# Add constant for the CAM1 and CAM3 CLK_SEL pin (11b for UltraZed-EV Carrier and 10b for Genesys ZU, 00b for all other boards)
+set clk_sel [create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant clk_sel]
+set_property -dict [list CONFIG.CONST_WIDTH {2}] $clk_sel
 if { $target == "uzev" } {
-  set_property -dict [list CONFIG.CONST_VAL {0x03}] $pin_swap
+  set_property -dict [list CONFIG.CONST_VAL {0x03}] $clk_sel
 } elseif { $target == "genesyszu" } {
-  set_property -dict [list CONFIG.CONST_VAL {0x02}] $pin_swap
+  set_property -dict [list CONFIG.CONST_VAL {0x02}] $clk_sel
 } else {
-  set_property -dict [list CONFIG.CONST_VAL {0x00}] $pin_swap
+  set_property -dict [list CONFIG.CONST_VAL {0x00}] $clk_sel
 }
-create_bd_port -dir O pin_swap
-connect_bd_net [get_bd_ports pin_swap] [get_bd_pins pin_swap/dout]
+create_bd_port -dir O clk_sel
+connect_bd_net [get_bd_ports clk_sel] [get_bd_pins clk_sel/dout]
 
 # Add and configure GPIO for the reserved GPIOs
 set rsvd_gpio [create_bd_cell -type ip -vlnv xilinx.com:ip:axi_gpio rsvd_gpio]
-set_property -dict [list CONFIG.C_GPIO_WIDTH {12} CONFIG.C_ALL_OUTPUTS {1}] $rsvd_gpio
+set_property -dict [list CONFIG.C_GPIO_WIDTH {10} CONFIG.C_ALL_OUTPUTS {1}] $rsvd_gpio
 connect_bd_net [get_bd_pins clk_wiz_0/clk_out2] [get_bd_pins rsvd_gpio/s_axi_aclk]
 connect_bd_net [get_bd_pins rst_ps_axi_150M/peripheral_aresetn] [get_bd_pins rsvd_gpio/s_axi_aresetn]
 lappend axi_lite_ports [list "rsvd_gpio/S_AXI" "clk_wiz_0/clk_out2" "rst_ps_axi_150M/peripheral_aresetn"]
