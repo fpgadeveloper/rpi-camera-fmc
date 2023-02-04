@@ -6,8 +6,8 @@ set_property SLEW SLOW [get_ports iic_0_*]
 set_property DRIVE 4 [get_ports iic_0_*]
 
 # I2C signals for MIPI 1
-set_property PACKAGE_PIN AJ17 [get_ports iic_1_scl_io]; # LA04_N
-set_property PACKAGE_PIN AH17 [get_ports iic_1_sda_io]; # LA04_P
+set_property PACKAGE_PIN AE19 [get_ports iic_1_scl_io]; # LA05_N
+set_property PACKAGE_PIN AD19 [get_ports iic_1_sda_io]; # LA05_P
 set_property IOSTANDARD LVCMOS12 [get_ports iic_1_*]
 set_property SLEW SLOW [get_ports iic_1_*]
 set_property DRIVE 4 [get_ports iic_1_*]
@@ -27,10 +27,10 @@ set_property SLEW SLOW [get_ports iic_3_*]
 set_property DRIVE 4 [get_ports iic_3_*]
 
 # CAM1 and CAM3 CLK_SEL signals
-set_property PACKAGE_PIN AD19 [get_ports {clk_sel[0]}]; # LA05_P
+set_property PACKAGE_PIN AF5 [get_ports {clk_sel[0]}]; # LA25_N
 set_property IOSTANDARD LVCMOS12 [get_ports {clk_sel[0]}]
 
-set_property PACKAGE_PIN AE19 [get_ports {clk_sel[1]}]; # LA05_N
+set_property PACKAGE_PIN AF6 [get_ports {clk_sel[1]}]; # LA25_P
 set_property IOSTANDARD LVCMOS12 [get_ports {clk_sel[1]}]
 
 # GPIOs for MIPI camera 0
@@ -54,12 +54,12 @@ set_property PACKAGE_PIN AJ10 [get_ports {gpio_3_tri_o[1]}]; # LA20_P
 set_property IOSTANDARD LVCMOS12 [get_ports {gpio_3_tri_o[*]}]
 
 # Reserved GPIOs
-set_property PACKAGE_PIN AA16 [get_ports {rsvd_gpio_tri_o[0]}]; # LA07_P
-set_property PACKAGE_PIN AB16 [get_ports {rsvd_gpio_tri_o[1]}]; # LA07_N
-set_property PACKAGE_PIN AJ15 [get_ports {rsvd_gpio_tri_o[2]}]; # LA13_P
-set_property PACKAGE_PIN AK15 [get_ports {rsvd_gpio_tri_o[3]}]; # LA13_N
-set_property PACKAGE_PIN AF6 [get_ports {rsvd_gpio_tri_o[4]}]; # LA25_P
-set_property PACKAGE_PIN AF5 [get_ports {rsvd_gpio_tri_o[5]}]; # LA25_N
+set_property PACKAGE_PIN AH17 [get_ports {rsvd_gpio_tri_o[0]}]; # LA04_P
+set_property PACKAGE_PIN AJ17 [get_ports {rsvd_gpio_tri_o[1]}]; # LA04_N
+set_property PACKAGE_PIN AA16 [get_ports {rsvd_gpio_tri_o[2]}]; # LA07_P
+set_property PACKAGE_PIN AB16 [get_ports {rsvd_gpio_tri_o[3]}]; # LA07_N
+set_property PACKAGE_PIN AJ15 [get_ports {rsvd_gpio_tri_o[4]}]; # LA13_P
+set_property PACKAGE_PIN AK15 [get_ports {rsvd_gpio_tri_o[5]}]; # LA13_N
 set_property PACKAGE_PIN AG8 [get_ports {rsvd_gpio_tri_o[6]}]; # LA27_P
 set_property PACKAGE_PIN AH8 [get_ports {rsvd_gpio_tri_o[7]}]; # LA27_N
 set_property PACKAGE_PIN AJ4 [get_ports {rsvd_gpio_tri_o[8]}]; # LA29_P
