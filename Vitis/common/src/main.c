@@ -14,6 +14,7 @@
 #include "xaxivdma.h"
 #include "xv_demosaic.h"
 #include "xv_gamma_lut.h"
+#include "xaxis_switch.h"
 #include "math.h"
 #include "i2c_axi.h"
 #include "xdpdma_video_example.h"
@@ -26,6 +27,7 @@
 XScuGic Intc;
 XVtc VtcInst;
 XGpio RsvdGpio;
+XAxis_Switch AxisSwitch;
 
 // Camera 0 IP
 XIic Iic;
@@ -124,6 +126,7 @@ int main()
 	XVtc_Timing VtcTiming;
 	XVtc_SourceSelect SourceSelect;
 	Run_Config RunCfg;
+	XAxis_Switch_Config *SwitchConfig;
 
 	int Status;
 
@@ -143,6 +146,33 @@ int main()
 	// Set Rsvd GPIO default directions (1=input, 0=output) and values
 	XGpio_SetDataDirection(&RsvdGpio, 1, RSVD_GPIO_DEF_DIR_MASK);
 	XGpio_DiscreteWrite(&RsvdGpio, 1, RSVD_GPIO_DEF_VAL_MASK);
+
+	/*
+	 * Initialize AXIS switch
+	 */
+	SwitchConfig = XAxisScr_LookupConfig(XPAR_AXIS_SWITCH_0_DEVICE_ID);
+	if (NULL == SwitchConfig) {
+		return XST_FAILURE;
+	}
+
+	Status = XAxisScr_CfgInitialize(&AxisSwitch, SwitchConfig,
+			SwitchConfig->BaseAddress);
+	if (Status != XST_SUCCESS) {
+		xil_printf("AXI4-Stream initialization failed.\r\n");
+		return XST_FAILURE;
+	}
+
+	/* Disable register update */
+	XAxisScr_RegUpdateDisable(&AxisSwitch);
+
+	/* Disable all MI ports */
+	XAxisScr_MiPortDisableAll(&AxisSwitch);
+
+	/* Source SI[0] to MI[0] */
+	XAxisScr_MiPortEnable(&AxisSwitch, 0, 0);
+
+	/* Enable register update */
+	XAxisScr_RegUpdateEnable(&AxisSwitch);
 
 	/*
 	 * Initialize the GPIO driver for CAM0

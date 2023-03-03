@@ -1,4 +1,4 @@
-# Opsero Electronic Design Inc. Copyright 2022
+# Opsero Electronic Design Inc. Copyright 2023
 #
 # Project build script
 #
@@ -33,13 +33,13 @@ if {![string equal $ver $version_required]} {
 }
 
 # Possible targets
-dict set target_dict zcu104 { xczu7ev-ffvc1156-2-e xilinx.com:zcu104:part0:1.1 4 zynqmp }
-dict set target_dict zcu102_hpc0 { xczu9eg-ffvb1156-2-e xilinx.com:zcu102:part0:3.4 4 zynqmp }
-dict set target_dict zcu102_hpc1 { xczu9eg-ffvb1156-2-e xilinx.com:zcu102:part0:3.4 2 zynqmp }
-dict set target_dict zcu106_hpc0 { xc7z045ffg900-2 xilinx.com:zcu106:part0:2.6 4 zynqmp }
-dict set target_dict pynqzu { xczu5eg-sfvc784-1-e tul.com.tw:pynqzu:part0:1.1 4 zynqmp }
-dict set target_dict genesyszu { xczu5ev-sfvc784-1-e digilentinc.com:gzu_5ev:part0:1.1 4 zynqmp }
-dict set target_dict uzev { xczu7ev-fbvb900-1-i avnet.com:ultrazed_7ev_cc:part0:1.4 4 zynqmp }
+dict set target_dict zcu104 { xczu7ev-ffvc1156-2-e xilinx.com:zcu104:part0:1.1 { 0 1 2 3 } zynqmp }
+dict set target_dict zcu102_hpc0 { xczu9eg-ffvb1156-2-e xilinx.com:zcu102:part0:3.4 { 0 1 2 3 } zynqmp }
+dict set target_dict zcu102_hpc1 { xczu9eg-ffvb1156-2-e xilinx.com:zcu102:part0:3.4 { 0 1 } zynqmp }
+dict set target_dict zcu106_hpc0 { xc7z045ffg900-2 xilinx.com:zcu106:part0:2.6 { 0 1 2 3 } zynqmp }
+dict set target_dict pynqzu { xczu5eg-sfvc784-1-e tul.com.tw:pynqzu:part0:1.1 { 0 1 2 3 } zynqmp }
+dict set target_dict genesyszu { xczu5ev-sfvc784-1-e digilentinc.com:gzu_5ev:part0:1.1 { 0 1 2 3 } zynqmp }
+dict set target_dict uzev { xczu7ev-fbvb900-1-i avnet.com:ultrazed_7ev_cc:part0:1.4 { 0 1 2 3 } zynqmp }
 
 if { $argc == 1 } {
   set target [lindex $argv 0]
@@ -66,11 +66,11 @@ if { $argc == 1 } {
   return
 }
 
-set design_name ${target}_mipi
-set block_name mipi
+set design_name ${target}
+set block_name rpi
 set fpga_part [lindex [dict get $target_dict $target] 0]
 set board_part [lindex [dict get $target_dict $target] 1]
-set num_cams [lindex [dict get $target_dict $target] 2]
+set cams [lindex [dict get $target_dict $target] 2]
 set bd_script [lindex [dict get $target_dict $target] 3]
 
 # Set the reference directory for source file relative paths (by default the value is script directory path)

@@ -281,12 +281,12 @@ proc get_vivado_projects {vivado_dir} {
   foreach {vivado_proj_dir} [glob -type d "${vivado_dir}/*"] {
     # Get the vivado project name from the project directory name
     set vivado_proj [lindex [split $vivado_proj_dir /] end]
-    # Ignore directories returned by glob that don't contain an underscore
-    if { ([string first "_" $vivado_proj] == -1) } {
-      continue
+    # Return only directories containing .xpr project files
+    set xpr_file "$vivado_proj_dir/$vivado_proj.xpr"
+    if {[file exists $xpr_file]} {
+      # Add the Vivado project to the list
+      lappend vivado_proj_list $vivado_proj
     }
-    # Add the Vivado project to the list
-    lappend vivado_proj_list $vivado_proj
   }
   return $vivado_proj_list
 }
@@ -354,10 +354,10 @@ proc create_vitis_ws {vivado_dirs} {
     # Check each Vivado project for export files
     foreach {vivado_folder} [get_vivado_projects $vivado_dir] {
       # If the hardware has been exported for Vitis
-      set xsa_file "$vivado_dir/$vivado_folder/${design_prefix}_wrapper.xsa"
-      if {[file exists $xsa_file]} {
-        lappend xsa_files $xsa_file
-      }
+      set file_list [glob -nocomplain "$vivado_dir/$vivado_folder/*.xsa"]
+      if {[llength $file_list] != 0} {
+        lappend xsa_files [lindex $file_list 0]
+      }      
     }
   }
   

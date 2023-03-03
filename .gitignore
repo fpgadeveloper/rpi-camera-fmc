@@ -2,7 +2,13 @@
 *.jou
 Vivado/.Xil/
 Vivado/*.str
-Vivado/*_mipi/
+Vivado/genesyszu/
+Vivado/pynqzu/
+Vivado/uzev/
+Vivado/zcu102_hpc0/
+Vivado/zcu102_hpc1/
+Vivado/zcu104/
+Vivado/zcu106_hpc0/
 Vitis/*_app/
 Vitis/*_app_*/
 Vitis/.*/

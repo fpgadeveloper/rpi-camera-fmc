@@ -17,8 +17,8 @@ foreach d $vivado_dirs_rel {
 # Applications will be named using the app_postfix appended to the board name
 set app_postfix "_app"
 
-# Specify the postfix on the Vivado projects so that the workspace builder can find them
-set vivado_postfix "_mipi"
+# Specify the postfix on the Vivado projects (if one is used)
+set vivado_postfix ""
 
 # Set the app template used to create the application
 set support_app "empty_application"
