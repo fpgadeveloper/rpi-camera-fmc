@@ -44,8 +44,8 @@ set_property PACKAGE_PIN L1 [get_ports {gpio_1_tri_o[1]}]; # LA09_P
 set_property IOSTANDARD LVCMOS12 [get_ports {gpio_1_tri_o[*]}]
 
 # GPIOs for MIPI camera 2
-set_property PACKAGE_PIN AC2 [get_ports {gpio_2_tri_o[0]}]; # LA19_N
-set_property PACKAGE_PIN AB2 [get_ports {gpio_2_tri_o[1]}]; # LA19_P
+set_property PACKAGE_PIN AG6 [get_ports {gpio_2_tri_o[0]}]; # LA19_N
+set_property PACKAGE_PIN AG5 [get_ports {gpio_2_tri_o[1]}]; # LA19_P
 set_property IOSTANDARD LVCMOS12 [get_ports {gpio_2_tri_o[*]}]
 
 # GPIOs for MIPI camera 3
@@ -125,8 +125,8 @@ set_property PACKAGE_PIN AG9 [get_ports {mipi_phy_if_3_clk_p}]; # LA31_P
 set_property PACKAGE_PIN AH9 [get_ports {mipi_phy_if_3_clk_n}]; # LA31_N
 set_property PACKAGE_PIN AD7 [get_ports {mipi_phy_if_3_data_p[0]}]; # LA33_P
 set_property PACKAGE_PIN AE7 [get_ports {mipi_phy_if_3_data_n[0]}]; # LA33_N
-set_property PACKAGE_PIN AG6 [get_ports {mipi_phy_if_3_data_p[1]}]; # LA28_P
-set_property PACKAGE_PIN AG5 [get_ports {mipi_phy_if_3_data_n[1]}]; # LA28_N
+set_property PACKAGE_PIN AB2 [get_ports {mipi_phy_if_3_data_p[1]}]; # LA28_P - now LA19
+set_property PACKAGE_PIN AC2 [get_ports {mipi_phy_if_3_data_n[1]}]; # LA28_N
 
 set_property IOSTANDARD MIPI_DPHY_DCI [get_ports mipi_phy_if_3_clk_p]
 set_property IOSTANDARD MIPI_DPHY_DCI [get_ports mipi_phy_if_3_clk_n]

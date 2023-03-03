@@ -2,6 +2,10 @@
 # As we use LA03_P, we need the following constraint
 set_property UNAVAILABLE_DURING_CALIBRATION TRUE [get_ports iic_0_sda_io]
 
+# DCI_CASCADE is required since banks 66 and 67 do not have 240 ohm resistor on VRP pins
+# https://support.xilinx.com/s/article/67565?language=en_US
+set_property DCI_CASCADE {66 67} [get_iobanks 65] 
+
 # I2C signals for MIPI 0
 set_property PACKAGE_PIN Y1 [get_ports iic_0_scl_io]; # LA03_N
 set_property PACKAGE_PIN Y2 [get_ports iic_0_sda_io]; # LA03_P

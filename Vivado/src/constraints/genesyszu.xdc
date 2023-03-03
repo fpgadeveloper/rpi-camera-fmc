@@ -9,6 +9,10 @@ set_property IOSTANDARD LVCMOS18 [get_ports dp_aux_dout]
 set_property PACKAGE_PIN J10 [get_ports dp_aux_hotplug_detect]; #IO_L1N_AD15N_45/25 Sch=dp_aux_hotplug_detect
 set_property IOSTANDARD LVCMOS18 [get_ports dp_aux_hotplug_detect]
 
+# DCI_CASCADE is required since bank 64 does not have 240 ohm resistor on VRP pin
+# https://support.xilinx.com/s/article/67565?language=en_US
+set_property DCI_CASCADE {64} [get_iobanks 65] 
+
 # I2C signals for MIPI 0
 set_property PACKAGE_PIN K3 [get_ports iic_0_scl_io]; # LA03_N
 set_property PACKAGE_PIN K4 [get_ports iic_0_sda_io]; # LA03_P

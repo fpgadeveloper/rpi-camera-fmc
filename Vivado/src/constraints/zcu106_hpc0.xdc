@@ -1,3 +1,8 @@
+
+# DCI_CASCADE is required since banks 67 does not have 240 ohm resistor on VRP pin
+# https://support.xilinx.com/s/article/67565?language=en_US
+set_property DCI_CASCADE {67} [get_iobanks 68] 
+
 # I2C signals for MIPI 0
 set_property PACKAGE_PIN K18 [get_ports iic_0_scl_io]; # LA03_N
 set_property PACKAGE_PIN K19 [get_ports iic_0_sda_io]; # LA03_P

@@ -7,6 +7,13 @@ Vitis/*_app/
 Vitis/*_app_*/
 Vitis/.*/
 Vitis/.*
+Vitis/genesyszu/
+Vitis/pynqzu/
+Vitis/uzev/
+Vitis/zcu102_hpc0/
+Vitis/zcu102_hpc1/
+Vitis/zcu104/
+Vitis/zcu106_hpc0/
 Vitis/boot/
 Vitis/embeddedsw/
 Vitis/RemoteSystemsTempFiles/
