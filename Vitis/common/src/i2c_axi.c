@@ -4,14 +4,16 @@
 ******************************************************************************/
 
 #include "i2c_axi.h"
-
+#include "xparameters.h"
 #include "xiic.h"
+
+#define IIC_NUM_INSTANCES XPAR_XIIC_NUM_INSTANCES
 
 /************************** Variable Definitions *****************************/
 
-u32 IicBaseAddr[2];
-volatile u8 TransmitComplete[2];	/* Flag to check completion of Transmission */
-volatile u8 ReceiveComplete[2];	/* Flag to check completion of Reception */
+u32 IicBaseAddr[IIC_NUM_INSTANCES];
+volatile u8 TransmitComplete[IIC_NUM_INSTANCES];	/* Flag to check completion of Transmission */
+volatile u8 ReceiveComplete[IIC_NUM_INSTANCES];	/* Flag to check completion of Reception */
 
 /************************** Function Definitions *****************************/
 
@@ -253,7 +255,7 @@ void IicSendHandler(XIic *InstancePtr)
 {
 	int i;
 	// Reset the TransmitComplete flag for this IIC instance
-	for(i=0; i<2; i++){
+	for(i=0; i<IIC_NUM_INSTANCES; i++){
 		if(InstancePtr->BaseAddress == IicBaseAddr[i]){
 			TransmitComplete[i] = 0;
 			break;
@@ -265,7 +267,7 @@ void IicStartSendHandler(XIic *InstancePtr)
 {
 	int i;
 	// Reset the ReceiveComplete flag for this IIC instance
-	for(i=0; i<2; i++){
+	for(i=0; i<IIC_NUM_INSTANCES; i++){
 		if(InstancePtr->BaseAddress == IicBaseAddr[i]){
 			TransmitComplete[i] = 1;
 			break;
@@ -277,7 +279,7 @@ int IicSendComplete(XIic *InstancePtr)
 {
 	int i;
 	// Return the ReceiveComplete flag for this IIC instance
-	for(i=0; i<2; i++){
+	for(i=0; i<IIC_NUM_INSTANCES; i++){
 		if(InstancePtr->BaseAddress == IicBaseAddr[i]){
 			return(TransmitComplete[i] == 0);
 		}
@@ -302,7 +304,7 @@ void IicRecvHandler(XIic *InstancePtr)
 {
 	int i;
 	// Reset the ReceiveComplete flag for this IIC instance
-	for(i=0; i<2; i++){
+	for(i=0; i<IIC_NUM_INSTANCES; i++){
 		if(InstancePtr->BaseAddress == IicBaseAddr[i]){
 			ReceiveComplete[i] = 0;
 			break;
@@ -314,7 +316,7 @@ void IicStartRecvHandler(XIic *InstancePtr)
 {
 	int i;
 	// Reset the ReceiveComplete flag for this IIC instance
-	for(i=0; i<2; i++){
+	for(i=0; i<IIC_NUM_INSTANCES; i++){
 		if(InstancePtr->BaseAddress == IicBaseAddr[i]){
 			ReceiveComplete[i] = 1;
 			break;
@@ -326,7 +328,7 @@ int IicRecvComplete(XIic *InstancePtr)
 {
 	int i;
 	// Return the ReceiveComplete flag for this IIC instance
-	for(i=0; i<2; i++){
+	for(i=0; i<IIC_NUM_INSTANCES; i++){
 		if(InstancePtr->BaseAddress == IicBaseAddr[i]){
 			return(ReceiveComplete[i] == 0);
 		}

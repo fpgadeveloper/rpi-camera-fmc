@@ -6,9 +6,6 @@
 #include "sleep.h"
 #include "ov5640.h"
 
-XIIC_TYPE *ov5640_iic;
-XGpio *ov5640_gpio;
-uint8_t ov5640_gpio_mask;
 
 config_word_t const cfg_advanced_awb_[] =
 {
@@ -644,13 +641,13 @@ config_awb_t const awbs[] =
 };
 
 // Initialize the OV5640 driver with a pointer to the I2C instance
-int ov5640_init(XIIC_TYPE *iic_inst,XGpio *gpio_inst,uint8_t gpio_mask)
+int ov5640_init(OV5640 *ov5640,XIIC_TYPE *iic_inst,XGpio *gpio_inst,uint8_t gpio_mask)
 {
 	// Copy the IIC instance pointer that connects to the OV5640
-	ov5640_iic = iic_inst;
+	ov5640->iic = iic_inst;
 	// Copy the GPIO instance for the reset signal
-	ov5640_gpio = gpio_inst;
-	ov5640_gpio_mask = gpio_mask;
+	ov5640->gpio = gpio_inst;
+	ov5640->gpio_mask = gpio_mask;
 
 	return XST_SUCCESS;
 }
@@ -668,36 +665,35 @@ int ov5640_init(XIIC_TYPE *iic_inst,XGpio *gpio_inst,uint8_t gpio_mask)
  * on how the camera/cable was positioned.
  *
  */
-int ov5640_config(vmode_t mode,awb_t awb)
+int ov5640_config(OV5640 *ov5640,vmode_t mode,awb_t awb)
 {
 	int Status;
 	uint8_t gpi_status_high,gpi_status_low,frame_status_high,frame_status_low;
-	uint8_t mask;
 	// Reset the camera
-	ov5640_reset();
+	ov5640_reset(ov5640);
 	do {
 		// Initial configuration from step 4:
 		// https://digilent.com/reference/add-ons/pcam-5c/reference-manual?redirect=1#power-up_and_reset
 		// 4. Choose system input clock from pad by writing 0x11 to register address 0x3103.
-		Status = ov5640_writeReg(0x3103,0x11);
+		Status = ov5640_writeReg(ov5640,0x3103,0x11);
 		//[7]=1 Software reset; [6]=0 Software power down; Default=0x02
 		// 5. Execute software reset by writing 0x82 to register address 0x3008.
-		Status = ov5640_writeReg(0x3008, 0x82);
+		Status = ov5640_writeReg(ov5640,0x3008, 0x82);
 		// 6. Wait 10ms
 		usleep(10000);
 		// Steps 7+
-		Status = ov5640_write_config(cfg_init_,sizeof(cfg_init_)/sizeof(cfg_init_[0]));
+		Status = ov5640_write_config(ov5640,cfg_init_,sizeof(cfg_init_)/sizeof(cfg_init_[0]));
 		// AWB config
 		config_awb_t const *cfg_awb = &awbs[awb];
-	    Status = ov5640_write_config(cfg_awb->cfg,cfg_awb->cfg_size);
+	    Status = ov5640_write_config(ov5640,cfg_awb->cfg,cfg_awb->cfg_size);
 	    // Video mode config
 		config_modes_t const *cfg_mode = &modes[mode];
 	    //[7]=0 Software reset; [6]=1 Software power down; Default=0x02
-	    ov5640_writeReg(0x3008, 0x42);
+	    ov5640_writeReg(ov5640,0x3008, 0x42);
 	    usleep(20000);
-	    Status = ov5640_write_config(cfg_mode->cfg,cfg_mode->cfg_size);
+	    Status = ov5640_write_config(ov5640,cfg_mode->cfg,cfg_mode->cfg_size);
 	    //[7]=0 Software reset; [6]=0 Software power down; Default=0x02
-	    ov5640_writeReg(0x3008, 0x02);
+	    ov5640_writeReg(ov5640,0x3008, 0x02);
 
 	    /*
 	     * Releasing the OV5640 from software reset seems to lock up the I2C driver
@@ -705,14 +701,14 @@ int ov5640_config(vmode_t mode,awb_t awb)
 	     * reset the driver.
 	     */
 	    usleep(10000);
-	    XIic_Reset(ov5640_iic);
+	    XIic_Reset(ov5640->iic);
 
 		// Check GPI_STATUS and FRAME_STATUS registers to ensure
 		// that the camera has started properly
-		ov5640_readReg(0x3026,&gpi_status_high);
-		ov5640_readReg(0x3027,&gpi_status_low);
-		ov5640_readReg(0x303C,&frame_status_high);
-		ov5640_readReg(0x303D,&frame_status_low);
+		ov5640_readReg(ov5640,0x3026,&gpi_status_high);
+		ov5640_readReg(ov5640,0x3027,&gpi_status_low);
+		ov5640_readReg(ov5640,0x303C,&frame_status_high);
+		ov5640_readReg(ov5640,0x303D,&frame_status_low);
 
 		if ((gpi_status_high == 0xFF) && (gpi_status_low == 0xFF)) {
 			xil_printf("OV5640 repeating configuration\n\r");
@@ -725,18 +721,15 @@ int ov5640_config(vmode_t mode,awb_t awb)
 
 /*
  * Looks for the OV5640 on the I2C bus
- *
- * This function will ensure that the I2C MUX is properly configured before attempting
- * to communicate with the OV5640. It will return the MUX to its original state afterwards.
  */
-int ov5640_detect()
+int ov5640_detect(OV5640 *ov5640)
 {
 	int Status;
 	uint8_t data;
 	uint8_t mask;
 
 	// Read the register
-	Status = ov5640_readReg(0x3100,&data);
+	Status = ov5640_readReg(ov5640,0x3100,&data);
 	if (Status != XST_SUCCESS) {
 		xil_printf("ERROR: ov5640_detect could not read register\n\r");
 		return XST_FAILURE;
@@ -756,19 +749,19 @@ int ov5640_detect()
  */
 
 // Reset the OV5640 by toggling the enable pin
-int ov5640_reset()
+int ov5640_reset(OV5640 *ov5640)
 {
 	// Disable the camera, wait 100ms
-	XGpio_DiscreteClear(ov5640_gpio, 1, ov5640_gpio_mask);
+	XGpio_DiscreteClear(ov5640->gpio, 1, ov5640->gpio_mask);
 	usleep(100000);
 	// Enable the camera, wait 50ms
-	XGpio_DiscreteWrite(ov5640_gpio, 1, ov5640_gpio_mask);
+	XGpio_DiscreteWrite(ov5640->gpio, 1, ov5640->gpio_mask);
 	usleep(50000);
 	return XST_SUCCESS;
 }
 
 // Write to a register of the OV5640
-int ov5640_writeReg(uint16_t addr, uint8_t data)
+int ov5640_writeReg(OV5640 *ov5640,uint16_t addr, uint8_t data)
 {
 	int Status;
 	// Write to OV5640 register
@@ -776,7 +769,7 @@ int ov5640_writeReg(uint16_t addr, uint8_t data)
 	buf[0] = addr >> 8;
 	buf[1] = addr & 0x00FF;
 	buf[2] = data;
-	Status = IicWrite(ov5640_iic,IIC_OV5640_ADDR,buf,3);
+	Status = IicWrite(ov5640->iic,IIC_OV5640_ADDR,buf,3);
 	if (Status != XST_SUCCESS) {
 		xil_printf("ERROR: ov5640_writeReg failed\n\r");
 	}
@@ -784,19 +777,19 @@ int ov5640_writeReg(uint16_t addr, uint8_t data)
 }
 
 // Read from a register of the OV5640
-int ov5640_readReg(uint16_t addr, uint8_t *data)
+int ov5640_readReg(OV5640 *ov5640,uint16_t addr, uint8_t *data)
 {
 	int Status;
 	// Read the OV5640 register
 	uint8_t buf[10];
 	buf[0] = addr >> 8;
 	buf[1] = addr & 0x00FF;
-	Status = IicWrite(ov5640_iic,IIC_OV5640_ADDR,buf,2);
+	Status = IicWrite(ov5640->iic,IIC_OV5640_ADDR,buf,2);
 	if (Status != XST_SUCCESS) {
 		xil_printf("ERROR: ov5640_readReg failed to write the address\n\r");
 		return(Status);
 	}
-	Status = IicRead(ov5640_iic,IIC_OV5640_ADDR,buf,1);
+	Status = IicRead(ov5640->iic,IIC_OV5640_ADDR,buf,1);
 	if (Status != XST_SUCCESS) {
 		xil_printf("ERROR: ov5640_readReg failed to read from address\n\r");
 		return(Status);
@@ -808,12 +801,12 @@ int ov5640_readReg(uint16_t addr, uint8_t *data)
 // Write a set configuration to the OV5640
 // The configs originated from this Digilent design:
 // https://github.com/Digilent/Zybo-Z7-20-pcam-5c/blob/master/sdk/appsrc/pcam_vdma_hdmi/ov5640/OV5640.h
-int ov5640_write_config(config_word_t const *cfg, size_t len)
+int ov5640_write_config(OV5640 *ov5640,config_word_t const *cfg, size_t len)
 {
 	int Status;
     for(int i = 0; i < len; i++)
     {
-    	Status = ov5640_writeReg(cfg[i].addr,cfg[i].data);
+    	Status = ov5640_writeReg(ov5640,cfg[i].addr,cfg[i].data);
     	if (Status != XST_SUCCESS)
     	{
     		return(Status);

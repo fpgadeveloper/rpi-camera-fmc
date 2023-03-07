@@ -7,6 +7,7 @@
 #define OV5640_H_
 
 #include "xil_types.h"
+#include "xgpio.h"
 #include "board.h"
 
 #if defined (BOARD_PYNQZU_PCAM)
@@ -33,21 +34,27 @@ typedef struct { vmode_t mode; config_word_t const* cfg; size_t cfg_size; } conf
 typedef enum { AWB_DISABLED = 0, AWB_SIMPLE, AWB_ADVANCED, AWB_END } awb_t;
 typedef struct { awb_t awb; config_word_t const* cfg; size_t cfg_size; } config_awb_t;
 
+typedef struct {
+	XIIC_TYPE *iic;
+	XGpio *gpio;
+	uint8_t gpio_mask;
+} OV5640;
+
 /*
  * Public functions
  * These functions are intended to be called by the user
  */
-int ov5640_init(XIIC_TYPE *iic_inst,XGpio *gpio_inst,uint8_t gpio_mask);
-int ov5640_config(vmode_t mode,awb_t awb);
-int ov5640_detect();
+int ov5640_init(OV5640 *ov5640,XIIC_TYPE *iic_inst,XGpio *gpio_inst,uint8_t gpio_mask);
+int ov5640_config(OV5640 *ov5640,vmode_t mode,awb_t awb);
+int ov5640_detect(OV5640 *ov5640);
 
 /*
  * Internal functions
  * These functions are intended for use internal to this library
  */
-int ov5640_reset();
-int ov5640_writeReg(uint16_t addr, uint8_t data);
-int ov5640_readReg(uint16_t addr, uint8_t *data);
-int ov5640_write_config(config_word_t const *cfg, size_t len);
+int ov5640_reset(OV5640 *ov5640);
+int ov5640_writeReg(OV5640 *ov5640,uint16_t addr, uint8_t data);
+int ov5640_readReg(OV5640 *ov5640,uint16_t addr, uint8_t *data);
+int ov5640_write_config(OV5640 *ov5640,config_word_t const *cfg, size_t len);
 
 #endif /* OV5640_H_ */
