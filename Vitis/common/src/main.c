@@ -38,6 +38,7 @@ VideoPipeDevIds CamDevIds0 = {
 		XPAR_MIPI_0_AXI_IIC_0_DEVICE_ID,
 		XPAR_MIPI_0_AXI_GPIO_0_DEVICE_ID,
 		XPAR_MIPI_0_AXI_VDMA_0_DEVICE_ID,
+		0x00000000,
 		XPAR_MIPI_0_DEMOSAIC_0_DEVICE_ID,
 		XPAR_MIPI_0_V_GAMMA_LUT_DEVICE_ID,
 		XPAR_FABRIC_MIPI_0_AXI_IIC_0_IIC2INTC_IRPT_INTR
@@ -46,6 +47,7 @@ VideoPipeDevIds CamDevIds1 = {
 		XPAR_MIPI_1_AXI_IIC_0_DEVICE_ID,
 		XPAR_MIPI_1_AXI_GPIO_0_DEVICE_ID,
 		XPAR_MIPI_1_AXI_VDMA_0_DEVICE_ID,
+		0x01000000,
 		XPAR_MIPI_1_DEMOSAIC_0_DEVICE_ID,
 		XPAR_MIPI_1_V_GAMMA_LUT_DEVICE_ID,
 		XPAR_FABRIC_MIPI_1_AXI_IIC_0_IIC2INTC_IRPT_INTR
@@ -54,6 +56,7 @@ VideoPipeDevIds CamDevIds2 = {
 		XPAR_MIPI_2_AXI_IIC_0_DEVICE_ID,
 		XPAR_MIPI_2_AXI_GPIO_0_DEVICE_ID,
 		XPAR_MIPI_2_AXI_VDMA_0_DEVICE_ID,
+		0x02000000,
 		XPAR_MIPI_2_DEMOSAIC_0_DEVICE_ID,
 		XPAR_MIPI_2_V_GAMMA_LUT_DEVICE_ID,
 		XPAR_FABRIC_MIPI_2_AXI_IIC_0_IIC2INTC_IRPT_INTR
@@ -62,6 +65,7 @@ VideoPipeDevIds CamDevIds3 = {
 		XPAR_MIPI_3_AXI_IIC_0_DEVICE_ID,
 		XPAR_MIPI_3_AXI_GPIO_0_DEVICE_ID,
 		XPAR_MIPI_3_AXI_VDMA_0_DEVICE_ID,
+		0x03000000,
 		XPAR_MIPI_3_DEMOSAIC_0_DEVICE_ID,
 		XPAR_MIPI_3_V_GAMMA_LUT_DEVICE_ID,
 		XPAR_FABRIC_MIPI_3_AXI_IIC_0_IIC2INTC_IRPT_INTR
@@ -237,7 +241,23 @@ int main()
 	config_camera(&Cam2);
 	config_camera(&Cam3);
 
+	u8 cam_index = 0;
 	while(1){
+		sleep(5);
+		cam_index++;
+		if(cam_index == 4)
+			cam_index = 0;
+		/* Disable register update */
+		XAxisScr_RegUpdateDisable(&AxisSwitch);
+
+		/* Disable all MI ports */
+		XAxisScr_MiPortDisableAll(&AxisSwitch);
+
+		/* Source SI[0] to MI[0] */
+		XAxisScr_MiPortEnable(&AxisSwitch, 0, cam_index);
+
+		/* Enable register update */
+		XAxisScr_RegUpdateEnable(&AxisSwitch);
 	}
 
     return 0;

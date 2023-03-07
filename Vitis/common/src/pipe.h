@@ -68,6 +68,7 @@ typedef struct {
 	u16 Iic;
 	u16 Gpio;
 	u16 Vdma;
+	u32 VdmaFrameBufOffset;
 	u16 Demosaic;
 	u16 GammaLut;
 	u16 IicIntr;

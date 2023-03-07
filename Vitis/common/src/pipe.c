@@ -56,7 +56,7 @@ int pipe_init(VideoPipe *pipe, VideoPipeDevIds *devids, XScuGic *intc)
 	VdmaDma.EnableFrameCounter = 0;  // Endless transfers
 	VdmaDma.FixedFrameStoreAddr = 0;  // We are not doing parking
 	// Initialize buffer addresses, use physical addresses
-	UINTPTR Addr = FRAME_BUF_ADDR_BASE + SUBFRAME_START_OFFSET;
+	UINTPTR Addr = devids->VdmaFrameBufOffset + FRAME_BUF_ADDR_BASE + SUBFRAME_START_OFFSET;
 	for(uint32_t i = 0; i < VdmaConfig->MaxFrameStoreNum; i++) {
 		VdmaDma.FrameStoreStartAddr[i] = Addr;
 		Addr += FRAME_HORI_LEN * FRAME_VERT_LEN;
