@@ -375,15 +375,15 @@ set concat_0 [create_bd_cell -type ip -vlnv xilinx.com:ip:xlconcat xlconcat_0]
 # lappend axi_lite_ports [list "axi_intc_0/s_axi" "clk_wiz_0/clk_out2" "rst_ps_axi_150M/peripheral_aresetn"]
 connect_bd_net [get_bd_pins xlconcat_0/dout] [get_bd_pins zynq_ultra_ps_e_0/pl_ps_irq0]
 
-# Add constant for the CAM1 and CAM3 CLK_SEL pin (11b for UltraZed-EV Carrier and 10b for Genesys ZU, 00b for all other boards)
+# Add constant for the CAM1 and CAM3 CLK_SEL pin (01b for UltraZed-EV Carrier and 00b for Genesys ZU, 10b for all other boards)
 set clk_sel [create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant clk_sel]
 set_property -dict [list CONFIG.CONST_WIDTH {2}] $clk_sel
 if { $target == "uzev" } {
-  set_property -dict [list CONFIG.CONST_VAL {0x03}] $clk_sel
+  set_property -dict [list CONFIG.CONST_VAL {0x01}] $clk_sel
 } elseif { $target == "genesyszu" } {
-  set_property -dict [list CONFIG.CONST_VAL {0x02}] $clk_sel
-} else {
   set_property -dict [list CONFIG.CONST_VAL {0x00}] $clk_sel
+} else {
+  set_property -dict [list CONFIG.CONST_VAL {0x02}] $clk_sel
 }
 create_bd_port -dir O clk_sel
 connect_bd_net [get_bd_ports clk_sel] [get_bd_pins clk_sel/dout]
