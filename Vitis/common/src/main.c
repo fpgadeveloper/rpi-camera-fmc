@@ -110,9 +110,9 @@ int main()
 
 	int Status;
 
-    xil_printf("-------------------------------------\n\r");
-    xil_printf(" MIPI camera to Display Port example\n\r");
-    xil_printf("-------------------------------------\n\r");
+    xil_printf("---------------------------------------\n\r");
+    xil_printf(" 4x RPi camera to Display Port example\n\r");
+    xil_printf("---------------------------------------\n\r");
 
 	/*
 	 * Initialize the Reserved GPIO driver

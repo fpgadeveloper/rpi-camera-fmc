@@ -41,30 +41,44 @@ dict set dp_dict zcu104 dpaux "MIO 27 .. 30"
 dict set dp_dict zcu104 lane_sel "Dual Lower"
 dict set dp_dict zcu104 ref_clk_freq "27"
 dict set dp_dict zcu104 ref_clk_sel "Ref Clk3"
+dict set dp_dict zcu104 dp_lane0 "GT Lane1"
+dict set dp_dict zcu104 dp_lane1 "GT Lane0"
 dict set dp_dict zcu102_hpc0 dpaux "MIO 27 .. 30"
 dict set dp_dict zcu102_hpc0 lane_sel "Single Lower"
 dict set dp_dict zcu102_hpc0 ref_clk_freq "27"
 dict set dp_dict zcu102_hpc0 ref_clk_sel "Ref Clk3"
+dict set dp_dict zcu102_hpc0 dp_lane0 "GT Lane1"
+dict set dp_dict zcu102_hpc0 dp_lane1 ""
 dict set dp_dict zcu102_hpc1 dpaux "MIO 27 .. 30"
 dict set dp_dict zcu102_hpc1 lane_sel "Single Lower"
 dict set dp_dict zcu102_hpc1 ref_clk_freq "27"
 dict set dp_dict zcu102_hpc1 ref_clk_sel "Ref Clk3"
+dict set dp_dict zcu102_hpc1 dp_lane0 "GT Lane1"
+dict set dp_dict zcu102_hpc1 dp_lane1 ""
 dict set dp_dict zcu106_hpc0 dpaux "MIO 27 .. 30"
 dict set dp_dict zcu106_hpc0 lane_sel "Dual Lower"
 dict set dp_dict zcu106_hpc0 ref_clk_freq "27"
 dict set dp_dict zcu106_hpc0 ref_clk_sel "Ref Clk3"
+dict set dp_dict zcu106_hpc0 dp_lane0 "GT Lane1"
+dict set dp_dict zcu106_hpc0 dp_lane1 "GT Lane0"
 dict set dp_dict uzev dpaux "MIO 27 .. 30"
 dict set dp_dict uzev lane_sel "Single Higher"
 dict set dp_dict uzev ref_clk_freq "27"
 dict set dp_dict uzev ref_clk_sel "Ref Clk3"
+dict set dp_dict uzev dp_lane0 "GT Lane3"
+dict set dp_dict uzev dp_lane1 ""
 dict set dp_dict pynqzu dpaux "MIO 27 .. 30"
 dict set dp_dict pynqzu lane_sel "Dual Lower"
 dict set dp_dict pynqzu ref_clk_freq "27"
 dict set dp_dict pynqzu ref_clk_sel "Ref Clk1"
+dict set dp_dict pynqzu dp_lane0 "GT Lane1"
+dict set dp_dict pynqzu dp_lane1 "GT Lane0"
 dict set dp_dict genesyszu dpaux "EMIO"
 dict set dp_dict genesyszu lane_sel "Dual Higher"
 dict set dp_dict genesyszu ref_clk_freq "108"
 dict set dp_dict genesyszu ref_clk_sel "Ref Clk2"
+dict set dp_dict genesyszu dp_lane0 "GT Lane3"
+dict set dp_dict genesyszu dp_lane1 "GT Lane2"
 
 # Procedure for creating a MIPI pipe for one camera
 proc create_mipi_pipe { index loc_dict } {
@@ -305,10 +319,10 @@ set_property -dict [list CONFIG.PSU__USE__S_AXI_GP0 {1} \
   CONFIG.PSU__USE__M_AXI_GP1 {0} \
   CONFIG.PSU__USE__M_AXI_GP2 {0} \
   CONFIG.PSU__USE__IRQ0 {1} \
-  CONFIG.PSU__DISPLAYPORT__LANE0__ENABLE {1} \
-  CONFIG.PSU__DISPLAYPORT__LANE0__IO {GT Lane1} \
-  CONFIG.PSU__DISPLAYPORT__LANE1__ENABLE {1} \
-  CONFIG.PSU__DISPLAYPORT__LANE1__IO {GT Lane0} \
+  CONFIG.PSU__DISPLAYPORT__LANE0__ENABLE [expr {[dict get $dp_dict $target dp_lane0] ne ""}] \
+  CONFIG.PSU__DISPLAYPORT__LANE0__IO [dict get $dp_dict $target dp_lane0] \
+  CONFIG.PSU__DISPLAYPORT__LANE1__ENABLE [expr {[dict get $dp_dict $target dp_lane1] ne ""}] \
+  CONFIG.PSU__DISPLAYPORT__LANE1__IO [dict get $dp_dict $target dp_lane1] \
   CONFIG.PSU__DISPLAYPORT__PERIPHERAL__ENABLE {1} \
   CONFIG.PSU__DPAUX__PERIPHERAL__ENABLE {1} \
   CONFIG.PSU__DPAUX__PERIPHERAL__IO [dict get $dp_dict $target dpaux] \
