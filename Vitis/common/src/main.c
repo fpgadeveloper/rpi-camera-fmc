@@ -30,8 +30,8 @@ XVtc VtcInst;
 XGpio RsvdGpio;
 XAxis_Switch AxisSwitch;
 
-// Video pipes
-VideoPipe Cam0,Cam1,Cam2,Cam3;
+// Video pipes 0 and 1
+VideoPipe Cam0,Cam1;
 
 // Provide the device IDs for the elements of each video pipe
 VideoPipeDevIds CamDevIds0 = {
@@ -52,6 +52,12 @@ VideoPipeDevIds CamDevIds1 = {
 		XPAR_MIPI_1_V_GAMMA_LUT_DEVICE_ID,
 		XPAR_FABRIC_MIPI_1_AXI_IIC_0_IIC2INTC_IRPT_INTR
 };
+
+#ifdef XPAR_MIPI_2_AXI_IIC_0_DEVICE_ID
+#define NUM_CAMS 4
+// Video pipes 2 and 3
+VideoPipe Cam2,Cam3;
+
 VideoPipeDevIds CamDevIds2 = {
 		XPAR_MIPI_2_AXI_IIC_0_DEVICE_ID,
 		XPAR_MIPI_2_AXI_GPIO_0_DEVICE_ID,
@@ -70,6 +76,9 @@ VideoPipeDevIds CamDevIds3 = {
 		XPAR_MIPI_3_V_GAMMA_LUT_DEVICE_ID,
 		XPAR_FABRIC_MIPI_3_AXI_IIC_0_IIC2INTC_IRPT_INTR
 };
+#else
+#define NUM_CAMS 2
+#endif
 
 // Common target device IDs
 #define INTC_DEVICE_ID		XPAR_SCUGIC_SINGLE_DEVICE_ID
@@ -181,8 +190,10 @@ int main()
 	 */
 	pipe_init(&Cam0, &CamDevIds0, &Intc);
 	pipe_init(&Cam1, &CamDevIds1, &Intc);
+#ifdef XPAR_MIPI_2_AXI_IIC_0_DEVICE_ID
 	pipe_init(&Cam2, &CamDevIds2, &Intc);
 	pipe_init(&Cam3, &CamDevIds3, &Intc);
+#endif
 
 	/*
 	 * Initialize VTC
@@ -238,14 +249,16 @@ int main()
 	 */
 	config_camera(&Cam0);
 	config_camera(&Cam1);
+#ifdef XPAR_MIPI_2_AXI_IIC_0_DEVICE_ID
 	config_camera(&Cam2);
 	config_camera(&Cam3);
+#endif
 
 	u8 cam_index = 0;
 	while(1){
-		sleep(5);
+		sleep(8);
 		cam_index++;
-		if(cam_index == 4)
+		if(cam_index == NUM_CAMS)
 			cam_index = 0;
 		/* Disable register update */
 		XAxisScr_RegUpdateDisable(&AxisSwitch);

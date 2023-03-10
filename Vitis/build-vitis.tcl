@@ -38,7 +38,7 @@ proc custom_platform_mods {platform_name} {
   # Enable and configure the Standalone domain
   # Set the DisplayPort driver to dppsu
   domain active {standalone_domain}
-  bsp setdriver -ip psu_dp -driver dppsu -ver 1.3
+  bsp setdriver -ip psu_dp -driver dppsu
   bsp regenerate
 }
 

@@ -151,6 +151,14 @@ void DpPsu_Run(Run_Config *RunCfgPtr)
 	u32 Status;
 	XDpPsu  *DpPsuPtr = RunCfgPtr->DpPsuPtr;
 
+// Opsero mod start: Run init first
+	Status = InitDpDmaSubsystem(RunCfgPtr);
+	if (Status != XST_SUCCESS) {
+		xil_printf("! InitDpDmaSubsystem failed.\n\r");
+		return;
+	}
+// Opsero mod end
+
 	XDpPsu_EnableMainLink(DpPsuPtr, 0);
 
 	if (!XDpPsu_IsConnected(DpPsuPtr)) {
@@ -183,9 +191,11 @@ void DpPsu_Run(Run_Config *RunCfgPtr)
 		else if (Status != XST_SUCCESS)
 			continue;
 
-		Status = InitDpDmaSubsystem(RunCfgPtr);
-		if (Status != XST_SUCCESS)
-			return;
+// Opsero mod start: Run init first
+		//Status = InitDpDmaSubsystem(RunCfgPtr);
+		//if (Status != XST_SUCCESS)
+		//	return;
+// Opsero mod end
 
 // Opsero mod start: Not using graphics source
 		//XDpDma_DisplayGfxFrameBuffer(RunCfgPtr->DpDmaPtr, &FrameBuffer);

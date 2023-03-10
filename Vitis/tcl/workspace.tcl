@@ -1,5 +1,5 @@
 # -------------------------------------------------------------------------------------
-# Opsero Electronic Design Inc. Copyright 2022
+# Opsero Electronic Design Inc. Copyright 2023
 # -------------------------------------------------------------------------------------
 # *** VITIS WORKSPACE BUILDER SCRIPT ***
 #
@@ -109,6 +109,32 @@ proc print_app {name msg} {
 
 proc print_sysproj {name msg} {
   puts "  SYSPROJ ($name): $msg"
+}
+
+# Create the local software repository (embeddedsw) for the modified drivers
+proc create_local_embeddedsw {} {
+  # Xilinx Vitis install directory
+  set vitis_dir $::env(XILINX_VITIS)
+  # Copy the EmbeddedSw folder into the Vitis workspace
+  file mkdir "embeddedsw"
+  copy-r "../EmbeddedSw" "embeddedsw"
+  # List all of the "src" or "data" directories so that we know what to copy
+  # from the Vitis installation original driver sources
+  set local_dirs [glob-dir-r "embeddedsw" src data]
+  set orig_dirs {}
+  foreach d $local_dirs {
+    if {[string index $d end] == "9"} {
+      lappend orig_dirs [string replace "$vitis_dir/data/$d" end end ""]
+    } else {
+      lappend orig_dirs "$vitis_dir/data/$d"
+    }
+  }
+  # Copy the relevant original sources into the local software repository
+  foreach local_dir $local_dirs orig_dir $orig_dirs {
+    puts "Copying files from $orig_dir to $local_dir"
+    # Copy the original files to local repo, without overwriting existing code
+    copy-r $orig_dir $local_dir
+  }
 }
 
 # Returns a list of platforms in the workspace
@@ -291,6 +317,19 @@ proc get_vivado_projects {vivado_dir} {
   return $vivado_proj_list
 }
 
+# Add the local software repo to the workspace
+proc add_local_software_repo {vitis_dir} {
+  # Check if the software repo is already in the workspace
+  set embsw [file normalize "${vitis_dir}/embeddedsw"]
+  set sw_repos [repo -get]
+  if {[string first $embsw $sw_repos] >= 0} {
+    puts "Local software repo (embeddedsw) already in workspace."
+  } else {
+    puts "Adding local software repo (embeddedsw) to the workspace."
+    repo -set $embsw
+  }
+}
+
 # Create the platform
 proc create_platform {xsa_file platform_name} {
   global support_app
@@ -381,6 +420,11 @@ proc create_vitis_ws {vivado_dirs} {
   puts "Vitis workspace: $vitis_dir"
   setws $vitis_dir
   
+  # Add local software repo to workspace
+  if {[file exists "../EmbeddedSw"]} {
+    add_local_software_repo $vitis_dir
+  }
+
   # Get a list of platforms and apps already in the workspace
   set list_of_platforms [get_list_of_platforms]
   set list_of_apps [get_list_of_apps]
@@ -517,6 +561,12 @@ proc check_apps {} {
   }
 }
   
+# Copy original library sources into the local Vitis repo
+if {[file exists "../EmbeddedSw"]} {
+  puts "Building the local Vitis repo from original sources"
+  create_local_embeddedsw
+}
+
 # Create the Vitis workspace
 puts "Creating the Vitis workspace"
 create_vitis_ws $vivado_dirs
