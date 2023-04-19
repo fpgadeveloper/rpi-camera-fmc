@@ -584,6 +584,15 @@ foreach i $cams {
 connect_bd_intf_net [get_bd_intf_pins axis_switch/M00_AXIS] [get_bd_intf_pins axi4s_vid_out/video_in]
 lappend axi_lite_ports [list "axis_switch/S_AXI_CTRL" "clk_wiz_0/clk_out2" "rst_ps_axi_150M/peripheral_aresetn"]
 
+# Add GPIO for the on-board LEDs (only ZCU104)
+if { $target == "zcu104" } {
+  create_bd_cell -type ip -vlnv xilinx.com:ip:axi_gpio axi_gpio_leds
+  connect_bd_net [get_bd_pins clk_wiz_0/clk_out2] [get_bd_pins axi_gpio_leds/s_axi_aclk]
+  connect_bd_net [get_bd_pins rst_ps_axi_150M/peripheral_aresetn] [get_bd_pins axi_gpio_leds/s_axi_aresetn]
+  apply_bd_automation -rule xilinx.com:bd_rule:board -config { Board_Interface {led_4bits ( LED ) } Manual_Source {Auto}}  [get_bd_intf_pins axi_gpio_leds/GPIO]
+  lappend axi_lite_ports [list "axi_gpio_leds/S_AXI" "clk_wiz_0/clk_out2" "rst_ps_axi_150M/peripheral_aresetn"]
+}
+
 # Add AXI Interconnect for the AXI Lite interfaces
 
 set n_periph_ports [llength $axi_lite_ports]

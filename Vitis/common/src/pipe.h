@@ -14,7 +14,7 @@
 
 // Camera GPIO masks
 #define GPIO_CAM_IO0_MASK	0x01
-#define GPIO_CAM_IO1_MASK	0x01
+#define GPIO_CAM_IO1_MASK	0x02
 
 // Memory for the frame buffers
 #define DDR_BASE_ADDR		XPAR_PSU_DDR_0_S_AXI_BASEADDR
