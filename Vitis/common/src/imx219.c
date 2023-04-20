@@ -8,11 +8,10 @@
 #include "xgpio.h"
 #include "xil_printf.h"
 #include "i2c.h"
-#include "rpi_cam.h"
 
 // config from https://android.googlesource.com/kernel/bcm/+/android-bcm-tetra-3.10-lollipop-wear-release/drivers/media/video/imx219.c
 /* 1920x1080P48 */
-config_word_t const imx219_cfg[] =
+imx219_config_word_t const imx219_cfg[] =
 {
     {0x30EB, 0x05},
     {0x30EB, 0x0C},
@@ -74,13 +73,13 @@ config_word_t const imx219_cfg[] =
 /*
  * Looks for the IMX219 on the I2C bus
  */
-int imx219_detect(RpiCamera *camera)
+int imx219_detect(uint8_t iic_id)
 {
 	int Status;
 	uint8_t data;
 
 	// Read the register
-	Status = imx219_read(camera,0x00,&data);
+	Status = imx219_read(iic_id,0x00,&data);
 	if (Status != XST_SUCCESS) {
 		return XST_FAILURE;
 	}
@@ -92,15 +91,15 @@ int imx219_detect(RpiCamera *camera)
 	}
 }
 
-int imx219_config(RpiCamera *camera) {
+int imx219_config(uint8_t iic_id,XGpio *gpio,uint8_t gpio_mask) {
 	// Reset the camera
-	imx219_reset(camera);
+	imx219_reset(gpio,gpio_mask);
 	// Write the config registers
 	int Status;
 	size_t len = sizeof(imx219_cfg)/sizeof(imx219_cfg[0]);
     for(int i = 0; i < len; i++)
     {
-    	Status = imx219_write(camera,imx219_cfg[i].addr,imx219_cfg[i].data);
+    	Status = imx219_write(iic_id,imx219_cfg[i].addr,imx219_cfg[i].data);
     	if(Status != XST_SUCCESS) {
     		return(Status);
     	}
@@ -109,48 +108,48 @@ int imx219_config(RpiCamera *camera) {
     }
 	xil_printf("IMX219 camera configured\r\n");
 
-	imx219_write(camera,IMX219_ANA_GAIN_GLOBAL, 232);
+	imx219_write(iic_id,IMX219_ANA_GAIN_GLOBAL, 232);
 
 	// Commented out in Greg Taylor's code
-//	imx219_write(camera,IMX219_COARSE_INT_TIME_HI, 0x02);
+//	imx219_write(iic_id,IMX219_COARSE_INT_TIME_HI, 0x02);
 
 	return XST_SUCCESS;
 }
 
 // Reset the IMX219 by toggling the enable pin
-int imx219_reset(RpiCamera *camera)
+int imx219_reset(XGpio *gpio,uint8_t gpio_mask)
 {
 	// Disable the camera, wait 100ms
-	XGpio_DiscreteClear(camera->gpio, 1, camera->gpio_mask);
+	XGpio_DiscreteClear(gpio, 1, gpio_mask);
 	usleep(100000);
 	// Enable the camera, wait 50ms
-	XGpio_DiscreteWrite(camera->gpio, 1, camera->gpio_mask);
+	XGpio_DiscreteWrite(gpio, 1, gpio_mask);
 	usleep(50000);
 	return XST_SUCCESS;
 }
 
-int imx219_write(RpiCamera *camera,uint16_t addr, uint8_t data)
+int imx219_write(uint8_t iic_id,uint16_t addr, uint8_t data)
 {
 	int Status;
 	uint8_t buf[10];
 	buf[0] = addr >> 8;
 	buf[1] = addr & 0x00FF;
 	buf[2] = data;
-	Status = IicWrite(camera->iic_id,IMX219_I2C_SLAVE_ADDR,buf,3);
+	Status = IicWrite(iic_id,IMX219_I2C_SLAVE_ADDR,buf,3);
 	return Status;
 }
 
-int imx219_read(RpiCamera *camera,uint16_t addr, uint8_t *data)
+int imx219_read(uint8_t iic_id,uint16_t addr, uint8_t *data)
 {
 	int Status;
 	uint8_t buf[10];
 	buf[0] = addr >> 8;
 	buf[1] = addr & 0x00FF;
-	Status = IicWrite(camera->iic_id,IMX219_I2C_SLAVE_ADDR,buf,2);
+	Status = IicWrite(iic_id,IMX219_I2C_SLAVE_ADDR,buf,2);
 	if (Status != XST_SUCCESS) {
 		return(Status);
 	}
-	Status = IicRead(camera->iic_id,IMX219_I2C_SLAVE_ADDR,buf,1);
+	Status = IicRead(iic_id,IMX219_I2C_SLAVE_ADDR,buf,1);
 	if (Status != XST_SUCCESS) {
 		return(Status);
 	}

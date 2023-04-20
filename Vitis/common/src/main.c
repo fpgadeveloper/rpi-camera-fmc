@@ -1,6 +1,9 @@
 /*
  * Opsero Electronic Design Inc. Copyright 2023
  *
+ * This example standalone application for the RPi Camera FMC will configure all of the connected
+ * cameras that it finds connected, and then displays the video outputs on the DisplayPort monitor
+ * one camera at a time, by changing the selection of the AXIS switch.
  */
 
 #include <stdio.h>
@@ -17,6 +20,7 @@
 #include "xdpdma_video_example.h"
 #include "board.h"
 #include "pipe.h"
+#include "config.h"
 
 // Common IP
 XScuGic Intc;
@@ -73,6 +77,10 @@ VideoPipeDevIds CamDevIds3 = {
 #else
 #define NUM_CAMS 2
 #endif
+
+VideoPipe *ActiveCams[NUM_CAMS];
+uint8_t ActiveCamIndex[NUM_CAMS];
+uint8_t NumActiveCams;
 
 // Common target device IDs
 #define INTC_DEVICE_ID		XPAR_SCUGIC_SINGLE_DEVICE_ID
@@ -182,12 +190,40 @@ int main()
 	/*
 	 * Initialize Video pipe for each camera
 	 */
+	NumActiveCams = 0;
 	pipe_init(&Cam0, &CamDevIds0, &Intc);
+	if(Cam0.IsConnected) {
+		ActiveCams[NumActiveCams] = &Cam0;
+		ActiveCamIndex[NumActiveCams] = 0;
+		NumActiveCams++;
+	}
 	pipe_init(&Cam1, &CamDevIds1, &Intc);
+	if(Cam1.IsConnected) {
+		ActiveCams[NumActiveCams] = &Cam1;
+		ActiveCamIndex[NumActiveCams] = 1;
+		NumActiveCams++;
+	}
 #ifdef XPAR_MIPI_2_AXI_IIC_0_DEVICE_ID
 	pipe_init(&Cam2, &CamDevIds2, &Intc);
+	if(Cam2.IsConnected) {
+		ActiveCams[NumActiveCams] = &Cam2;
+		ActiveCamIndex[NumActiveCams] = 2;
+		NumActiveCams++;
+	}
 	pipe_init(&Cam3, &CamDevIds3, &Intc);
+	if(Cam3.IsConnected) {
+		ActiveCams[NumActiveCams] = &Cam3;
+		ActiveCamIndex[NumActiveCams] = 3;
+		NumActiveCams++;
+	}
 #endif
+
+	if(NumActiveCams == 0) {
+		xil_printf("No supported cameras were detected.\n\r");
+		return 0;
+	}
+
+	xil_printf("Detected %d connected cameras\n\r",NumActiveCams);
 
 	/*
 	 * Initialize VTC
@@ -239,20 +275,20 @@ int main()
 	}
 
 	/*
-	 * Start the cameras
+	 * Start the connected cameras
 	 */
-	config_camera(&Cam0);
-	config_camera(&Cam1);
-#ifdef XPAR_MIPI_2_AXI_IIC_0_DEVICE_ID
-	config_camera(&Cam2);
-	config_camera(&Cam3);
-#endif
+	for(int i = 0; i < NumActiveCams; i++) {
+		pipe_start_camera(ActiveCams[i]);
+	}
 
+	/*
+	 * Camera outputs selected in sequence through the AXIS switch
+	 */
 	u8 cam_index = 0;
 	while(1){
 		sleep(8);
 		cam_index++;
-		if(cam_index == NUM_CAMS)
+		if(cam_index == NumActiveCams)
 			cam_index = 0;
 		/* Disable register update */
 		XAxisScr_RegUpdateDisable(&AxisSwitch);
@@ -261,7 +297,7 @@ int main()
 		XAxisScr_MiPortDisableAll(&AxisSwitch);
 
 		/* Source SI[0] to MI[0] */
-		XAxisScr_MiPortEnable(&AxisSwitch, 0, cam_index);
+		XAxisScr_MiPortEnable(&AxisSwitch, 0, ActiveCamIndex[cam_index]);
 
 		/* Enable register update */
 		XAxisScr_RegUpdateEnable(&AxisSwitch);

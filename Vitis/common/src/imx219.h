@@ -6,7 +6,7 @@
 #ifndef IMX219_H_
 #define IMX219_H_
 
-#include "rpi_cam.h"
+#include "xgpio.h"
 
 #define IMX219_I2C_SLAVE_ADDR  0x10
 
@@ -28,10 +28,16 @@
 #define IMX219_FRM_LENGTH_HI                            0x0160
 #define IMX219_FRM_LENGTH_LO                            0x0161
 
-int imx219_detect(RpiCamera *camera);
-int imx219_config(RpiCamera *camera);
-int imx219_reset(RpiCamera *camera);
-int imx219_write(RpiCamera *camera,u16 addr, u8 data);
-int imx219_read(RpiCamera *camera,u16 addr, u8 *data);
+// Register address and value
+typedef struct {
+	uint16_t addr;
+	uint8_t data;
+} imx219_config_word_t;
+
+int imx219_detect(uint8_t iic_id);
+int imx219_config(uint8_t iic_id,XGpio *gpio,uint8_t gpio_mask);
+int imx219_reset(XGpio *gpio,uint8_t gpio_mask);
+int imx219_write(uint8_t iic_id,u16 addr, u8 data);
+int imx219_read(uint8_t iic_id,u16 addr, u8 *data);
 
 #endif /* IMX219_H_ */

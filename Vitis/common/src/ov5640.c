@@ -10,6 +10,7 @@
 #include "sleep.h"
 #include "ov5640.h"
 #include "rpi_cam.h"
+#include "config.h"
 
 
 config_word_t const cfg_advanced_awb_[] =
@@ -658,35 +659,35 @@ config_awb_t const awbs[] =
  * on how the camera/cable was positioned.
  *
  */
-int ov5640_config(RpiCamera *camera,vmode_t mode,awb_t awb)
+int ov5640_config(uint8_t iic_id,XGpio *gpio,uint8_t gpio_mask)
 {
 	int Status;
 	uint8_t gpi_status_high,gpi_status_low,frame_status_high,frame_status_low;
 	// Reset the camera
-	ov5640_reset(camera);
+	ov5640_reset(gpio,gpio_mask);
 	do {
 		// Initial configuration from step 4:
 		// https://digilent.com/reference/add-ons/pcam-5c/reference-manual?redirect=1#power-up_and_reset
 		// 4. Choose system input clock from pad by writing 0x11 to register address 0x3103.
-		Status = ov5640_writeReg(camera,0x3103,0x11);
+		Status = ov5640_write(iic_id,0x3103,0x11);
 		//[7]=1 Software reset; [6]=0 Software power down; Default=0x02
 		// 5. Execute software reset by writing 0x82 to register address 0x3008.
-		Status = ov5640_writeReg(camera,0x3008, 0x82);
+		Status = ov5640_write(iic_id,0x3008, 0x82);
 		// 6. Wait 10ms
 		usleep(10000);
 		// Steps 7+
-		Status = ov5640_write_config(camera,cfg_init_,sizeof(cfg_init_)/sizeof(cfg_init_[0]));
+		Status = ov5640_write_config(iic_id,cfg_init_,sizeof(cfg_init_)/sizeof(cfg_init_[0]));
 		// AWB config
-		config_awb_t const *cfg_awb = &awbs[awb];
-	    Status = ov5640_write_config(camera,cfg_awb->cfg,cfg_awb->cfg_size);
+		config_awb_t const *cfg_awb = &awbs[AWB_SIMPLE];
+	    Status = ov5640_write_config(iic_id,cfg_awb->cfg,cfg_awb->cfg_size);
 	    // Video mode config
-		config_modes_t const *cfg_mode = &modes[mode];
+		config_modes_t const *cfg_mode = &modes[VMODE_CAM];
 	    //[7]=0 Software reset; [6]=1 Software power down; Default=0x02
-	    ov5640_writeReg(camera,0x3008, 0x42);
+	    ov5640_write(iic_id,0x3008, 0x42);
 	    usleep(20000);
-	    Status = ov5640_write_config(camera,cfg_mode->cfg,cfg_mode->cfg_size);
+	    Status = ov5640_write_config(iic_id,cfg_mode->cfg,cfg_mode->cfg_size);
 	    //[7]=0 Software reset; [6]=0 Software power down; Default=0x02
-	    ov5640_writeReg(camera,0x3008, 0x02);
+	    ov5640_write(iic_id,0x3008, 0x02);
 
 	    /*
 	     * Releasing the OV5640 from software reset seems to lock up the I2C driver
@@ -694,14 +695,14 @@ int ov5640_config(RpiCamera *camera,vmode_t mode,awb_t awb)
 	     * reset the driver.
 	     */
 	    usleep(10000);
-	    IicReset(camera->iic_id);
+	    IicReset(iic_id);
 
 		// Check GPI_STATUS and FRAME_STATUS registers to ensure
 		// that the camera has started properly
-		ov5640_readReg(camera,0x3026,&gpi_status_high);
-		ov5640_readReg(camera,0x3027,&gpi_status_low);
-		ov5640_readReg(camera,0x303C,&frame_status_high);
-		ov5640_readReg(camera,0x303D,&frame_status_low);
+		ov5640_read(iic_id,0x3026,&gpi_status_high);
+		ov5640_read(iic_id,0x3027,&gpi_status_low);
+		ov5640_read(iic_id,0x303C,&frame_status_high);
+		ov5640_read(iic_id,0x303D,&frame_status_low);
 
 		if ((gpi_status_high == 0xFF) && (gpi_status_low == 0xFF)) {
 			xil_printf("OV5640 repeating configuration\n\r");
@@ -715,13 +716,13 @@ int ov5640_config(RpiCamera *camera,vmode_t mode,awb_t awb)
 /*
  * Looks for the OV5640 on the I2C bus
  */
-int ov5640_detect(RpiCamera *camera)
+int ov5640_detect(uint8_t iic_id)
 {
 	int Status;
 	uint8_t data;
 
 	// Read the register
-	Status = ov5640_readReg(camera,0x3100,&data);
+	Status = ov5640_read(iic_id,0x3100,&data);
 	if (Status != XST_SUCCESS) {
 		return XST_FAILURE;
 	}
@@ -740,19 +741,19 @@ int ov5640_detect(RpiCamera *camera)
  */
 
 // Reset the OV5640 by toggling the enable pin
-int ov5640_reset(RpiCamera *camera)
+int ov5640_reset(XGpio *gpio,uint8_t gpio_mask)
 {
 	// Disable the camera, wait 100ms
-	XGpio_DiscreteClear(camera->gpio, 1, camera->gpio_mask);
+	XGpio_DiscreteClear(gpio, 1, gpio_mask);
 	usleep(100000);
 	// Enable the camera, wait 50ms
-	XGpio_DiscreteWrite(camera->gpio, 1, camera->gpio_mask);
+	XGpio_DiscreteWrite(gpio, 1, gpio_mask);
 	usleep(50000);
 	return XST_SUCCESS;
 }
 
 // Write to a register of the OV5640
-int ov5640_writeReg(RpiCamera *camera,uint16_t addr, uint8_t data)
+int ov5640_write(uint8_t iic_id,uint16_t addr, uint8_t data)
 {
 	int Status;
 	// Write to OV5640 register
@@ -760,23 +761,23 @@ int ov5640_writeReg(RpiCamera *camera,uint16_t addr, uint8_t data)
 	buf[0] = addr >> 8;
 	buf[1] = addr & 0x00FF;
 	buf[2] = data;
-	Status = IicWrite(camera->iic_id,IIC_OV5640_ADDR,buf,3);
+	Status = IicWrite(iic_id,IIC_OV5640_ADDR,buf,3);
 	return Status;
 }
 
 // Read from a register of the OV5640
-int ov5640_readReg(RpiCamera *camera,uint16_t addr, uint8_t *data)
+int ov5640_read(uint8_t iic_id,uint16_t addr, uint8_t *data)
 {
 	int Status;
 	// Read the OV5640 register
 	uint8_t buf[10];
 	buf[0] = addr >> 8;
 	buf[1] = addr & 0x00FF;
-	Status = IicWrite(camera->iic_id,IIC_OV5640_ADDR,buf,2);
+	Status = IicWrite(iic_id,IIC_OV5640_ADDR,buf,2);
 	if (Status != XST_SUCCESS) {
 		return(Status);
 	}
-	Status = IicRead(camera->iic_id,IIC_OV5640_ADDR,buf,1);
+	Status = IicRead(iic_id,IIC_OV5640_ADDR,buf,1);
 	if (Status != XST_SUCCESS) {
 		return(Status);
 	}
@@ -787,12 +788,12 @@ int ov5640_readReg(RpiCamera *camera,uint16_t addr, uint8_t *data)
 // Write a set configuration to the OV5640
 // The configs originated from this Digilent design:
 // https://github.com/Digilent/Zybo-Z7-20-pcam-5c/blob/master/sdk/appsrc/pcam_vdma_hdmi/ov5640/OV5640.h
-int ov5640_write_config(RpiCamera *camera,config_word_t const *cfg, size_t len)
+int ov5640_write_config(uint8_t iic_id,config_word_t const *cfg, size_t len)
 {
 	int Status;
     for(int i = 0; i < len; i++)
     {
-    	Status = ov5640_writeReg(camera,cfg[i].addr,cfg[i].data);
+    	Status = ov5640_write(iic_id,cfg[i].addr,cfg[i].data);
     	if (Status != XST_SUCCESS)
     	{
     		return(Status);

@@ -13,6 +13,7 @@
 #include "xv_gamma_lut.h"
 #include "pipe.h"
 #include "math.h"
+#include "config.h"
 
 /*
  * Initialize the video pipe
@@ -48,6 +49,18 @@ int pipe_init(VideoPipe *pipe, VideoPipeDevIds *devids, XScuGic *intc)
 	}
 
 	/*
+	 * Initialize the camera
+	 * This function will initialize the Camera container and try to communicate with the image sensor
+	 * via the I2C bus so that we know what model it is and thus configure the Sensor Demosaic
+	 * accordingly.
+	 */
+	Status = rpi_cam_init(&(pipe->Camera),iic_id,&(pipe->Gpio),GPIO_CAM_IO0_MASK);
+	if(Status == XST_FAILURE) {
+		pipe->IsConnected = FALSE;
+		return(XST_FAILURE);
+	}
+
+	/*
 	 * VDMA initialization and config
 	 */
 	VdmaConfig = XAxiVdma_LookupConfig(devids->Vdma);
@@ -79,7 +92,7 @@ int pipe_init(VideoPipe *pipe, VideoPipeDevIds *devids, XScuGic *intc)
 	XV_demosaic_Initialize(&(pipe->Demosaic), devids->Demosaic);
 	XV_demosaic_Set_HwReg_width(&(pipe->Demosaic), VMODE_WIDTH);
 	XV_demosaic_Set_HwReg_height(&(pipe->Demosaic), VMODE_HEIGHT);
-	XV_demosaic_Set_HwReg_bayer_phase(&(pipe->Demosaic), 0x03);
+	XV_demosaic_Set_HwReg_bayer_phase(&(pipe->Demosaic), rpi_cam_bayer_phase(&(pipe->Camera)));
 	XV_demosaic_EnableAutoRestart(&(pipe->Demosaic));
 	XV_demosaic_Start(&(pipe->Demosaic));
 
@@ -112,15 +125,12 @@ int pipe_init(VideoPipe *pipe, VideoPipeDevIds *devids, XScuGic *intc)
 	Status = XAxiVdma_DmaStart(&(pipe->Vdma), XAXIVDMA_READ);
 	Status = XAxiVdma_StartParking(&(pipe->Vdma), 0, XAXIVDMA_READ);
 
-	/*
-	 * Initialize the camera
-	 */
-	Status = rpi_cam_init(&(pipe->Camera),iic_id,&(pipe->Gpio),GPIO_CAM_IO0_MASK);
+	pipe->IsConnected = TRUE;
 
 	return(XST_SUCCESS);
 }
 
-int config_camera(VideoPipe *pipe)
+int pipe_start_camera(VideoPipe *pipe)
 {
 	int Status;
 
