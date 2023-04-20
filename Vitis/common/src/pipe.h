@@ -1,5 +1,5 @@
 /*
- * Opsero Electronic Design Inc. Copyright 2022
+ * Opsero Electronic Design Inc. Copyright 2023
  *
  */
 
@@ -10,7 +10,11 @@
 #include "xgpio.h"
 #include "xiic.h"
 #include "board.h"
-#include "ov5640.h"
+#include "rpi_cam.h"
+#include "xaxivdma.h"
+#include "xv_demosaic.h"
+#include "xv_gamma_lut.h"
+#include "xscugic.h"
 
 // Camera GPIO masks
 #define GPIO_CAM_IO0_MASK	0x01
@@ -60,7 +64,7 @@ typedef struct {
 	XAxiVdma Vdma;
 	XV_demosaic Demosaic;
 	XV_gamma_lut GammaLut;
-	OV5640 Ov5640;
+	RpiCamera Camera;
 } VideoPipe;
 
 // VideoPipe device IDs

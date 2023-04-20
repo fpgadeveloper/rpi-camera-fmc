@@ -1,13 +1,18 @@
+/*
+ * Opsero Electronic Design Inc. Copyright 2023
+ *
+ */
 
 #include "xstatus.h"
 #include "xil_printf.h"
-#include "i2c_axi.h"
+#include "i2c.h"
 #include "sleep.h"
 #include "ov5640.h"
 #include "xaxivdma.h"
 #include "xv_demosaic.h"
 #include "xv_gamma_lut.h"
 #include "pipe.h"
+#include "math.h"
 
 /*
  * Initialize the video pipe
@@ -35,7 +40,8 @@ int pipe_init(VideoPipe *pipe, VideoPipeDevIds *devids, XScuGic *intc)
 	/*
 	 * Initialize the IIC for communication with camera
 	 */
-	Status = IicInit(&(pipe->Iic),devids->Iic,intc,devids->IicIntr);
+	u8 iic_id;
+	Status = IicAxiInit(&(pipe->Iic),devids->Iic,intc,devids->IicIntr,&iic_id);
 	if (Status != XST_SUCCESS) {
 		xil_printf("Failed to initialize the I2C\n\r");
 		return XST_FAILURE;
@@ -90,7 +96,7 @@ int pipe_init(VideoPipe *pipe, VideoPipeDevIds *devids, XScuGic *intc)
 	XV_gamma_lut_Set_HwReg_video_format(&(pipe->GammaLut), 0);
 	for(uint32_t i = 0; i < GAMMA_TABLE_SIZE; i++)
 	{
-		uint16_t value = pow((i / (float)GAMMA_TABLE_SIZE), GAMMA) * (float)GAMMA_TABLE_SIZE;
+		uint16_t value = pow((i / (double)GAMMA_TABLE_SIZE), GAMMA) * (float)GAMMA_TABLE_SIZE;
 		Xil_Out16((pipe->GammaLut.Config.BaseAddress + 0x800 + i*2), value );
 		Xil_Out16((pipe->GammaLut.Config.BaseAddress + 0x1000 + i*2), value );
 		Xil_Out16((pipe->GammaLut.Config.BaseAddress + 0x1800 + i*2), value );
@@ -109,24 +115,15 @@ int pipe_init(VideoPipe *pipe, VideoPipeDevIds *devids, XScuGic *intc)
 	/*
 	 * Initialize the camera
 	 */
-	ov5640_init(&(pipe->Ov5640),&(pipe->Iic),&(pipe->Gpio),GPIO_CAM_IO0_MASK);
+	Status = rpi_cam_init(&(pipe->Camera),iic_id,&(pipe->Gpio),GPIO_CAM_IO0_MASK);
+
+	return(XST_SUCCESS);
 }
 
 int config_camera(VideoPipe *pipe)
 {
 	int Status;
-	/*
-	 * OV5640 camera setup
-	 */
-	Status = ov5640_detect(&(pipe->Ov5640));
-	if (Status != XST_SUCCESS) {
-		xil_printf("ERROR: Failed to detect OV5640 camera\n\r");
-		return XST_FAILURE;
-	}
-	else {
-		xil_printf("OV5640 camera detected\n\r");
-	}
 
-	ov5640_config(&(pipe->Ov5640),VMODE_CAM,AWB_SIMPLE);
-
+	Status = rpi_cam_config(&(pipe->Camera));
+	return(Status);
 }

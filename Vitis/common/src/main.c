@@ -8,21 +8,15 @@
 #include "xil_cache.h"
 #include "xscugic.h"
 #include "xgpio.h"
-#include "xiic.h"
 #include "xvtc.h"
 #include "xavbuf.h"
 #include "xaxivdma.h"
 #include "xv_demosaic.h"
 #include "xv_gamma_lut.h"
 #include "xaxis_switch.h"
-#include "math.h"
-#include "i2c_axi.h"
 #include "xdpdma_video_example.h"
 #include "board.h"
 #include "pipe.h"
-
-// PCam OV5640 driver
-#include "ov5640.h"
 
 // Common IP
 XScuGic Intc;
