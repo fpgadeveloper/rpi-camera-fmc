@@ -1,11 +1,40 @@
-# Raspberry Pi Camera FMC example design
+# Reference design for RPi Camera FMC
 
-This is the example design for the [RPi Camera FMC](https://camerafmc.com), an add-on card for FPGA dev boards that
-has four independent 2-lane MIPI interfaces for connection to Raspberry Pi cameras.
+## Description
 
+This project demonstrates the Opsero [RPi Camera FMC](https://camerafmc.com/docs/rpi-camera-fmc/overview/) used to
+connect 4x Raspberry Pi cameras (or compatible cameras) to one of the target FPGA/MPSoC boards listed below.
+
+The high level block diagram below illustrates the design:
+![RPi Camera FMC example design](https://camerafmc.com/docs/rpi-camera-fmc/example-designs/block-diagram-top-level_huec5a19c1eaa45c8ca2267d18798bfdb8_38374_941x0_resize_q75_h2_box_3.webp "RPi Camera FMC example design")
+
+The video pipe sub-blocks are illustrated below:
+![RPi Camera FMC video pipe](https://camerafmc.com/docs/rpi-camera-fmc/example-designs/video-pipe-block-diagram_hua0506aba2666ba749a549f56cc090275_16242_981x0_resize_q75_h2_box_3.webp "RPi Camera FMC video pipe")
+
+Example application setup:
 ![RPi Camera FMC](https://www.fpgadeveloper.com/camera-fmc-connecting-mipi-cameras-to-fpgas/images/rpi-camera-fmc-pynq-zu-1.jpg "RPi Camera FMC")
 
-The design is still under development but has been verified on most of the target platforms (see below).
+Important links:
+* The RPi Camera FMC [datasheet](https://camerafmc.com/docs/rpi-camera-fmc/overview/)
+* The user guide for these reference designs is coming soon!
+* To [report an issue](https://github.com/fpgadeveloper/rpi-camera-fmc/issues)
+* For technical support: [Contact Opsero](https://opsero.com/contact-us)
+
+## Requirements
+
+This project is designed for version 2020.2 of the Xilinx tools (Vivado/Vitis/PetaLinux). 
+If you are using an older version of the Xilinx tools, then refer to the 
+[release tags](https://github.com/fpgadeveloper/rpi-camera-fmc/releases "releases")
+to find the version of this repository that matches your version of the tools.
+
+In order to test this design on hardware, you will need the following:
+
+* Vivado 2020.2
+* Vitis 2020.2
+* PetaLinux Tools 2020.2
+* One or more [Raspberry Pi Camera Module 2](https://www.raspberrypi.com/products/camera-module-v2/) and/or [Digilent Pcam 5C](https://digilent.com/shop/pcam-5c-5-mp-fixed-focus-color-camera-module/)
+* [RPi Camera FMC](https://camerafmc.com/docs/rpi-camera-fmc/overview/ "RPi Camera FMC")
+* One of the supported target boards listed below
 
 ### Target boards
 
@@ -16,17 +45,33 @@ The design is still under development but has been verified on most of the targe
 * [Genesys-ZU](https://digilent.com/shop/genesys-zu-zynq-ultrascale-mpsoc-development-board/) (LPC: 4x cameras)
 * [UltraZed EV carrier](https://www.xilinx.com/products/boards-and-kits/1-y3n9v1.html) (HPC: 4x cameras)
 
-That list may grow, but may also shrink depending on any issues that we come across during
-development.
+## Contribute
 
-### List of things to fix/complete
+We strongly encourage community contribution to these projects. Please make a pull request if you
+would like to share your work:
+* if you've spotted and fixed any issues
+* if you've added designs for other target platforms
+* if you've added software support for other cameras
+Thank you to everyone who supports us!
 
-* We are having trouble getting the UltraZed EV Carrier DisplayPort working with the standalone
+### The TODO list
+
+* Get a Genesys-ZU board and test the design on hardware.
+* Develop the PetaLinux project and test on HW.
+* Write the ref design documentation (build and usage instructions, troubleshooting, etc).
+* Software support for more cameras (this will be an ongoing task due to the number of cameras available).
+* Debug: We are having trouble getting the UltraZed EV Carrier DisplayPort working with the standalone
   application. More time needed to debug.
-* The example design has run out of PL-to-PS interrupts, so we need to add the AXI Interrupt Controller.
-  The main challenge for the moment is adapting the software application to AXI Intc.
-* The four cameras feed an AXI Switch which selects which video source to display on the monitor.
-  Instead we want to add an IP to combine all four sources into a single 1080p video to display
-  on the monitor.
-* Eventually we want to use the Vitis Vision Library to do some processing on the input videos to make the
-  demo interesting.
+* The example design has run out of PL-to-PS interrupts, so we need to add the AXI Interrupt Controller and
+  adapt the software application to AXI Intc.
+* Improvement: The 4 cameras feed an AXIS Switch which selects the video source to display on the monitor.
+  The plan is to scrap the AXIS Switch and instead use the Vitis Vision Library to demonstrate doing some 
+  useful/interesting video processing.
+
+## About us
+
+[Opsero Inc.](https://opsero.com "Opsero Inc.") is a team of FPGA developers delivering FPGA products and 
+design services to start-ups and tech companies. Follow our blog, 
+[FPGA Developer](https://www.fpgadeveloper.com "FPGA Developer"), for news, tutorials and
+updates on the awesome projects we work on.
+
