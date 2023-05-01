@@ -5,14 +5,13 @@
 This project demonstrates the Opsero [RPi Camera FMC](https://camerafmc.com/docs/rpi-camera-fmc/overview/) used to
 connect 4x Raspberry Pi cameras (or compatible cameras) to one of the target FPGA/MPSoC boards listed below.
 
+![RPi Camera FMC](https://www.fpgadeveloper.com/camera-fmc-connecting-mipi-cameras-to-fpgas/images/rpi-camera-fmc-pynq-zu-1.jpg "RPi Camera FMC")
+
 The high level block diagram below illustrates the design:
 ![RPi Camera FMC example design](https://camerafmc.com/docs/rpi-camera-fmc/example-designs/block-diagram-top-level_huec5a19c1eaa45c8ca2267d18798bfdb8_38374_941x0_resize_q75_h2_box_3.webp "RPi Camera FMC example design")
 
 The video pipe sub-blocks are illustrated below:
 ![RPi Camera FMC video pipe](https://camerafmc.com/docs/rpi-camera-fmc/example-designs/video-pipe-block-diagram_hua0506aba2666ba749a549f56cc090275_16242_981x0_resize_q75_h2_box_3.webp "RPi Camera FMC video pipe")
-
-Example application setup:
-![RPi Camera FMC](https://www.fpgadeveloper.com/camera-fmc-connecting-mipi-cameras-to-fpgas/images/rpi-camera-fmc-pynq-zu-1.jpg "RPi Camera FMC")
 
 Important links:
 * The RPi Camera FMC [datasheet](https://camerafmc.com/docs/rpi-camera-fmc/overview/)
@@ -32,8 +31,9 @@ In order to test this design on hardware, you will need the following:
 * Vivado 2020.2
 * Vitis 2020.2
 * PetaLinux Tools 2020.2
-* One or more [Raspberry Pi Camera Module 2](https://www.raspberrypi.com/products/camera-module-v2/) and/or [Digilent Pcam 5C](https://digilent.com/shop/pcam-5c-5-mp-fixed-focus-color-camera-module/)
-* [RPi Camera FMC](https://camerafmc.com/docs/rpi-camera-fmc/overview/ "RPi Camera FMC")
+* One or more [Raspberry Pi Camera Module 2](https://www.raspberrypi.com/products/camera-module-v2/) and/or 
+  [Digilent Pcam 5C](https://digilent.com/shop/pcam-5c-5-mp-fixed-focus-color-camera-module/) cameras
+* One [RPi Camera FMC](https://camerafmc.com/buy/ "RPi Camera FMC")
 * One of the supported target boards listed below
 
 ### Target boards
@@ -52,6 +52,7 @@ would like to share your work:
 * if you've spotted and fixed any issues
 * if you've added designs for other target platforms
 * if you've added software support for other cameras
+
 Thank you to everyone who supports us!
 
 ### The TODO list
