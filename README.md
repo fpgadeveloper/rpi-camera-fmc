@@ -15,7 +15,7 @@ The video pipe sub-blocks are illustrated below:
 
 Important links:
 * The RPi Camera FMC [datasheet](https://camerafmc.com/docs/rpi-camera-fmc/overview/)
-* The user guide for these reference designs is coming soon!
+* The [user guide](https://rpi.camerafmc.com) for these reference designs
 * To [report an issue](https://github.com/fpgadeveloper/rpi-camera-fmc/issues)
 * For technical support: [Contact Opsero](https://opsero.com/contact-us)
 
