@@ -1,6 +1,8 @@
 /*
  * Opsero Electronic Design Inc. Copyright 2023
  *
+ * The functions in this module allow for initialization of the video pipe and starting of
+ * the video pipe.
  */
 
 #include "xstatus.h"
@@ -8,9 +10,11 @@
 #include "i2c.h"
 #include "sleep.h"
 #include "ov5640.h"
-#include "xaxivdma.h"
+#include "xv_frmbufrd_l2.h"
+#include "xv_frmbufwr_l2.h"
 #include "xv_demosaic.h"
 #include "xv_gamma_lut.h"
+#include "xvprocss_vdma.h"
 #include "pipe.h"
 #include "math.h"
 #include "config.h"
@@ -20,9 +24,11 @@
  */
 int pipe_init(VideoPipe *pipe, VideoPipeDevIds *devids, XScuGic *intc)
 {
-	XAxiVdma_DmaSetup VdmaDma;
-	XAxiVdma_Config *VdmaConfig;
+	XVprocSs_Config *VprocSsConfigPtr;
+	XVidC_VideoStream Stream;
+	XVidC_VideoTiming const *TimingPtr;
 	int Status;
+	XVidC_VideoMode resId;
 
 	/*
 	 * Initialize the GPIO driver
@@ -61,30 +67,18 @@ int pipe_init(VideoPipe *pipe, VideoPipeDevIds *devids, XScuGic *intc)
 	}
 
 	/*
-	 * VDMA initialization and config
+	 * Frame Buffer Wr/Rd initialization and config
 	 */
-	VdmaConfig = XAxiVdma_LookupConfig(devids->Vdma);
-	Status = XAxiVdma_CfgInitialize(&(pipe->Vdma), VdmaConfig, VdmaConfig->BaseAddress);
-	VdmaDma.VertSizeInput = FRAME_VERT_LEN;
-	VdmaDma.HoriSizeInput = FRAME_HORI_LEN;
-	VdmaDma.Stride = FRAME_HORI_LEN;
-	VdmaDma.FrameDelay = 0;  // Does not test frame delay
-	VdmaDma.EnableCircularBuf = 1;
-	VdmaDma.EnableSync = 0;  // No Gen-Lock
-	VdmaDma.PointNum = 0;  // No Gen-Lock
-	VdmaDma.EnableFrameCounter = 0;  // Endless transfers
-	VdmaDma.FixedFrameStoreAddr = 0;  // We are not doing parking
-	// Initialize buffer addresses, use physical addresses
-	UINTPTR Addr = devids->VdmaFrameBufOffset + FRAME_BUF_ADDR_BASE + SUBFRAME_START_OFFSET;
-	for(uint32_t i = 0; i < VdmaConfig->MaxFrameStoreNum; i++) {
-		VdmaDma.FrameStoreStartAddr[i] = Addr;
-		Addr += FRAME_HORI_LEN * FRAME_VERT_LEN;
+	Status = FrmbufWrInit(&(pipe->Frmbuf),devids->FrmbufWr,intc,devids->FrmbufWrIntr,devids->FrmbufBufrBaseAddr);
+	if (Status != XST_SUCCESS) {
+		xil_printf("Failed to initialize the Frame Buffer Write\n\r");
+		return XST_FAILURE;
 	}
-	// Set the buffer addresses for transfer in the DMA engine
-	Status = XAxiVdma_DmaConfig(&(pipe->Vdma), XAXIVDMA_WRITE, &VdmaDma);
-	Status = XAxiVdma_DmaSetBufferAddr(&(pipe->Vdma), XAXIVDMA_WRITE, VdmaDma.FrameStoreStartAddr);
-	Status = XAxiVdma_DmaConfig(&(pipe->Vdma), XAXIVDMA_READ, &VdmaDma);
-	Status = XAxiVdma_DmaSetBufferAddr(&(pipe->Vdma), XAXIVDMA_READ, VdmaDma.FrameStoreStartAddr);
+	Status = FrmbufRdInit(&(pipe->Frmbuf),devids->FrmbufRd,intc,devids->FrmbufRdIntr,devids->FrmbufBufrBaseAddr);
+	if (Status != XST_SUCCESS) {
+		xil_printf("Failed to initialize the Frame Buffer Read\n\r");
+		return XST_FAILURE;
+	}
 
 	/*
 	 * Demosaic initialization and config
@@ -101,7 +95,7 @@ int pipe_init(VideoPipe *pipe, VideoPipeDevIds *devids, XScuGic *intc)
 	 */
 	Status = XV_gamma_lut_Initialize(&(pipe->GammaLut), devids->GammaLut);
 	if (Status != XST_SUCCESS) {
-		xil_printf("Failed to initialize the Gamma LUT\n\r");
+		xil_printf("ERROR: Failed to initialize the Gamma LUT\n\r");
 		return XST_FAILURE;
 	}
 	XV_gamma_lut_Set_HwReg_width(&(pipe->GammaLut), VMODE_WIDTH);
@@ -118,12 +112,49 @@ int pipe_init(VideoPipe *pipe, VideoPipeDevIds *devids, XScuGic *intc)
 	XV_gamma_lut_EnableAutoRestart(&(pipe->GammaLut));
 
 	/*
-	 * Start the VDMA
+	 * Video Processor Subsystem initialization and config
 	 */
-	Status = XAxiVdma_DmaStart(&(pipe->Vdma), XAXIVDMA_WRITE);
-	Status = XAxiVdma_StartParking(&(pipe->Vdma), 0, XAXIVDMA_WRITE);
-	Status = XAxiVdma_DmaStart(&(pipe->Vdma), XAXIVDMA_READ);
-	Status = XAxiVdma_StartParking(&(pipe->Vdma), 0, XAXIVDMA_READ);
+	VprocSsConfigPtr = XVprocSs_LookupConfig(devids->Vproc);
+	if(VprocSsConfigPtr == NULL) {
+		xil_printf("ERROR: Video Processor Subsystem device not found\r\n");
+		return(XST_FAILURE);
+	}
+	// Start capturing event log
+	XVprocSs_LogReset(&(pipe->Vproc));
+	Status = XVprocSs_CfgInitialize(&(pipe->Vproc),
+			                        VprocSsConfigPtr,
+			                        VprocSsConfigPtr->BaseAddress);
+	if(Status != XST_SUCCESS) {
+		xil_printf("ERROR: Video Processing Subsystem Init. error\n\r");
+		return(XST_FAILURE);
+	}
+
+	// Configure the Video Processing Subsystem INPUT stream parameters
+	resId = XVidC_GetVideoModeId(VMODE_WIDTH,VMODE_HEIGHT,VMODE_FRAMERATE,FALSE);
+	TimingPtr = XVidC_GetTimingInfo(resId);
+	Stream.VmId           = resId;
+	Stream.Timing         = *TimingPtr;
+	Stream.ColorFormatId  = COLOR_FORMAT_ID;
+	Stream.ColorDepth     = pipe->Vproc.Config.ColorDepth;
+	Stream.PixPerClk      = pipe->Vproc.Config.PixPerClock;
+	Stream.FrameRate      = XVidC_GetFrameRate(Stream.VmId);
+	Stream.IsInterlaced   = XVidC_IsInterlaced(Stream.VmId);
+	XVprocSs_SetVidStreamIn(&(pipe->Vproc), &Stream);
+
+	// Configure the Video Processing Subsystem OUTPUT stream parameters
+	resId = XVidC_GetVideoModeId(VPROC_WIDTH_OUT,VPROC_HEIGHT_OUT,VPROC_FRAMERATE_OUT,FALSE);
+	TimingPtr = XVidC_GetTimingInfo(resId);
+	Stream.VmId           = resId;
+	Stream.Timing         = *TimingPtr;
+	Stream.ColorFormatId  = COLOR_FORMAT_ID;
+	Stream.ColorDepth     = pipe->Vproc.Config.ColorDepth;
+	Stream.PixPerClk      = pipe->Vproc.Config.PixPerClock;
+	Stream.FrameRate      = XVidC_GetFrameRate(Stream.VmId);
+	Stream.IsInterlaced   = XVidC_IsInterlaced(Stream.VmId);
+	XVprocSs_SetVidStreamOut(&(pipe->Vproc), &Stream);
+
+	// Start the Video Processor Subsystem
+	Status = XVprocSs_SetSubsystemConfig(&(pipe->Vproc));
 
 	pipe->IsConnected = TRUE;
 
@@ -134,6 +165,10 @@ int pipe_start_camera(VideoPipe *pipe)
 {
 	int Status;
 
+	// Start the RPi camera
 	Status = rpi_cam_config(&(pipe->Camera));
+	// Start the Frame buffers
+	Status = FrmbufStart(&(pipe->Frmbuf));
 	return(Status);
 }
+

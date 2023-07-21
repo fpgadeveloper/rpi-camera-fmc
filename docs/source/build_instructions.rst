@@ -8,6 +8,39 @@ Source code
 The source code for the reference designs is maintained on the 
 `Github repository <https://github.com/fpgadeveloper/rpi-camera-fmc>`_.
 
+License requirements
+--------------------
+
+The ZCU102 board is not supported by the Vivado ML Standard Edition (aka. the Webpack or free version)
+so to build the designs for the ZCU102 board, you will need to either buy a license or download
+a 30-day evaluation license for Vivado ML Enterprise Edition.
+
+The designs for all of the other boards can be built with the Vivado ML Standard Edition without
+a license.
+
+PYNQ-ZU and Genesys-ZU board files
+----------------------------------
+
+If you wish to build the designs for the PYNQ-ZU and Genesys-ZU boards, you will
+first need to install the board files. To do so, you need to clone the XilinxBoardStore
+git repository, checkout the ``2022.1`` branch, and then copy the board files into the
+appropriate location in the Vivado and Vitis installation.
+
+.. code-block::
+
+  git clone https://github.com/Xilinx/XilinxBoardStore.git
+  cd XilinxBoardStore
+  git fetch --all
+  git checkout 2022.1
+
+For the PYNQ-ZU board, copy the folder ``pynqzu`` found in ``XilinxBoardStore/boards/TUL`` to 
+``<vivado-install-path>/2020.2/data/boards/board_files``. Also copy it to 
+``<vitis-install-path>/2020.2/data/boards/board_files``.
+
+For the Genesys-ZU board, copy the folder ``genesys-zu-5ev`` found in 
+``XilinxBoardStore/boards/Digilent`` to ``<vivado-install-path>/2020.2/data/boards/board_files``.
+Also copy it to ``<vitis-install-path>/2020.2/data/boards/board_files``.
+
 Windows users
 -------------
 
@@ -43,7 +76,8 @@ Linux users
 #. Set the target board by running the command: ``set target <board>`` where the possible values for the target board 
    are: ``zcu104``, ``zcu102_hpc0``, ``zcu102_hpc1``, ``zcu106_hpc0``, ``pynqzu``, ``genesyszu``, ``uzev``. For 
    example, to set the target board to PYNQ-ZU, run the command: ``set target pynqzu``.
-#. Vivado will run the script and generate the project. When it's finished, click Generate bitstream.
+#. Run the build script with the command ``source build.tcl``. Vivado will run the script and generate the project.
+   When it's finished, click Generate bitstream.
 #. When the bitstream is successfully generated, select `File->Export->Export Hardware`.
    In the window that opens, tick "Include bitstream" and "Local to project".
 #. To build the Vitis workspace, open a Linux command terminal and ``cd`` to the Vitis directory in the repo.

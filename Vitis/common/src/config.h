@@ -12,9 +12,7 @@
 #if defined (DEMO_VMODE_720P60)
 #define VMODE_WIDTH			1280
 #define VMODE_HEIGHT		720
-#define VMODE_VTC           XVTC_VMODE_720P
 #define VMODE_CAM			MODE_720P_1280_720_60fps
-#define VMODE_DP			XVIDC_VM_1280x720_60_P
 #define GAMMA               1/1.0
 #define PIXEL_SIZE			8	// In bits
 #define GAMMA_TABLE_SIZE	256  // 2^PIXEL_SIZE
@@ -25,9 +23,12 @@
 #if defined (DEMO_VMODE_1080P30)
 #define VMODE_WIDTH			1920
 #define VMODE_HEIGHT		1080
-#define VMODE_VTC           XVTC_VMODE_1080P
+#define VMODE_FRAMERATE		60
 #define VMODE_CAM			MODE_1080P_1920_1080_30fps
-#define VMODE_DP			XVIDC_VM_1920x1080_30_P
+#define VPROC_WIDTH_OUT		720
+#define VPROC_HEIGHT_OUT	480
+#define VPROC_FRAMERATE_OUT	60
+#define COLOR_FORMAT_ID		XVIDC_CSF_RGB
 #define GAMMA               1/1.0
 #define PIXEL_SIZE			8	// In bits
 #define GAMMA_TABLE_SIZE	256  // 2^PIXEL_SIZE

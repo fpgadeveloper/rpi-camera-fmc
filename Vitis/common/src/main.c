@@ -2,8 +2,46 @@
  * Opsero Electronic Design Inc. Copyright 2023
  *
  * This example standalone application for the RPi Camera FMC will configure all of the connected
- * cameras that it finds connected, and then displays the video outputs on the DisplayPort monitor
- * one camera at a time, by changing the selection of the AXIS switch.
+ * cameras that it finds connected, and then displays the video outputs on the DisplayPort monitor.
+ * To display all four video streams on the single display, it uses the Video Processor Subsystem IP
+ * to downsize the 1080p videos coming from the cameras to 720x480 resolution and then combines them
+ * with the Video Mixer to produce a 1080p resolution video containing all four video streams.
+ * The camera streams are organized on the screen as shown below:
+ *
+ * +------------------------------------------+
+ * |              1920x1080px                 |
+ * |  +----------------+  +----------------+  |
+ * |  |                |  |                |  |
+ * |  |     CAM0       |  |     CAM1       |  |
+ * |  |   720x480px    |  |   720x480px    |  |
+ * |  +----------------+  +----------------+  |
+ * |                                          |
+ * |  +----------------+  +----------------+  |
+ * |  |                |  |                |  |
+ * |  |     CAM2       |  |     CAM3       |  |
+ * |  |   720x480px    |  |   720x480px    |  |
+ * |  +----------------+  +----------------+  |
+ * |                                          |
+ * +------------------------------------------+
+ *
+ * Camera-to-DDR video pipe (x4):
+ * ------------------------------
+ *  RPi cam -> MIPI CSI SS -> Demosaic -> Gamma LUT -> VProc SS -> Frame Buffer Write -> DDR
+ *
+ *  The video pipe runs at 2 pixels per clock.
+ *
+ * DDR-to-DP video pipe:
+ * ---------------------
+ *                                    +-------------+
+ *    Video Test Pattern Generator -> |             |
+ * DDR -> Frame Buffer Read (CAM0) -> |             |
+ * DDR -> Frame Buffer Read (CAM1) -> | Video Mixer |-> AXIS Remapper -> AXIS to Video Out -> DP live
+ * DDR -> Frame Buffer Read (CAM2) -> |   (2ppc)    |   (2ppc to 1ppc)
+ * DDR -> Frame Buffer Read (CAM3) -> |             |
+ *                                    +-------------+
+ *
+ * Input and output of the video mixer runs at 2 pixels per clock. The AXIS Remapper converts
+ * the 2ppc to 1ppc before it gets converted to video signals for the ZynqMP's DP live interface.
  */
 
 #include <stdio.h>
@@ -11,22 +49,37 @@
 #include "xil_cache.h"
 #include "xscugic.h"
 #include "xgpio.h"
+#include "xgpiops.h"
 #include "xvtc.h"
 #include "xavbuf.h"
-#include "xaxivdma.h"
+#include "xv_frmbufrd_l2.h"
+#include "xv_frmbufwr_l2.h"
 #include "xv_demosaic.h"
 #include "xv_gamma_lut.h"
-#include "xaxis_switch.h"
+#include "xvprocss_vdma.h"
+#include "xv_mix_l2.h"
+#include "xv_axi4s_remap.h"
+#include "xv_tpg.h"
+#include "xvidc.h"
 #include "xdpdma_video_example.h"
 #include "board.h"
 #include "pipe.h"
 #include "config.h"
 
+// Frame buffer Rd/Wr buffer addresses (using physical memory)
+#define CAM0_FRMBUF_BUFR_ADDR 0x10000000
+#define CAM1_FRMBUF_BUFR_ADDR 0x20000000
+#define CAM2_FRMBUF_BUFR_ADDR 0x30000000
+#define CAM3_FRMBUF_BUFR_ADDR 0x40000000
+
 // Common IP
 XScuGic Intc;
 XVtc VtcInst;
 XGpio RsvdGpio;
-XAxis_Switch AxisSwitch;
+XV_Mix_l2  VMix;
+XGpioPs EmioGpio;
+XV_tpg Tpg;
+XV_axi4s_remap Remap;
 
 // Video pipes 0 and 1
 VideoPipe Cam0,Cam1;
@@ -35,20 +88,28 @@ VideoPipe Cam0,Cam1;
 VideoPipeDevIds CamDevIds0 = {
 		XPAR_MIPI_0_AXI_IIC_0_DEVICE_ID,
 		XPAR_MIPI_0_AXI_GPIO_0_DEVICE_ID,
-		XPAR_MIPI_0_AXI_VDMA_0_DEVICE_ID,
-		0x00000000,
+		XPAR_MIPI_0_V_FRMBUF_WR_DEVICE_ID,
+		XPAR_MIPI_0_V_FRMBUF_RD_DEVICE_ID,
+		CAM0_FRMBUF_BUFR_ADDR,
 		XPAR_MIPI_0_DEMOSAIC_0_DEVICE_ID,
 		XPAR_MIPI_0_V_GAMMA_LUT_DEVICE_ID,
-		XPAR_FABRIC_MIPI_0_AXI_IIC_0_IIC2INTC_IRPT_INTR
+		XPAR_XVPROCSS_0_DEVICE_ID,
+		XPAR_FABRIC_MIPI_0_AXI_IIC_0_IIC2INTC_IRPT_INTR,
+		XPAR_FABRIC_MIPI_0_V_FRMBUF_WR_INTERRUPT_INTR,
+		XPAR_FABRIC_MIPI_0_V_FRMBUF_RD_INTERRUPT_INTR
 };
 VideoPipeDevIds CamDevIds1 = {
 		XPAR_MIPI_1_AXI_IIC_0_DEVICE_ID,
 		XPAR_MIPI_1_AXI_GPIO_0_DEVICE_ID,
-		XPAR_MIPI_1_AXI_VDMA_0_DEVICE_ID,
-		0x01000000,
+		XPAR_MIPI_1_V_FRMBUF_WR_DEVICE_ID,
+		XPAR_MIPI_1_V_FRMBUF_RD_DEVICE_ID,
+		CAM1_FRMBUF_BUFR_ADDR,
 		XPAR_MIPI_1_DEMOSAIC_0_DEVICE_ID,
 		XPAR_MIPI_1_V_GAMMA_LUT_DEVICE_ID,
-		XPAR_FABRIC_MIPI_1_AXI_IIC_0_IIC2INTC_IRPT_INTR
+		XPAR_XVPROCSS_1_DEVICE_ID,
+		XPAR_FABRIC_MIPI_1_AXI_IIC_0_IIC2INTC_IRPT_INTR,
+		XPAR_FABRIC_MIPI_1_V_FRMBUF_WR_INTERRUPT_INTR,
+		XPAR_FABRIC_MIPI_1_V_FRMBUF_RD_INTERRUPT_INTR
 };
 
 #ifdef XPAR_MIPI_2_AXI_IIC_0_DEVICE_ID
@@ -59,24 +120,44 @@ VideoPipe Cam2,Cam3;
 VideoPipeDevIds CamDevIds2 = {
 		XPAR_MIPI_2_AXI_IIC_0_DEVICE_ID,
 		XPAR_MIPI_2_AXI_GPIO_0_DEVICE_ID,
-		XPAR_MIPI_2_AXI_VDMA_0_DEVICE_ID,
-		0x02000000,
+		XPAR_MIPI_2_V_FRMBUF_WR_DEVICE_ID,
+		XPAR_MIPI_2_V_FRMBUF_RD_DEVICE_ID,
+		CAM2_FRMBUF_BUFR_ADDR,
 		XPAR_MIPI_2_DEMOSAIC_0_DEVICE_ID,
 		XPAR_MIPI_2_V_GAMMA_LUT_DEVICE_ID,
-		XPAR_FABRIC_MIPI_2_AXI_IIC_0_IIC2INTC_IRPT_INTR
+		XPAR_XVPROCSS_2_DEVICE_ID,
+		XPAR_FABRIC_MIPI_2_AXI_IIC_0_IIC2INTC_IRPT_INTR,
+		XPAR_FABRIC_MIPI_2_V_FRMBUF_WR_INTERRUPT_INTR,
+		XPAR_FABRIC_MIPI_2_V_FRMBUF_RD_INTERRUPT_INTR
 };
 VideoPipeDevIds CamDevIds3 = {
 		XPAR_MIPI_3_AXI_IIC_0_DEVICE_ID,
 		XPAR_MIPI_3_AXI_GPIO_0_DEVICE_ID,
-		XPAR_MIPI_3_AXI_VDMA_0_DEVICE_ID,
-		0x03000000,
+		XPAR_MIPI_3_V_FRMBUF_WR_DEVICE_ID,
+		XPAR_MIPI_3_V_FRMBUF_RD_DEVICE_ID,
+		CAM3_FRMBUF_BUFR_ADDR,
 		XPAR_MIPI_3_DEMOSAIC_0_DEVICE_ID,
 		XPAR_MIPI_3_V_GAMMA_LUT_DEVICE_ID,
-		XPAR_FABRIC_MIPI_3_AXI_IIC_0_IIC2INTC_IRPT_INTR
+		XPAR_XVPROCSS_3_DEVICE_ID,
+		XPAR_FABRIC_MIPI_3_AXI_IIC_0_IIC2INTC_IRPT_INTR,
+		XPAR_FABRIC_MIPI_3_V_FRMBUF_WR_INTERRUPT_INTR,
+		XPAR_FABRIC_MIPI_3_V_FRMBUF_RD_INTERRUPT_INTR
 };
 #else
 #define NUM_CAMS 2
 #endif
+
+/*
+ * The table below determines how the four camera video streams are organized
+ * on a single 1080p video stream
+ */
+static const XVidC_VideoWindow MixLayerConfig[4] =
+{// X   Y     W    H
+  {160, 40,  VPROC_WIDTH_OUT, VPROC_HEIGHT_OUT}, //Layer 1
+  {1040, 40,  VPROC_WIDTH_OUT, VPROC_HEIGHT_OUT}, //Layer 2
+  {160, 560,  VPROC_WIDTH_OUT, VPROC_HEIGHT_OUT}, //Layer 3
+  {1040, 560,  VPROC_WIDTH_OUT, VPROC_HEIGHT_OUT}  //Layer 4
+};
 
 VideoPipe *ActiveCams[NUM_CAMS];
 uint8_t ActiveCamIndex[NUM_CAMS];
@@ -110,14 +191,20 @@ uint8_t NumActiveCams;
 // Reserved GPIO default value mask
 #define RSVD_GPIO_DEF_VAL_MASK (CAM_IO0_DIR_MASK|CAM_IO1_DIR_MASK)
 
+// EMIO GPIO mapping
+#define EMIO_GPIO_VMIX_RST_N (78+0)
+#define EMIO_GPIO_VTPG_RST_N (78+1)
+
 int main()
 {
 	XScuGic_Config *IntcConfig;
 	XVtc_Config *VtcConfig;
-	XVtc_Timing VtcTiming;
-	XVtc_SourceSelect SourceSelect;
+	XVtc_Timing VtcTiming = {0};
 	Run_Config RunCfg;
-	XAxis_Switch_Config *SwitchConfig;
+	XVidC_VideoTiming const *TimingPtr;
+	XGpioPs_Config *ConfigPtr;
+	XV_tpg_Config *TpgConfig;
+	XV_axi4s_remap_Config *RemapCfg;
 
 	int Status;
 
@@ -125,45 +212,34 @@ int main()
     xil_printf(" 4x RPi camera to Display Port example\n\r");
     xil_printf("---------------------------------------\n\r");
 
+    /*
+     * Initialize the EMIO GPIO driver
+     */
+    ConfigPtr = XGpioPs_LookupConfig(XPAR_XGPIOPS_0_DEVICE_ID);
+	Status = XGpioPs_CfgInitialize(&EmioGpio, ConfigPtr,ConfigPtr->BaseAddr);
+	if (Status != XST_SUCCESS) {
+		xil_printf("ERROR: EmioGpio Initialization Failed\r\n");
+		return XST_FAILURE;
+	}
+	XGpioPs_SetDirectionPin(&EmioGpio, EMIO_GPIO_VMIX_RST_N, 1);
+	XGpioPs_WritePin(&EmioGpio, EMIO_GPIO_VMIX_RST_N, 1);
+	XGpioPs_SetOutputEnablePin(&EmioGpio, EMIO_GPIO_VMIX_RST_N, 1);
+	XGpioPs_SetDirectionPin(&EmioGpio, EMIO_GPIO_VTPG_RST_N, 1);
+	XGpioPs_WritePin(&EmioGpio, EMIO_GPIO_VTPG_RST_N, 1);
+	XGpioPs_SetOutputEnablePin(&EmioGpio, EMIO_GPIO_VTPG_RST_N, 1);
+
 	/*
 	 * Initialize the Reserved GPIO driver
 	 */
 	Status = XGpio_Initialize(&RsvdGpio, RSVD_GPIO_DEVICE_ID);
 	if (Status != XST_SUCCESS) {
-		xil_printf("RsvdGpio Initialization Failed\r\n");
+		xil_printf("ERROR: RsvdGpio Initialization Failed\r\n");
 		return XST_FAILURE;
 	}
 
 	// Set Rsvd GPIO default directions (1=input, 0=output) and values
 	XGpio_SetDataDirection(&RsvdGpio, 1, RSVD_GPIO_DEF_DIR_MASK);
 	XGpio_DiscreteWrite(&RsvdGpio, 1, RSVD_GPIO_DEF_VAL_MASK);
-
-	/*
-	 * Initialize AXIS switch
-	 */
-	SwitchConfig = XAxisScr_LookupConfig(XPAR_AXIS_SWITCH_0_DEVICE_ID);
-	if (NULL == SwitchConfig) {
-		return XST_FAILURE;
-	}
-
-	Status = XAxisScr_CfgInitialize(&AxisSwitch, SwitchConfig,
-			SwitchConfig->BaseAddress);
-	if (Status != XST_SUCCESS) {
-		xil_printf("AXI4-Stream initialization failed.\r\n");
-		return XST_FAILURE;
-	}
-
-	/* Disable register update */
-	XAxisScr_RegUpdateDisable(&AxisSwitch);
-
-	/* Disable all MI ports */
-	XAxisScr_MiPortDisableAll(&AxisSwitch);
-
-	/* Source SI[0] to MI[0] */
-	XAxisScr_MiPortEnable(&AxisSwitch, 0, 0);
-
-	/* Enable register update */
-	XAxisScr_RegUpdateEnable(&AxisSwitch);
 
 	/*
 	 * Initialize the interrupt controller
@@ -219,48 +295,121 @@ int main()
 #endif
 
 	if(NumActiveCams == 0) {
-		xil_printf("No supported cameras were detected.\n\r");
+		xil_printf("ERROR: No video pipes were activated.\n\r");
 		return 0;
 	}
 
 	xil_printf("Detected %d connected cameras\n\r",NumActiveCams);
 
 	/*
+	 * Initialize the Video Test Pattern Generator
+	 */
+	TpgConfig = XV_tpg_LookupConfig(XPAR_V_TPG_DEVICE_ID);
+	if(TpgConfig == NULL) {
+		xil_printf("ERROR: Video TPG device not found\r\n");
+		return XST_FAILURE;
+	}
+	Status = XV_tpg_CfgInitialize(&Tpg, TpgConfig, TpgConfig->BaseAddress);
+	if(Status != XST_SUCCESS) {
+		xil_printf("ERROR:  Video TPG Initialization failed %d\r\n", Status);
+		return XST_FAILURE;
+	}
+	XV_tpg_Set_height(&Tpg, VMODE_HEIGHT);
+	XV_tpg_Set_width(&Tpg, VMODE_WIDTH);
+	XV_tpg_Set_colorFormat(&Tpg, 0);
+	XV_tpg_Set_bckgndId(&Tpg, XTPG_BKGND_SOLID_BLACK);
+	XV_tpg_Set_ovrlayId(&Tpg, 0);
+	XV_tpg_EnableAutoRestart(&Tpg);
+	XV_tpg_Start(&Tpg);
+
+	/*
+	 * Initialize and configure the Video Mixer
+	 */
+	XVidC_VideoStream Stream;
+	XVidC_ColorFormat Cfmt;
+	Status  = XVMix_Initialize(&VMix, XPAR_V_MIX_DEVICE_ID);
+	if(Status != XST_SUCCESS) {
+		xil_printf("ERROR: Video Mixer device not initialized\r\n");
+		return(XST_FAILURE);
+	}
+
+	// Video stream properties of the mixer's master input and output
+	Stream.VmId = XVidC_GetVideoModeId(VMODE_WIDTH,VMODE_HEIGHT,VMODE_FRAMERATE,FALSE);
+	XVMix_GetLayerColorFormat(&VMix, XVMIX_LAYER_MASTER, &Cfmt);
+	Stream.PixPerClk = VMix.Mix.Config.PixPerClk;
+	Stream.ColorFormatId = Cfmt;
+	Stream.ColorDepth = VMix.Mix.Config.MaxDataWidth;
+	TimingPtr = XVidC_GetTimingInfo(Stream.VmId);
+	Stream.Timing = *TimingPtr;
+	Stream.FrameRate = XVidC_GetFrameRate(Stream.VmId);
+
+	XVMix_LayerDisable(&VMix, XVMIX_LAYER_MASTER);
+	XVMix_LayerDisable(&VMix, XVMIX_LAYER_ALL);
+	XVMix_SetVidStream(&VMix, &Stream);
+
+	// Background color used when a streaming layer is disabled
+	XVMix_SetBackgndColor(&VMix, XVMIX_BKGND_GREEN, Stream.ColorDepth);
+
+	XVidC_VideoWindow Win;
+	u32 Stride;
+	for(u8 layerIndex = 0; layerIndex < NUM_CAMS; layerIndex++) {
+		Win = MixLayerConfig[layerIndex];
+		XVMix_GetLayerColorFormat(&VMix, layerIndex+1, &Cfmt);
+		Stride = ((Cfmt == XVIDC_CSF_YCRCB_422) ? 2: 4); //BytesPerPixel
+		Stride *= Win.Width;
+		Status = XVMix_SetLayerWindow(&VMix, layerIndex+1, &Win, Stride);
+		if(Status != XST_SUCCESS) {
+			xil_printf("ERROR: Failed to set window for Video Mixer layer %d\r\n",layerIndex+1);
+		}
+	}
+
+	XVMix_LayerEnable(&VMix, XVMIX_LAYER_MASTER);
+	XVMix_InterruptDisable(&VMix);
+	XVMix_Start(&VMix);
+
+	/*
+	 * Initialize Remapper (for converting 2ppc to 1ppc)
+	 */
+    RemapCfg = XV_axi4s_remap_LookupConfig(XPAR_V_AXI4S_REMAP_DEVICE_ID);
+    if(RemapCfg == NULL) {
+        xil_printf("ERROR: AXI4S_REMAP device not found\r\n");
+        return(XST_FAILURE);
+    }
+    Status = XV_axi4s_remap_CfgInitialize(&Remap, RemapCfg, RemapCfg->BaseAddress);
+    if(Status != XST_SUCCESS) {
+        xil_printf("ERROR: AXI4S_REMAP Initialization failed %d\r\n", Status);
+        return(XST_FAILURE);
+    }
+    XV_axi4s_remap_Set_width(&Remap, TimingPtr->HActive);
+    XV_axi4s_remap_Set_height(&Remap, TimingPtr->VActive);
+    XV_axi4s_remap_Set_ColorFormat(&Remap, 0);
+    XV_axi4s_remap_Set_inPixClk(&Remap, Remap.Config.PixPerClkIn);
+    XV_axi4s_remap_Set_outPixClk(&Remap, Remap.Config.PixPerClkOut);
+    XV_axi4s_remap_Set_inHDMI420(&Remap, 0);
+    XV_axi4s_remap_Set_outHDMI420(&Remap, 0);
+    XV_axi4s_remap_Set_inPixDrop(&Remap, 0);
+    XV_axi4s_remap_Set_outPixRepeat(&Remap, 0);
+    XV_axi4s_remap_WriteReg(RemapCfg->BaseAddress, XV_AXI4S_REMAP_CTRL_ADDR_AP_CTRL, 0x81);
+
+	/*
 	 * Initialize VTC
 	 */
 	VtcConfig = XVtc_LookupConfig(VTC_DEVICE_ID);
     XVtc_CfgInitialize(&VtcInst, VtcConfig, VtcConfig->BaseAddress);
-	XVtc_ConvVideoMode2Timing(&VtcInst,VMODE_VTC,&VtcTiming);
-
-    /*
-     * Setup the VTC Source Select config structure.
-     * 1=Generator registers are source
-     * 0=Detector registers are source
-     */
-	memset((void *)&SourceSelect, 0, sizeof(SourceSelect));
-	SourceSelect.VBlankPolSrc = 1;
-	SourceSelect.VSyncPolSrc = 1;
-	SourceSelect.HBlankPolSrc = 1;
-	SourceSelect.HSyncPolSrc = 1;
-	SourceSelect.ActiveVideoPolSrc = 1;
-	SourceSelect.ActiveChromaPolSrc= 1;
-	SourceSelect.VChromaSrc = 1;
-	SourceSelect.VActiveSrc = 1;
-	SourceSelect.VBackPorchSrc = 1;
-	SourceSelect.VSyncSrc = 1;
-	SourceSelect.VFrontPorchSrc = 1;
-	SourceSelect.VTotalSrc = 1;
-	SourceSelect.HActiveSrc = 1;
-	SourceSelect.HBackPorchSrc = 1;
-	SourceSelect.HSyncSrc = 1;
-	SourceSelect.HFrontPorchSrc = 1;
-	SourceSelect.HTotalSrc = 1;
-	XVtc_SelfTest(&VtcInst);
-	XVtc_RegUpdateEnable(&VtcInst);
-	XVtc_SetGeneratorTiming(&VtcInst, &VtcTiming);
-	XVtc_SetSource(&VtcInst, &SourceSelect);
-	XVtc_EnableGenerator(&VtcInst);
-	XVtc_Enable(&VtcInst);
+    VtcTiming.HActiveVideo  = TimingPtr->HActive/Remap.Config.PixPerClkOut;
+    VtcTiming.HFrontPorch   = TimingPtr->HFrontPorch/Remap.Config.PixPerClkOut;
+    VtcTiming.HSyncWidth    = TimingPtr->HSyncWidth/Remap.Config.PixPerClkOut;
+    VtcTiming.HBackPorch    = TimingPtr->HBackPorch/Remap.Config.PixPerClkOut;
+    VtcTiming.HSyncPolarity = TimingPtr->HSyncPolarity;
+    VtcTiming.VActiveVideo  = TimingPtr->VActive;
+    VtcTiming.V0FrontPorch  = TimingPtr->F0PVFrontPorch;
+    VtcTiming.V0SyncWidth   = TimingPtr->F0PVSyncWidth;
+    VtcTiming.V0BackPorch   = TimingPtr->F0PVBackPorch;
+    VtcTiming.VSyncPolarity = TimingPtr->VSyncPolarity;
+    XVtc_SetGeneratorTiming(&VtcInst, &VtcTiming);
+    XVtc_Enable(&VtcInst);
+    XVtc_EnableGenerator(&VtcInst);
+    XVtc_RegUpdateEnable(&VtcInst);
 
 	/*
 	 * Run the DisplayPort video example
@@ -268,39 +417,21 @@ int main()
 	Xil_DCacheDisable();
 	Xil_ICacheDisable();
 
-	Status = DpdmaVideoExample(&RunCfg,&Intc,VMODE_DP);
+	Status = DpdmaVideoExample(&RunCfg,&Intc,Stream.VmId);
 	if (Status != XST_SUCCESS) {
-			xil_printf("DPDMA Video Example Test Failed\r\n");
+			xil_printf("ERROR: DPDMA Video Example Test Failed\r\n");
 			return XST_FAILURE;
 	}
 
 	/*
-	 * Start the connected cameras
+	 * Start the connected cameras and enable corresponding mixer layers
 	 */
 	for(int i = 0; i < NumActiveCams; i++) {
 		pipe_start_camera(ActiveCams[i]);
+		XVMix_LayerEnable(&VMix, ActiveCamIndex[i]+1);
 	}
 
-	/*
-	 * Camera outputs selected in sequence through the AXIS switch
-	 */
-	u8 cam_index = 0;
 	while(1){
-		sleep(8);
-		cam_index++;
-		if(cam_index == NumActiveCams)
-			cam_index = 0;
-		/* Disable register update */
-		XAxisScr_RegUpdateDisable(&AxisSwitch);
-
-		/* Disable all MI ports */
-		XAxisScr_MiPortDisableAll(&AxisSwitch);
-
-		/* Source SI[0] to MI[0] */
-		XAxisScr_MiPortEnable(&AxisSwitch, 0, ActiveCamIndex[cam_index]);
-
-		/* Enable register update */
-		XAxisScr_RegUpdateEnable(&AxisSwitch);
 	}
 
     return 0;

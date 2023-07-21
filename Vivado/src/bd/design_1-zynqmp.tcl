@@ -94,15 +94,15 @@ proc create_mipi_pipe { index loc_dict } {
   create_bd_pin -dir O mipi_sub_irq
   create_bd_pin -dir O demosaic_irq
   create_bd_pin -dir O gamma_lut_irq
-  create_bd_pin -dir O vdma_s2mm_irq
-  create_bd_pin -dir O vdma_mm2s_irq
+  create_bd_pin -dir O frmbufwr_irq
+  create_bd_pin -dir O frmbufrd_irq
   create_bd_pin -dir O iic2intc_irpt
   
   # Create the interfaces of the block
   create_bd_intf_pin -mode Slave -vlnv xilinx.com:interface:aximm_rtl:1.0 S_AXI_LITE
-  create_bd_intf_pin -mode Master -vlnv xilinx.com:interface:aximm_rtl:1.0 M_AXI_S2MM
-  create_bd_intf_pin -mode Master -vlnv xilinx.com:interface:aximm_rtl:1.0 M_AXI_MM2S
-  create_bd_intf_pin -mode Master -vlnv xilinx.com:interface:axis_rtl:1.0 M_AXIS_MM2S
+  create_bd_intf_pin -mode Master -vlnv xilinx.com:interface:aximm_rtl:1.0 m_axi_mm_video_wr
+  create_bd_intf_pin -mode Master -vlnv xilinx.com:interface:aximm_rtl:1.0 m_axi_mm_video_rd
+  create_bd_intf_pin -mode Master -vlnv xilinx.com:interface:axis_rtl:1.0 m_axis_video
   create_bd_intf_pin -mode Slave -vlnv xilinx.com:interface:mipi_phy_rtl:1.0 mipi_phy_if
   create_bd_intf_pin -mode Master -vlnv xilinx.com:interface:iic_rtl:1.0 IIC
   create_bd_intf_pin -mode Master -vlnv xilinx.com:interface:gpio_rtl:1.0 GPIO
@@ -138,7 +138,7 @@ proc create_mipi_pipe { index loc_dict } {
   # Add and configure the AXI Interconnect
   set axi_int_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect axi_int_0 ]
   set_property -dict [list \
-  CONFIG.NUM_MI {6} \
+  CONFIG.NUM_MI {8} \
   ] $axi_int_0
   
   # Add and configure the AXIS Subset Converter
@@ -165,6 +165,8 @@ proc create_mipi_pipe { index loc_dict } {
     CONFIG.MAX_COLS {1920} \
     CONFIG.MAX_DATA_WIDTH {8} \
     CONFIG.MAX_ROWS {1080} \
+    CONFIG.ALGORITHM {1} \
+    CONFIG.USE_URAM {1} \
   ] $v_demosaic_0
   
   # Add and configure the V Gamma LUT
@@ -176,36 +178,34 @@ proc create_mipi_pipe { index loc_dict } {
     CONFIG.MAX_ROWS {1080} \
   ] $v_gamma_lut
   
-  # Add and configure the Pixel packer
-  # set pixel_pack_0 [create_bd_cell -type ip -vlnv xilinx.com:hls:pixel_pack:1.0 pixel_pack_0]
- 
-  # Add and configure the VDMA for writing only
-  set vdma_0 [create_bd_cell -type ip -vlnv xilinx.com:ip:axi_vdma axi_vdma_0]
-  set_property -dict [list \
-   CONFIG.c_include_mm2s {1} \
-   CONFIG.c_m_axis_mm2s_tdata_width {24} \
-   CONFIG.c_num_fstores {4} \
-   CONFIG.c_s2mm_linebuffer_depth {512} \
-   CONFIG.c_s2mm_max_burst_length {8} \
-  ] $vdma_0
-  
-  # Add the AXIS Subset converter at output of VDMA
-  set subset_conv_1 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axis_subset_converter subset_conv_1 ]
-  set tdata_remap "tdata[15:8],tdata[23:16],tdata[7:0]"
+  # Add and configure the Video Processor subsystem
+  set v_proc [ create_bd_cell -type ip -vlnv xilinx.com:ip:v_proc_ss v_proc ]
   set_property -dict [ list \
-   CONFIG.M_HAS_TKEEP {1} \
-   CONFIG.M_HAS_TLAST {1} \
-   CONFIG.M_TDATA_NUM_BYTES {3} \
-   CONFIG.M_TUSER_WIDTH {1} \
-   CONFIG.S_HAS_TKEEP {1} \
-   CONFIG.S_HAS_TLAST {1} \
-   CONFIG.S_TDATA_NUM_BYTES {3} \
-   CONFIG.S_TUSER_WIDTH {1} \
-   CONFIG.TDATA_REMAP $tdata_remap \
-   CONFIG.TKEEP_REMAP {tkeep[2:0]} \
-   CONFIG.TLAST_REMAP {tlast[0]} \
-   CONFIG.TUSER_REMAP {tuser[0:0]} \
- ] $subset_conv_1
+    CONFIG.C_MAX_COLS {1920} \
+    CONFIG.C_MAX_ROWS {1080} \
+    CONFIG.C_ENABLE_DMA {false} \
+    CONFIG.C_MAX_DATA_WIDTH {8} \
+    CONFIG.C_TOPOLOGY {0} \
+    CONFIG.C_SCALER_ALGORITHM {1} \
+  ] $v_proc
+ 
+  # Add and configure the Video Frame Buffer Write
+  set v_frmbuf_wr [create_bd_cell -type ip -vlnv xilinx.com:ip:v_frmbuf_wr v_frmbuf_wr]
+  set_property -dict [list \
+   CONFIG.C_M_AXI_MM_VIDEO_DATA_WIDTH {128} \
+   CONFIG.SAMPLES_PER_CLOCK {2} \
+   CONFIG.AXIMM_DATA_WIDTH {128} \
+   CONFIG.HAS_BGR8 {1} \
+  ] $v_frmbuf_wr
+  
+  # Add and configure the Video Frame Buffer Read
+  set v_frmbuf_rd [create_bd_cell -type ip -vlnv xilinx.com:ip:v_frmbuf_rd v_frmbuf_rd]
+  set_property -dict [list \
+   CONFIG.C_M_AXI_MM_VIDEO_DATA_WIDTH {128} \
+   CONFIG.SAMPLES_PER_CLOCK {2} \
+   CONFIG.AXIMM_DATA_WIDTH {128} \
+   CONFIG.HAS_BGR8 {1} \
+  ] $v_frmbuf_rd
 
   # Add and configure AXI IIC
   set axi_iic [create_bd_cell -type ip -vlnv xilinx.com:ip:axi_iic axi_iic_0]
@@ -219,72 +219,72 @@ proc create_mipi_pipe { index loc_dict } {
   # Connect the 250M video clock
   connect_bd_net [get_bd_pins video_aclk] [get_bd_pins mipi_csi2_rx_subsyst_0/video_aclk]
   connect_bd_net [get_bd_pins video_aclk] [get_bd_pins subset_conv_0/aclk]
-  connect_bd_net [get_bd_pins video_aclk] [get_bd_pins subset_conv_1/aclk]
-  connect_bd_net [get_bd_pins video_aclk] [get_bd_pins axi_vdma_0/s_axis_s2mm_aclk]
-  connect_bd_net [get_bd_pins video_aclk] [get_bd_pins axi_vdma_0/m_axis_mm2s_aclk]
+  connect_bd_net [get_bd_pins video_aclk] [get_bd_pins v_frmbuf_wr/ap_clk]
+  connect_bd_net [get_bd_pins video_aclk] [get_bd_pins v_frmbuf_rd/ap_clk]
   connect_bd_net [get_bd_pins video_aclk] [get_bd_pins ila_0/clk]
   connect_bd_net [get_bd_pins video_aclk] [get_bd_pins demosaic_0/ap_clk]
-  # connect_bd_net [get_bd_pins video_aclk] [get_bd_pins pixel_pack_0/ap_clk]
+  connect_bd_net [get_bd_pins video_aclk] [get_bd_pins v_proc/aclk_axis]
   connect_bd_net [get_bd_pins video_aclk] [get_bd_pins v_gamma_lut/ap_clk]
   connect_bd_net [get_bd_pins video_aclk] [get_bd_pins axi_int_0/M01_ACLK]
   connect_bd_net [get_bd_pins video_aclk] [get_bd_pins axi_int_0/M02_ACLK]
+  connect_bd_net [get_bd_pins video_aclk] [get_bd_pins axi_int_0/M03_ACLK]
+  connect_bd_net [get_bd_pins video_aclk] [get_bd_pins axi_int_0/M04_ACLK]
   # Connect the 100M AXI-Lite clock
   connect_bd_net [get_bd_pins s_axi_lite_aclk] [get_bd_pins axi_int_0/ACLK]
   connect_bd_net [get_bd_pins s_axi_lite_aclk] [get_bd_pins axi_int_0/S00_ACLK]
   connect_bd_net [get_bd_pins s_axi_lite_aclk] [get_bd_pins axi_int_0/M00_ACLK]
-  connect_bd_net [get_bd_pins s_axi_lite_aclk] [get_bd_pins axi_int_0/M03_ACLK]
-  connect_bd_net [get_bd_pins s_axi_lite_aclk] [get_bd_pins axi_int_0/M04_ACLK]
   connect_bd_net [get_bd_pins s_axi_lite_aclk] [get_bd_pins axi_int_0/M05_ACLK]
+  connect_bd_net [get_bd_pins s_axi_lite_aclk] [get_bd_pins axi_int_0/M06_ACLK]
+  connect_bd_net [get_bd_pins s_axi_lite_aclk] [get_bd_pins axi_int_0/M07_ACLK]
   connect_bd_net [get_bd_pins s_axi_lite_aclk] [get_bd_pins mipi_csi2_rx_subsyst_0/lite_aclk]
-  connect_bd_net [get_bd_pins s_axi_lite_aclk] [get_bd_pins axi_vdma_0/s_axi_lite_aclk]
-  connect_bd_net [get_bd_pins s_axi_lite_aclk] [get_bd_pins axi_vdma_0/m_axi_s2mm_aclk]
-  connect_bd_net [get_bd_pins s_axi_lite_aclk] [get_bd_pins axi_vdma_0/m_axi_mm2s_aclk]
   connect_bd_net [get_bd_pins s_axi_lite_aclk] [get_bd_pins axi_iic_0/s_axi_aclk]
   connect_bd_net [get_bd_pins s_axi_lite_aclk] [get_bd_pins axi_gpio_0/s_axi_aclk]
+  connect_bd_net [get_bd_pins s_axi_lite_aclk] [get_bd_pins v_proc/aclk_ctrl]
   # Connect the video resets
   connect_bd_net [get_bd_pins video_aresetn] [get_bd_pins subset_conv_0/aresetn]
-  connect_bd_net [get_bd_pins video_aresetn] [get_bd_pins subset_conv_1/aresetn]
   connect_bd_net [get_bd_pins video_aresetn] [get_bd_pins v_gamma_lut/ap_rst_n]
   connect_bd_net [get_bd_pins video_aresetn] [get_bd_pins axi_int_0/M01_ARESETN] -boundary_type upper
   connect_bd_net [get_bd_pins video_aresetn] [get_bd_pins axi_int_0/M02_ARESETN] -boundary_type upper
+  connect_bd_net [get_bd_pins video_aresetn] [get_bd_pins axi_int_0/M03_ARESETN] -boundary_type upper
+  connect_bd_net [get_bd_pins video_aresetn] [get_bd_pins axi_int_0/M04_ARESETN] -boundary_type upper
   connect_bd_net [get_bd_pins video_aresetn] [get_bd_pins mipi_csi2_rx_subsyst_0/video_aresetn]
   connect_bd_net [get_bd_pins video_aresetn] [get_bd_pins demosaic_0/ap_rst_n]
-  # connect_bd_net [get_bd_pins video_aresetn] [get_bd_pins pixel_pack_0/ap_rst_n]
+  connect_bd_net [get_bd_pins video_aresetn] [get_bd_pins v_frmbuf_wr/ap_rst_n]
+  connect_bd_net [get_bd_pins video_aresetn] [get_bd_pins v_frmbuf_rd/ap_rst_n]
   # Connect the AXI-Lite resets
   connect_bd_net [get_bd_pins aresetn] [get_bd_pins axi_int_0/ARESETN] -boundary_type upper
   connect_bd_net [get_bd_pins aresetn] [get_bd_pins axi_int_0/S00_ARESETN] -boundary_type upper
   connect_bd_net [get_bd_pins aresetn] [get_bd_pins axi_int_0/M00_ARESETN] -boundary_type upper
-  connect_bd_net [get_bd_pins aresetn] [get_bd_pins axi_int_0/M03_ARESETN] -boundary_type upper
-  connect_bd_net [get_bd_pins aresetn] [get_bd_pins axi_int_0/M04_ARESETN] -boundary_type upper
   connect_bd_net [get_bd_pins aresetn] [get_bd_pins axi_int_0/M05_ARESETN] -boundary_type upper
+  connect_bd_net [get_bd_pins aresetn] [get_bd_pins axi_int_0/M06_ARESETN] -boundary_type upper
+  connect_bd_net [get_bd_pins aresetn] [get_bd_pins axi_int_0/M07_ARESETN] -boundary_type upper
   connect_bd_net [get_bd_pins aresetn] [get_bd_pins mipi_csi2_rx_subsyst_0/lite_aresetn]
-  connect_bd_net [get_bd_pins aresetn] [get_bd_pins axi_vdma_0/axi_resetn]
   connect_bd_net [get_bd_pins aresetn] [get_bd_pins axi_iic_0/s_axi_aresetn]
   connect_bd_net [get_bd_pins aresetn] [get_bd_pins axi_gpio_0/s_axi_aresetn]
+  connect_bd_net [get_bd_pins aresetn] [get_bd_pins v_proc/aresetn_ctrl]
   # Connect AXI Lite interfaces
   connect_bd_intf_net -boundary_type upper [get_bd_intf_pins S_AXI_LITE] [get_bd_intf_pins axi_int_0/S00_AXI]
   connect_bd_intf_net -boundary_type upper [get_bd_intf_pins axi_int_0/M00_AXI] [get_bd_intf_pins mipi_csi2_rx_subsyst_0/csirxss_s_axi]
   connect_bd_intf_net -boundary_type upper [get_bd_intf_pins axi_int_0/M01_AXI] [get_bd_intf_pins demosaic_0/s_axi_CTRL]
   connect_bd_intf_net -boundary_type upper [get_bd_intf_pins axi_int_0/M02_AXI] [get_bd_intf_pins v_gamma_lut/s_axi_CTRL]
-  # connect_bd_intf_net -boundary_type upper [get_bd_intf_pins axi_int_0/M02_AXI] [get_bd_intf_pins pixel_pack_0/s_axi_control]
-  connect_bd_intf_net -boundary_type upper [get_bd_intf_pins axi_int_0/M03_AXI] [get_bd_intf_pins axi_vdma_0/S_AXI_LITE]
-  connect_bd_intf_net -boundary_type upper [get_bd_intf_pins axi_int_0/M04_AXI] [get_bd_intf_pins axi_iic_0/S_AXI]
-  connect_bd_intf_net -boundary_type upper [get_bd_intf_pins axi_int_0/M05_AXI] [get_bd_intf_pins axi_gpio_0/S_AXI]
+  connect_bd_intf_net -boundary_type upper [get_bd_intf_pins axi_int_0/M03_AXI] [get_bd_intf_pins v_frmbuf_wr/s_axi_CTRL]
+  connect_bd_intf_net -boundary_type upper [get_bd_intf_pins axi_int_0/M04_AXI] [get_bd_intf_pins v_frmbuf_rd/s_axi_CTRL]
+  connect_bd_intf_net -boundary_type upper [get_bd_intf_pins axi_int_0/M05_AXI] [get_bd_intf_pins axi_iic_0/S_AXI]
+  connect_bd_intf_net -boundary_type upper [get_bd_intf_pins axi_int_0/M06_AXI] [get_bd_intf_pins axi_gpio_0/S_AXI]
+  connect_bd_intf_net -boundary_type upper [get_bd_intf_pins axi_int_0/M07_AXI] [get_bd_intf_pins v_proc/s_axi_ctrl]
   # Connect the AXI Streaming interfaces
   connect_bd_intf_net [get_bd_intf_pins mipi_csi2_rx_subsyst_0/video_out] [get_bd_intf_pins subset_conv_0/S_AXIS]
   connect_bd_intf_net [get_bd_intf_pins ila_0/SLOT_0_AXIS] [get_bd_intf_pins subset_conv_0/S_AXIS]
   connect_bd_intf_net [get_bd_intf_pins subset_conv_0/M_AXIS] [get_bd_intf_pins demosaic_0/s_axis_video]
   connect_bd_intf_net [get_bd_intf_pins demosaic_0/m_axis_video] [get_bd_intf_pins v_gamma_lut/s_axis_video]
-  # connect_bd_intf_net [get_bd_intf_pins v_gamma_lut/m_axis_video] [get_bd_intf_pins pixel_pack_0/stream_in_24]
-  # connect_bd_intf_net [get_bd_intf_pins pixel_pack_0/stream_out_32] [get_bd_intf_pins axi_vdma_0/S_AXIS_S2MM]
-  connect_bd_intf_net [get_bd_intf_pins v_gamma_lut/m_axis_video] [get_bd_intf_pins axi_vdma_0/S_AXIS_S2MM]
-  connect_bd_intf_net [get_bd_intf_pins axi_vdma_0/M_AXIS_MM2S] [get_bd_intf_pins subset_conv_1/S_AXIS]
-  connect_bd_intf_net [get_bd_intf_pins subset_conv_1/M_AXIS] [get_bd_intf_pins M_AXIS_MM2S]
+  connect_bd_intf_net [get_bd_intf_pins v_gamma_lut/m_axis_video] [get_bd_intf_pins v_proc/s_axis]
+  connect_bd_intf_net [get_bd_intf_pins v_proc/m_axis] [get_bd_intf_pins v_frmbuf_wr/s_axis_video]
+  connect_bd_intf_net [get_bd_intf_pins v_frmbuf_rd/m_axis_video] [get_bd_intf_pins m_axis_video]
   # Connect the MIPI D-PHY interface
   connect_bd_intf_net -boundary_type upper [get_bd_intf_pins mipi_phy_if] [get_bd_intf_pins mipi_csi2_rx_subsyst_0/mipi_phy_if]
-  # Connect the VDMA AXI MM interfaces
-  connect_bd_intf_net [get_bd_intf_pins M_AXI_S2MM] [get_bd_intf_pins axi_vdma_0/M_AXI_S2MM]
-  connect_bd_intf_net [get_bd_intf_pins M_AXI_MM2S] [get_bd_intf_pins axi_vdma_0/M_AXI_MM2S]
+  # Connect the Frame Buffer MM interfaces
+  connect_bd_intf_net [get_bd_intf_pins m_axi_mm_video_wr] [get_bd_intf_pins v_frmbuf_wr/m_axi_mm_video]
+  connect_bd_intf_net [get_bd_intf_pins m_axi_mm_video_rd] [get_bd_intf_pins v_frmbuf_rd/m_axi_mm_video]
   # Connect the I2C interface
   connect_bd_intf_net [get_bd_intf_pins IIC] [get_bd_intf_pins axi_iic_0/IIC]
   # Connect the GPIO interface
@@ -293,8 +293,8 @@ proc create_mipi_pipe { index loc_dict } {
   connect_bd_net [get_bd_pins mipi_sub_irq] [get_bd_pins mipi_csi2_rx_subsyst_0/csirxss_csi_irq]
   connect_bd_net [get_bd_pins demosaic_irq] [get_bd_pins demosaic_0/interrupt]
   connect_bd_net [get_bd_pins gamma_lut_irq] [get_bd_pins v_gamma_lut/interrupt]
-  connect_bd_net [get_bd_pins vdma_s2mm_irq] [get_bd_pins axi_vdma_0/s2mm_introut]
-  connect_bd_net [get_bd_pins vdma_mm2s_irq] [get_bd_pins axi_vdma_0/mm2s_introut]
+  connect_bd_net [get_bd_pins frmbufwr_irq] [get_bd_pins v_frmbuf_wr/interrupt]
+  connect_bd_net [get_bd_pins frmbufrd_irq] [get_bd_pins v_frmbuf_rd/interrupt]
   connect_bd_net [get_bd_pins iic2intc_irpt] [get_bd_pins axi_iic_0/iic2intc_irpt]
   
   current_bd_instance \
@@ -330,6 +330,8 @@ set_property -dict [list CONFIG.PSU__USE__S_AXI_GP0 {1} \
   CONFIG.PSU__DP__REF_CLK_FREQ [dict get $dp_dict $target ref_clk_freq] \
   CONFIG.PSU__DP__REF_CLK_SEL [dict get $dp_dict $target ref_clk_sel] \
   CONFIG.PSU__USE__VIDEO {1} \
+  CONFIG.PSU__GPIO_EMIO__PERIPHERAL__ENABLE {1} \
+  CONFIG.PSU__GPIO_EMIO__PERIPHERAL__IO {95} \
 ] [get_bd_cells zynq_ultra_ps_e_0]
 
 # Add a processor system reset
@@ -364,7 +366,7 @@ connect_bd_net [get_bd_pins rst_ps_100M/peripheral_aresetn] [get_bd_pins clk_wiz
 
 # Connect PS interface clocks
 connect_bd_net [get_bd_pins clk_wiz_0/clk_out2] [get_bd_pins zynq_ultra_ps_e_0/maxihpm0_fpd_aclk]
-connect_bd_net [get_bd_pins clk_wiz_0/clk_out2] [get_bd_pins zynq_ultra_ps_e_0/saxihpc0_fpd_aclk]
+connect_bd_net [get_bd_pins clk_wiz_0/clk_out3] [get_bd_pins zynq_ultra_ps_e_0/saxihpc0_fpd_aclk]
 
 # Add and configure reset processor system for the AXI clock
 set rst_ps_axi_150M [ create_bd_cell -type ip -vlnv xilinx.com:ip:proc_sys_reset rst_ps_axi_150M ]
@@ -411,10 +413,10 @@ lappend axi_lite_ports [list "rsvd_gpio/S_AXI" "clk_wiz_0/clk_out2" "rst_ps_axi_
 create_bd_intf_port -mode Master -vlnv xilinx.com:interface:gpio_rtl:1.0 rsvd_gpio
 connect_bd_intf_net [get_bd_intf_pins rsvd_gpio/GPIO] [get_bd_intf_ports rsvd_gpio]
 
-# Add the AXI SmartConnect for the VDMAs
+# Add the AXI SmartConnect for the Frame Buffers
 create_bd_cell -type ip -vlnv xilinx.com:ip:smartconnect smartconnect_0
-connect_bd_net [get_bd_pins clk_wiz_0/clk_out2] [get_bd_pins smartconnect_0/aclk]
-connect_bd_net [get_bd_pins rst_ps_axi_150M/peripheral_aresetn] [get_bd_pins smartconnect_0/aresetn]
+connect_bd_net [get_bd_pins clk_wiz_0/clk_out3] [get_bd_pins smartconnect_0/aclk]
+connect_bd_net [get_bd_pins rst_video_250M/peripheral_aresetn] [get_bd_pins smartconnect_0/aresetn]
 connect_bd_intf_net [get_bd_intf_pins smartconnect_0/M00_AXI] [get_bd_intf_pins zynq_ultra_ps_e_0/S_AXI_HPC0_FPD]
 set smartcon_ports [expr {$num_cams*2}]
 set_property -dict [list CONFIG.NUM_SI $smartcon_ports] [get_bd_cells smartconnect_0]
@@ -440,10 +442,8 @@ foreach i $cams {
   connect_bd_net [get_bd_pins rst_video_250M/peripheral_aresetn] [get_bd_pins mipi_$i/video_aresetn]
   # Add interrupts to the interrupt list to be connected later
   lappend intr_list "mipi_$i/mipi_sub_irq"
-  #lappend intr_list "mipi_$i/demosaic_irq"
-  #lappend intr_list "mipi_$i/gamma_lut_irq"
-  lappend intr_list "mipi_$i/vdma_s2mm_irq"
-  lappend intr_list "mipi_$i/vdma_mm2s_irq"
+  lappend intr_list "mipi_$i/frmbufwr_irq"
+  lappend intr_list "mipi_$i/frmbufrd_irq"
   lappend intr_list "mipi_$i/iic2intc_irpt"
   
   # AXI Lite interfaces to be connected later
@@ -457,10 +457,10 @@ foreach i $cams {
   # Connect the GPIO interface
   create_bd_intf_port -mode Master -vlnv xilinx.com:interface:gpio_rtl:1.0 gpio_$i
   connect_bd_intf_net [get_bd_intf_ports gpio_$i] [get_bd_intf_pins mipi_$i/GPIO]
-  # Connect the AXI MM interface of the VDMA
-  connect_bd_intf_net -boundary_type upper [get_bd_intf_pins mipi_$i/M_AXI_S2MM] [get_bd_intf_pins smartconnect_0/S0${smartcon_index}_AXI]
+  # Connect the AXI MM interfaces of the Frame Buffers
+  connect_bd_intf_net -boundary_type upper [get_bd_intf_pins mipi_$i/m_axi_mm_video_wr] [get_bd_intf_pins smartconnect_0/S0${smartcon_index}_AXI]
   set smartcon_index [expr {$smartcon_index+1}]
-  connect_bd_intf_net -boundary_type upper [get_bd_intf_pins mipi_$i/M_AXI_MM2S] [get_bd_intf_pins smartconnect_0/S0${smartcon_index}_AXI]
+  connect_bd_intf_net -boundary_type upper [get_bd_intf_pins mipi_$i/m_axi_mm_video_rd] [get_bd_intf_pins smartconnect_0/S0${smartcon_index}_AXI]
   set smartcon_index [expr {$smartcon_index+1}]
 }
 
@@ -490,6 +490,7 @@ connect_bd_net [get_bd_pins dp_vid_clk/locked] [get_bd_pins rst_dp_vid_74M/dcm_l
 # Add the AXI4-Stream to Video Out IP
 set axi4s_vid_out [ create_bd_cell -type ip -vlnv xilinx.com:ip:v_axi4s_vid_out axi4s_vid_out ]
 set_property -dict [ list \
+  CONFIG.C_PIXELS_PER_CLOCK {1} \
   CONFIG.C_ADDR_WIDTH {12} \
   CONFIG.C_HAS_ASYNC_CLK {1} \
   CONFIG.C_NATIVE_COMPONENT_WIDTH {12} \
@@ -566,23 +567,123 @@ if {[dict get $dp_dict $target dpaux] == "EMIO"} {
   connect_bd_net [get_bd_ports dp_aux_dout] [get_bd_pins zynq_ultra_ps_e_0/dp_aux_data_out]
 }
 
-# Add the AXIS Switch to select between the potential four video outputs
-set axis_switch [create_bd_cell -type ip -vlnv xilinx.com:ip:axis_switch axis_switch]
+# Add the Video Test Pattern Generator
+set v_tpg [create_bd_cell -type ip -vlnv xilinx.com:ip:v_tpg v_tpg]
 set_property -dict [list \
-  CONFIG.ROUTING_MODE {1} \
-  CONFIG.NUM_SI $num_cams \
-  ] $axis_switch
-connect_bd_net [get_bd_pins clk_wiz_0/clk_out3] [get_bd_pins axis_switch/aclk]
-connect_bd_net [get_bd_pins clk_wiz_0/clk_out2] [get_bd_pins axis_switch/s_axi_ctrl_aclk]
-connect_bd_net [get_bd_pins rst_video_250M/peripheral_aresetn] [get_bd_pins axis_switch/aresetn]
-connect_bd_net [get_bd_pins rst_ps_axi_150M/peripheral_aresetn] [get_bd_pins axis_switch/s_axi_ctrl_aresetn]
-set switch_index 0
+ CONFIG.SAMPLES_PER_CLOCK {2} \
+ CONFIG.RAMP {0} \
+ CONFIG.COLOR_BAR {0} \
+ CONFIG.DISPLAY_PORT {0} \
+ CONFIG.COLOR_SWEEP {0} \
+ CONFIG.ZONE_PLATE {0} \
+] $v_tpg
+
+connect_bd_net [get_bd_pins clk_wiz_0/clk_out3] [get_bd_pins v_tpg/ap_clk]
+lappend axi_lite_ports [list "v_tpg/s_axi_CTRL" "clk_wiz_0/clk_out3" "rst_video_250M/peripheral_aresetn"]
+
+# Slice for Video TPG reset signal
+set reset_v_tpg [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlslice reset_v_tpg ]
+set_property -dict [ list \
+CONFIG.DIN_WIDTH {95} \
+CONFIG.DIN_TO {1} \
+CONFIG.DIN_FROM {1} \
+CONFIG.DOUT_WIDTH {1} \
+] $reset_v_tpg
+
+connect_bd_net -net reset_v_tpg_Dout [get_bd_pins reset_v_tpg/Dout] [get_bd_pins v_tpg/ap_rst_n]
+connect_bd_net -net zynq_ultra_ps_e_0_emio_gpio_o [get_bd_pins reset_v_tpg/Din] [get_bd_pins zynq_ultra_ps_e_0/emio_gpio_o]
+
+# Add the Video mixer
+set v_mix [create_bd_cell -type ip -vlnv xilinx.com:ip:v_mix:5.1 v_mix]
+set num_v_mix_ports [expr {$num_cams+1}]
+set_property -dict [ list \
+ CONFIG.SAMPLES_PER_CLOCK {2} \
+ CONFIG.AXIMM_DATA_WIDTH {128} \
+ CONFIG.C_M_AXI_MM_VIDEO1_DATA_WIDTH {128} \
+ CONFIG.C_M_AXI_MM_VIDEO2_DATA_WIDTH {128} \
+ CONFIG.C_M_AXI_MM_VIDEO3_DATA_WIDTH {128} \
+ CONFIG.C_M_AXI_MM_VIDEO4_DATA_WIDTH {128} \
+ CONFIG.C_M_AXI_MM_VIDEO5_DATA_WIDTH {128} \
+ CONFIG.C_M_AXI_MM_VIDEO6_DATA_WIDTH {128} \
+ CONFIG.C_M_AXI_MM_VIDEO7_DATA_WIDTH {128} \
+ CONFIG.C_M_AXI_MM_VIDEO8_DATA_WIDTH {128} \
+ CONFIG.C_M_AXI_MM_VIDEO9_DATA_WIDTH {128} \
+ CONFIG.C_M_AXI_MM_VIDEO10_DATA_WIDTH {128} \
+ CONFIG.C_M_AXI_MM_VIDEO11_DATA_WIDTH {128} \
+ CONFIG.C_M_AXI_MM_VIDEO12_DATA_WIDTH {128} \
+ CONFIG.C_M_AXI_MM_VIDEO13_DATA_WIDTH {128} \
+ CONFIG.C_M_AXI_MM_VIDEO14_DATA_WIDTH {128} \
+ CONFIG.C_M_AXI_MM_VIDEO15_DATA_WIDTH {128} \
+ CONFIG.C_M_AXI_MM_VIDEO16_DATA_WIDTH {128} \
+ CONFIG.LAYER1_INTF_TYPE {1} \
+ CONFIG.LAYER1_UPSAMPLE {false} \
+ CONFIG.LAYER1_VIDEO_FORMAT {0} \
+ CONFIG.LAYER2_INTF_TYPE {1} \
+ CONFIG.LAYER2_UPSAMPLE {false} \
+ CONFIG.LAYER2_VIDEO_FORMAT {0} \
+ CONFIG.LAYER3_INTF_TYPE {1} \
+ CONFIG.LAYER3_UPSAMPLE {false} \
+ CONFIG.LAYER3_VIDEO_FORMAT {0} \
+ CONFIG.LAYER4_INTF_TYPE {1} \
+ CONFIG.LAYER4_VIDEO_FORMAT {0} \
+ CONFIG.MAX_COLS {1920} \
+ CONFIG.MAX_ROWS {1080} \
+ CONFIG.NR_LAYERS $num_v_mix_ports \
+] $v_mix
+
+connect_bd_intf_net [get_bd_intf_pins v_tpg/m_axis_video] [get_bd_intf_pins v_mix/s_axis_video]
+connect_bd_net [get_bd_pins clk_wiz_0/clk_out3] [get_bd_pins v_mix/ap_clk]
+set port_index 1
 foreach i $cams {
-  connect_bd_intf_net [get_bd_intf_pins mipi_$i/M_AXIS_MM2S] [get_bd_intf_pins axis_switch/S0${switch_index}_AXIS]
-  set switch_index [expr {$switch_index+1}]
+  connect_bd_intf_net [get_bd_intf_pins mipi_$i/m_axis_video] [get_bd_intf_pins v_mix/s_axis_video$port_index]
+  set port_index [expr {$port_index+1}]
 }
-connect_bd_intf_net [get_bd_intf_pins axis_switch/M00_AXIS] [get_bd_intf_pins axi4s_vid_out/video_in]
-lappend axi_lite_ports [list "axis_switch/S_AXI_CTRL" "clk_wiz_0/clk_out2" "rst_ps_axi_150M/peripheral_aresetn"]
+#connect_bd_intf_net [get_bd_intf_pins v_mix/m_axis_video] [get_bd_intf_pins axi4s_vid_out/video_in]
+lappend axi_lite_ports [list "v_mix/s_axi_CTRL" "clk_wiz_0/clk_out3" "rst_video_250M/peripheral_aresetn"]
+
+# Slice for Video Mixer reset signal
+set reset_v_mix [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlslice reset_v_mix ]
+set_property -dict [ list \
+CONFIG.DIN_WIDTH {95} \
+CONFIG.DIN_TO {0} \
+CONFIG.DIN_FROM {0} \
+CONFIG.DOUT_WIDTH {1} \
+] $reset_v_mix
+
+connect_bd_net -net reset_v_mix_Dout [get_bd_pins reset_v_mix/Dout] [get_bd_pins v_mix/ap_rst_n]
+connect_bd_net -net zynq_ultra_ps_e_0_emio_gpio_o [get_bd_pins reset_v_mix/Din] [get_bd_pins zynq_ultra_ps_e_0/emio_gpio_o]
+
+# Add the AXIS Remapper to change from 2ppc to 1ppc
+set v_axi4s_remap [create_bd_cell -type ip -vlnv xilinx.com:ip:v_axi4s_remap v_axi4s_remap]
+set_property -dict [list \
+ CONFIG.IN_SAMPLES_PER_CLOCK {2} \
+] $v_axi4s_remap
+connect_bd_intf_net [get_bd_intf_pins v_mix/m_axis_video] [get_bd_intf_pins v_axi4s_remap/s_axis_video]
+connect_bd_net [get_bd_pins v_axi4s_remap/ap_clk] [get_bd_pins clk_wiz_0/clk_out3]
+connect_bd_net [get_bd_pins v_axi4s_remap/ap_rst_n] [get_bd_pins rst_video_250M/peripheral_aresetn]
+lappend axi_lite_ports [list "v_axi4s_remap/s_axi_CTRL" "clk_wiz_0/clk_out3" "rst_video_250M/peripheral_aresetn"]
+
+# AXIS Subset converter to swap Blue and Red colors
+set vid_blue_red_swap [create_bd_cell -type ip -vlnv xilinx.com:ip:axis_subset_converter vid_blue_red_swap]
+set tdata_remap "tdata[15:8],tdata[23:16],tdata[7:0]"
+set_property -dict [ list \
+ CONFIG.M_HAS_TKEEP {1} \
+ CONFIG.M_HAS_TLAST {1} \
+ CONFIG.M_TDATA_NUM_BYTES {3} \
+ CONFIG.M_TUSER_WIDTH {1} \
+ CONFIG.S_HAS_TKEEP {1} \
+ CONFIG.S_HAS_TLAST {1} \
+ CONFIG.S_TDATA_NUM_BYTES {3} \
+ CONFIG.S_TUSER_WIDTH {1} \
+ CONFIG.TDATA_REMAP $tdata_remap \
+ CONFIG.TKEEP_REMAP {tkeep[2:0]} \
+ CONFIG.TLAST_REMAP {tlast[0]} \
+ CONFIG.TUSER_REMAP {tuser[0:0]} \
+] $vid_blue_red_swap
+connect_bd_intf_net [get_bd_intf_pins v_axi4s_remap/m_axis_video] [get_bd_intf_pins vid_blue_red_swap/S_AXIS]
+connect_bd_intf_net [get_bd_intf_pins vid_blue_red_swap/M_AXIS] [get_bd_intf_pins axi4s_vid_out/video_in]
+connect_bd_net [get_bd_pins vid_blue_red_swap/aclk] [get_bd_pins clk_wiz_0/clk_out3]
+connect_bd_net [get_bd_pins vid_blue_red_swap/aresetn] [get_bd_pins rst_video_250M/peripheral_aresetn]
 
 # Add GPIO for the on-board LEDs (only ZCU104)
 if { $target == "zcu104" } {

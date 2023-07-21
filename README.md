@@ -65,9 +65,6 @@ Thank you to everyone who supports us!
   application. More time needed to debug.
 * The example design has run out of PL-to-PS interrupts, so we need to add the AXI Interrupt Controller and
   adapt the software application to AXI Intc.
-* Improvement: The 4 cameras feed an AXIS Switch which selects the video source to display on the monitor.
-  The plan is to scrap the AXIS Switch and instead use the Vitis Vision Library to demonstrate doing some 
-  useful/interesting video processing.
 
 ## About us
 
