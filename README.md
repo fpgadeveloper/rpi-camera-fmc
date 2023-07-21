@@ -8,10 +8,10 @@ connect 4x Raspberry Pi cameras (or compatible cameras) to one of the target FPG
 ![RPi Camera FMC](https://www.fpgadeveloper.com/camera-fmc-connecting-mipi-cameras-to-fpgas/images/rpi-camera-fmc-pynq-zu-1.jpg "RPi Camera FMC")
 
 The high level block diagram below illustrates the design:
-![RPi Camera FMC example design](https://camerafmc.com/docs/rpi-camera-fmc/example-designs/block-diagram-top-level_huec5a19c1eaa45c8ca2267d18798bfdb8_38374_941x0_resize_q75_h2_box_3.webp "RPi Camera FMC example design")
+![RPi Camera FMC example design](https://rpi.camerafmc.com/en/latest/_images/block-diagram-top-level.png "RPi Camera FMC example design")
 
 The video pipe sub-blocks are illustrated below:
-![RPi Camera FMC video pipe](https://camerafmc.com/docs/rpi-camera-fmc/example-designs/video-pipe-block-diagram_hua0506aba2666ba749a549f56cc090275_16242_981x0_resize_q75_h2_box_3.webp "RPi Camera FMC video pipe")
+![RPi Camera FMC video pipe](https://rpi.camerafmc.com/en/latest/_images/video-pipe-block-diagram.png "RPi Camera FMC video pipe")
 
 Important links:
 * The RPi Camera FMC [datasheet](https://camerafmc.com/docs/rpi-camera-fmc/overview/)
