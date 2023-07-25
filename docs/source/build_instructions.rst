@@ -18,10 +18,10 @@ a 30-day evaluation license for Vivado ML Enterprise Edition.
 The designs for all of the other boards can be built with the Vivado ML Standard Edition without
 a license.
 
-PYNQ-ZU and Genesys-ZU board files
-----------------------------------
+PYNQ-ZU, Genesys-ZU and UltraZed-EV board files
+-----------------------------------------------
 
-If you wish to build the designs for the PYNQ-ZU and Genesys-ZU boards, you will
+If you wish to build the designs for the PYNQ-ZU, Genesys-ZU and UltraZed-EV Carrier boards, you will
 first need to install the board files. To do so, you need to clone the XilinxBoardStore
 git repository, checkout the ``2022.1`` branch, and then copy the board files into the
 appropriate location in the Vivado and Vitis installation.
@@ -39,6 +39,10 @@ For the PYNQ-ZU board, copy the folder ``pynqzu`` found in ``XilinxBoardStore/bo
 
 For the Genesys-ZU board, copy the folder ``genesys-zu-5ev`` found in 
 ``XilinxBoardStore/boards/Digilent`` to ``<vivado-install-path>/2020.2/data/boards/board_files``.
+Also copy it to ``<vitis-install-path>/2020.2/data/boards/board_files``.
+
+For the UltraZed-EV Carrier board, copy the folder ``ultrazed_7ev_cc`` found in 
+``XilinxBoardStore/boards/Avnet`` to ``<vivado-install-path>/2020.2/data/boards/board_files``.
 Also copy it to ``<vitis-install-path>/2020.2/data/boards/board_files``.
 
 Windows users

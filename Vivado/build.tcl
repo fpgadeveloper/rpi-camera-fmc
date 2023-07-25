@@ -39,7 +39,7 @@ dict set target_dict zcu102_hpc1 { xczu9eg-ffvb1156-2-e xilinx.com:zcu102:part0:
 dict set target_dict zcu106_hpc0 { xc7z045ffg900-2 xilinx.com:zcu106:part0:2.6 { 0 1 2 3 } zynqmp }
 dict set target_dict pynqzu { xczu5eg-sfvc784-1-e tul.com.tw:pynqzu:part0:1.1 { 0 1 2 3 } zynqmp }
 dict set target_dict genesyszu { xczu5ev-sfvc784-1-e digilentinc.com:gzu_5ev:part0:1.1 { 0 1 2 3 } zynqmp }
-dict set target_dict uzev { xczu7ev-fbvb900-1-i avnet.com:ultrazed_7ev_cc:part0:1.4 { 0 1 2 3 } zynqmp }
+dict set target_dict uzev { xczu7ev-fbvb900-1-i avnet.com:ultrazed_7ev_cc:part0:1.5 { 0 1 2 3 } zynqmp }
 
 if { $argc == 1 } {
   set target [lindex $argv 0]
