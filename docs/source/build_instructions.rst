@@ -22,28 +22,30 @@ PYNQ-ZU, Genesys-ZU and UltraZed-EV board files
 -----------------------------------------------
 
 If you wish to build the designs for the PYNQ-ZU, Genesys-ZU and UltraZed-EV Carrier boards, you will
-first need to install the board files. To do so, you need to clone the XilinxBoardStore
-git repository, checkout the ``2022.1`` branch, and then copy the board files into the
-appropriate location in the Vivado and Vitis installation.
+first need to install the board files. To do so, launch Vivado and run the following command in the
+Tcl console:
 
 .. code-block::
 
-  git clone https://github.com/Xilinx/XilinxBoardStore.git
-  cd XilinxBoardStore
-  git fetch --all
-  git checkout 2022.1
+  xhub::refresh_catalog [xhub::get_xstores xilinx_board_store]
 
-For the PYNQ-ZU board, copy the folder ``pynqzu`` found in ``XilinxBoardStore/boards/TUL`` to 
-``<vivado-install-path>/2020.2/data/boards/board_files``. Also copy it to 
-``<vitis-install-path>/2020.2/data/boards/board_files``.
+To install the PYNQ-ZU board, run this command:
 
-For the Genesys-ZU board, copy the folder ``genesys-zu-5ev`` found in 
-``XilinxBoardStore/boards/Digilent`` to ``<vivado-install-path>/2020.2/data/boards/board_files``.
-Also copy it to ``<vitis-install-path>/2020.2/data/boards/board_files``.
+.. code-block::
 
-For the UltraZed-EV Carrier board, copy the folder ``ultrazed_7ev_cc`` found in 
-``XilinxBoardStore/boards/Avnet`` to ``<vivado-install-path>/2020.2/data/boards/board_files``.
-Also copy it to ``<vitis-install-path>/2020.2/data/boards/board_files``.
+  xhub::install [xhub::get_xitems *pynqzu*]
+
+To install the Genesys-ZU board, run this command:
+
+.. code-block::
+
+  xhub::install [xhub::get_xitems *gzu_5ev*]
+
+To install the UltraZed-EV Carrier board, run this command:
+
+.. code-block::
+
+  xhub::install [xhub::get_xitems *ultrazed_7ev_cc*]
 
 Windows users
 -------------

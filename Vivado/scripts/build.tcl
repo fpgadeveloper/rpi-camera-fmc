@@ -19,7 +19,7 @@
 #*****************************************************************************************
 
 # Check the version of Vivado used
-set version_required "2020.2"
+set version_required "2022.1"
 set ver [lindex [split $::env(XILINX_VIVADO) /] end]
 if {![string equal $ver $version_required]} {
   puts "###############################"
@@ -32,14 +32,17 @@ if {![string equal $ver $version_required]} {
   return
 }
 
+# Add Xilinx board store to the repo paths
+set_param board.repoPaths [get_property LOCAL_ROOT_DIR [xhub::get_xstores xilinx_board_store]]
+
 # Possible targets
-dict set target_dict zcu104 { xczu7ev-ffvc1156-2-e xilinx.com:zcu104:part0:1.1 { 0 1 2 3 } zynqmp }
-dict set target_dict zcu102_hpc0 { xczu9eg-ffvb1156-2-e xilinx.com:zcu102:part0:3.4 { 0 1 2 3 } zynqmp }
-dict set target_dict zcu102_hpc1 { xczu9eg-ffvb1156-2-e xilinx.com:zcu102:part0:3.4 { 0 1 } zynqmp }
-dict set target_dict zcu106_hpc0 { xc7z045ffg900-2 xilinx.com:zcu106:part0:2.6 { 0 1 2 3 } zynqmp }
-dict set target_dict pynqzu { xczu5eg-sfvc784-1-e tul.com.tw:pynqzu:part0:1.1 { 0 1 2 3 } zynqmp }
-dict set target_dict genesyszu { xczu5ev-sfvc784-1-e digilentinc.com:gzu_5ev:part0:1.1 { 0 1 2 3 } zynqmp }
-dict set target_dict uzev { xczu7ev-fbvb900-1-i avnet.com:ultrazed_7ev_cc:part0:1.5 { 0 1 2 3 } zynqmp }
+dict set target_dict zcu104 { zcu104 { 0 1 2 3 } zynqmp }
+dict set target_dict zcu102_hpc0 { zcu102 { 0 1 2 3 } zynqmp }
+dict set target_dict zcu102_hpc1 { zcu102 { 0 1 } zynqmp }
+dict set target_dict zcu106_hpc0 { zcu106 { 0 1 2 3 } zynqmp }
+dict set target_dict pynqzu { pynqzu { 0 1 2 3 } zynqmp }
+dict set target_dict genesyszu { gzu_5ev { 0 1 2 3 } zynqmp }
+dict set target_dict uzev { ultrazed_7ev_cc { 0 1 2 3 } zynqmp }
 
 if { $argc == 1 } {
   set target [lindex $argv 0]
@@ -58,7 +61,7 @@ if { $argc == 1 } {
   puts "   * pynqzu       * genesyszu    * uzev"
   puts ""
   puts "Example 1 (from the Windows command line):"
-  puts "   vivado -mode batch -source build.tcl -notrace -tclargs zcu106-hpc0"
+  puts "   vivado -mode batch -source build.tcl -notrace -tclargs zcu106_hpc0"
   puts ""
   puts "Example 2 (from Vivado Tcl console):"
   puts "   set target zcu106-hpc0"
@@ -68,10 +71,11 @@ if { $argc == 1 } {
 
 set design_name ${target}
 set block_name rpi
-set fpga_part [lindex [dict get $target_dict $target] 0]
-set board_part [lindex [dict get $target_dict $target] 1]
-set cams [lindex [dict get $target_dict $target] 2]
-set bd_script [lindex [dict get $target_dict $target] 3]
+set board_name [lindex [dict get $target_dict $target] 0]
+set proj_board [get_board_parts "*:$board_name:*" -latest_file_version]
+set fpga_part [get_property PART_NAME [get_board_parts $proj_board]]
+set cams [lindex [dict get $target_dict $target] 1]
+set bd_script [lindex [dict get $target_dict $target] 2]
 
 # Set the reference directory for source file relative paths (by default the value is script directory path)
 set origin_dir "."
@@ -86,13 +90,7 @@ create_project $design_name $origin_dir/$design_name -part ${fpga_part}
 set proj_dir [get_property directory [current_project]]
 
 # Set project properties
-set obj [current_project]
-set_property -name "board_part" -value "$board_part" -objects $obj
-set_property -name "default_lib" -value "xil_defaultlib" -objects $obj
-set_property -name "ip_cache_permissions" -value "read write" -objects $obj
-set_property -name "ip_output_repo" -value "$proj_dir/$design_name.cache/ip" -objects $obj
-set_property -name "sim.ip.auto_export_scripts" -value "1" -objects $obj
-set_property -name "simulator_language" -value "Mixed" -objects $obj
+set_property board_part $proj_board [current_project]
 
 # Create 'sources_1' fileset (if not found)
 if {[string equal [get_filesets -quiet sources_1] ""]} {
@@ -142,10 +140,10 @@ set_property -name "top" -value "${block_name}_wrapper" -objects $obj
 
 # Create 'synth_1' run (if not found)
 if {[string equal [get_runs -quiet synth_1] ""]} {
-  create_run -name synth_1 -part ${fpga_part} -flow {Vivado Synthesis 2020} -strategy "Vivado Synthesis Defaults" -report_strategy {No Reports} -constrset constrs_1
+  create_run -name synth_1 -part ${fpga_part} -flow {Vivado Synthesis 2022} -strategy "Vivado Synthesis Defaults" -report_strategy {No Reports} -constrset constrs_1
 } else {
   set_property strategy "Vivado Synthesis Defaults" [get_runs synth_1]
-  set_property flow "Vivado Synthesis 2020" [get_runs synth_1]
+  set_property flow "Vivado Synthesis 2022" [get_runs synth_1]
 }
 set obj [get_runs synth_1]
 
@@ -154,10 +152,10 @@ current_run -synthesis [get_runs synth_1]
 
 # Create 'impl_1' run (if not found)
 if {[string equal [get_runs -quiet impl_1] ""]} {
-  create_run -name impl_1 -part ${fpga_part} -flow {Vivado Implementation 2020} -strategy "Vivado Implementation Defaults" -report_strategy {No Reports} -constrset constrs_1 -parent_run synth_1
+  create_run -name impl_1 -part ${fpga_part} -flow {Vivado Implementation 2022} -strategy "Vivado Implementation Defaults" -report_strategy {No Reports} -constrset constrs_1 -parent_run synth_1
 } else {
   set_property strategy "Vivado Implementation Defaults" [get_runs impl_1]
-  set_property flow "Vivado Implementation 2020" [get_runs impl_1]
+  set_property flow "Vivado Implementation 2022" [get_runs impl_1]
 }
 set obj [get_runs impl_1]
 set_property -name "steps.write_bitstream.args.readback_file" -value "0" -objects $obj

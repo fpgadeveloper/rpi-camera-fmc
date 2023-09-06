@@ -115,7 +115,7 @@ proc create_mipi_pipe { index loc_dict } {
   set data1_pin [dict get $loc_dict data1 pin]
   set data1_pin_name [dict get $loc_dict data1 pin_name]
   set bank [dict get $loc_dict bank]
-  set mipi_csi2_rx_subsyst [ create_bd_cell -type ip -vlnv xilinx.com:ip:mipi_csi2_rx_subsystem:5.1 mipi_csi2_rx_subsyst_0 ]
+  set mipi_csi2_rx_subsyst [ create_bd_cell -type ip -vlnv xilinx.com:ip:mipi_csi2_rx_subsystem mipi_csi2_rx_subsyst_0 ]
   set_property -dict [ list \
     CONFIG.SupportLevel {1} \
     CONFIG.CMN_NUM_LANES {2} \
@@ -594,7 +594,7 @@ connect_bd_net -net reset_v_tpg_Dout [get_bd_pins reset_v_tpg/Dout] [get_bd_pins
 connect_bd_net -net zynq_ultra_ps_e_0_emio_gpio_o [get_bd_pins reset_v_tpg/Din] [get_bd_pins zynq_ultra_ps_e_0/emio_gpio_o]
 
 # Add the Video mixer
-set v_mix [create_bd_cell -type ip -vlnv xilinx.com:ip:v_mix:5.1 v_mix]
+set v_mix [create_bd_cell -type ip -vlnv xilinx.com:ip:v_mix v_mix]
 set num_v_mix_ports [expr {$num_cams+1}]
 set_property -dict [ list \
  CONFIG.SAMPLES_PER_CLOCK {2} \
