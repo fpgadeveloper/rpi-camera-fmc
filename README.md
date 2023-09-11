@@ -21,16 +21,16 @@ Important links:
 
 ## Requirements
 
-This project is designed for version 2020.2 of the Xilinx tools (Vivado/Vitis/PetaLinux). 
+This project is designed for version 2022.1 of the Xilinx tools (Vivado/Vitis/PetaLinux). 
 If you are using an older version of the Xilinx tools, then refer to the 
 [release tags](https://github.com/fpgadeveloper/rpi-camera-fmc/releases "releases")
 to find the version of this repository that matches your version of the tools.
 
 In order to test this design on hardware, you will need the following:
 
-* Vivado 2020.2
-* Vitis 2020.2
-* PetaLinux Tools 2020.2
+* Vivado 2022.1
+* Vitis 2022.1
+* PetaLinux Tools 2022.1
 * One or more [Raspberry Pi Camera Module 2](https://www.raspberrypi.com/products/camera-module-v2/) and/or 
   [Digilent Pcam 5C](https://digilent.com/shop/pcam-5c-5-mp-fixed-focus-color-camera-module/) cameras
 * One [RPi Camera FMC](https://camerafmc.com/buy/ "RPi Camera FMC")

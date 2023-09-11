@@ -12,9 +12,7 @@
 #      eg. set target <target-name>
 #          source build.tcl -notrace
 #
-# The valid target names are:
-#   * zcu104       * zcu102_hpc0  * zcu102_hpc1  * zcu106_hpc0
-#   * pynqzu       * genesyszu    * uzev
+# For a list of possible targets, see below.
 #
 #*****************************************************************************************
 
@@ -57,14 +55,27 @@ if { $argc == 1 } {
   }
   puts "The build script requires one argument to specify the design to build."
   puts "Possible values are:"
-  puts "   * zcu104       * zcu102_hpc0  * zcu102_hpc1  * zcu106_hpc0"
-  puts "   * pynqzu       * genesyszu    * uzev"
+  # Get all the keys
+  set all_targets [dict keys $target_dict]
+  # Print the target names
+  set counter 0
+  foreach key $all_targets {
+    if { $counter == 3 } {
+      puts ""
+      set counter 0
+    }
+    if { $counter != 0 } {
+      puts -nonewline ", "
+    }
+    puts -nonewline $key
+    incr counter
+  }
   puts ""
   puts "Example 1 (from the Windows command line):"
-  puts "   vivado -mode batch -source build.tcl -notrace -tclargs zcu106_hpc0"
+  puts "   vivado -mode batch -source build.tcl -notrace -tclargs [lindex $all_targets 0]"
   puts ""
   puts "Example 2 (from Vivado Tcl console):"
-  puts "   set target zcu106-hpc0"
+  puts "   set target [lindex $all_targets 0]"
   puts "   source build.tcl -notrace"
   return
 }
@@ -73,6 +84,15 @@ set design_name ${target}
 set block_name rpi
 set board_name [lindex [dict get $target_dict $target] 0]
 set proj_board [get_board_parts "*:$board_name:*" -latest_file_version]
+# Check if the board files are installed, if not, install them
+if { $proj_board == "" } {
+    puts "Failed to find board files for $board_name. Installing board files..."
+    xhub::install [xhub::get_xitems *$board_name*]
+    set proj_board [get_board_parts "*:$board_name:*" -latest_file_version]
+} else {
+    puts "Board files found for $board_name"
+}
+
 set fpga_part [get_property PART_NAME [get_board_parts $proj_board]]
 set cams [lindex [dict get $target_dict $target] 1]
 set bd_script [lindex [dict get $target_dict $target] 2]
@@ -97,9 +117,6 @@ if {[string equal [get_filesets -quiet sources_1] ""]} {
   create_fileset -srcset sources_1
 }
 
-# Set IP repository paths
-set obj [get_filesets sources_1]
-set_property "ip_repo_paths" "[file normalize "$origin_dir/../HLS"]" $obj
 
 # Set 'sources_1' fileset properties
 set obj [get_filesets sources_1]

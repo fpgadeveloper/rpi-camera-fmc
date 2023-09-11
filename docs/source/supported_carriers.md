@@ -1,9 +1,6 @@
-========================
-Supported carrier boards
-========================
+# Supported carrier boards
 
-List of supported boards
-========================
+## List of supported boards
 
 +-----------------------------------------------------------------------+-----------------------------+ 
 | Carrier board                                                         | FMC connector               |
