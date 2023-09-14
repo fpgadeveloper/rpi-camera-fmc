@@ -127,6 +127,7 @@ CONFIG_packagegroup-petalinux-multimedia=y
 CONFIG_packagegroup-petalinux-opencv=y
 CONFIG_packagegroup-petalinux-opencv-dev=y
 CONFIG_packagegroup-petalinux-self-hosted=y
+CONFIG_packagegroup-petalinux-v4lutils=y
 CONFIG_cmake=y
 CONFIG_opencv-staticdev=y
 
@@ -142,6 +143,7 @@ CONFIG_packagegroup-petalinux-gstreamer
 CONFIG_packagegroup-petalinux-multimedia
 CONFIG_packagegroup-petalinux-opencv
 CONFIG_packagegroup-petalinux-x11
+CONFIG_packagegroup-petalinux-v4lutils
 CONFIG_cmake
 CONFIG_opencv-staticdev
 ```

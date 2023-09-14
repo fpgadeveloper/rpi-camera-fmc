@@ -145,7 +145,124 @@ losing data on one of your hard drives.
    sudo systemctl isolate graphical.target
    ```
 
+## Debugging tips
+
+The `media-ctl` command can be useful in debugging issues with your video pipe design. Below we show an
+example of the `media-ctl -p /dev/media0` output, which shows each of the elements in the video pipe as well
+as how they are connected and configured.
+
+```
+zcu104rpicamfmc20221:~$ media-ctl -p /dev/media0
+Media controller API version 5.15.19
+
+Media device information
+------------------------
+driver          xilinx-video
+model           Xilinx Video Composite Device
+serial
+bus info
+hw revision     0x0
+driver version  5.15.19
+
+Device topology
+- entity 1: vcap_mipi_0_v_proc output 0 (1 pad, 1 link)
+            type Node subtype V4L flags 0
+            device node name /dev/video0
+        pad0: Sink
+                <- "a0040000.v_proc_ss":1 [ENABLED]
+
+- entity 5: a0000000.mipi_csi2_rx_subsystem (2 pads, 2 links)
+            type V4L2 subdev subtype Unknown flags 0
+            device node name /dev/v4l-subdev0
+        pad0: Sink
+                [fmt:SRGGB10_1X10/1920x1080 field:none colorspace:srgb]
+                <- "imx219 1-0010":0 [ENABLED]
+        pad1: Source
+                [fmt:SRGGB10_1X10/1920x1080 field:none colorspace:srgb]
+                -> "a0140000.v_demosaic":0 [ENABLED]
+
+- entity 8: imx219 1-0010 (1 pad, 1 link)
+            type V4L2 subdev subtype Sensor flags 0
+            device node name /dev/v4l-subdev1
+        pad0: Source
+                [fmt:SRGGB10_1X10/3280x2464 field:none colorspace:srgb xfer:srgb ycbcr:601 quantization:full-range
+                 crop.bounds:(8,8)/3280x2464
+                 crop:(8,8)/3280x2464]
+                -> "a0000000.mipi_csi2_rx_subsystem":0 [ENABLED]
+
+- entity 10: a0140000.v_demosaic (2 pads, 2 links)
+             type V4L2 subdev subtype Unknown flags 0
+             device node name /dev/v4l-subdev2
+        pad0: Sink
+                [fmt:SRGGB8_1X8/1280x720 field:none colorspace:srgb]
+                <- "a0000000.mipi_csi2_rx_subsystem":1 [ENABLED]
+        pad1: Source
+                [fmt:RBG888_1X24/1280x720 field:none colorspace:srgb]
+                -> "a0170000.v_gamma_lut":0 [ENABLED]
+
+- entity 13: a0170000.v_gamma_lut (2 pads, 2 links)
+             type V4L2 subdev subtype Unknown flags 0
+             device node name /dev/v4l-subdev3
+        pad0: Sink
+                [fmt:RBG888_1X24/1280x720 field:none colorspace:srgb]
+                <- "a0140000.v_demosaic":1 [ENABLED]
+        pad1: Source
+                [fmt:RBG888_1X24/1280x720 field:none colorspace:srgb]
+                -> "a0040000.v_proc_ss":0 [ENABLED]
+
+- entity 16: a0040000.v_proc_ss (2 pads, 2 links)
+             type V4L2 subdev subtype Unknown flags 0
+             device node name /dev/v4l-subdev4
+        pad0: Sink
+                [fmt:VYYUYY8_1X24/1280x720 field:none colorspace:srgb]
+                <- "a0170000.v_gamma_lut":1 [ENABLED]
+        pad1: Source
+                [fmt:VYYUYY8_1X24/1920x1080 field:none colorspace:srgb]
+                -> "vcap_mipi_0_v_proc output 0":0 [ENABLED]
+```
+
+Individual interfaces can be configured using `media-ctl -V` as follows:
+
+```
+media-ctl -V '"a0140000.v_demosaic":0  [fmt:SRGGB10_1X8/1920x1080 field:none colorspace:srgb xfer:srgb ycbcr:601 quantization:full-range]' -d /dev/media0
+media-ctl -V '"a0140000.v_demosaic":1  [fmt:RBG888_1X24/1920x1080 field:none colorspace:srgb]' -d /dev/media0
+media-ctl -V '"a0040000.v_proc_ss":0  [fmt:VYYUYY8_1X24/1920x1080 field:none colorspace:srgb]' -d /dev/media0
+media-ctl -V '"a0040000.v_proc_ss":1  [fmt:VYYUYY8_1X24/1920x1080 field:none colorspace:srgb]' -d /dev/media0
+```
+
+An alternative way to get images from the cameras is to use the `yavta` tool, for example:
+
+```
+yavta -n 3 -c1 -f NV12 -s 1920x1080 --skip 9 -F /dev/video0
+```
+
+## Known issues and limitations
+
+### PYNQ-ZU and Genesys-ZU limits
+
+The ZynqMP devices on the PYNQ-ZU and Genesys-ZU boards are relatively small devices in terms of FPGA resources.
+Fitting the necessary logic to handle four video streams simultaneously can be a challenge on these boards. 
+For this reason, in our Vivado designs for these boards, the [Video Processing Subsystem IP] for cameras 2 and 3,
+has been configured to use the simplest and lowest footprint scaling algorithm. This scaling algorithm is known as
+"bilinear", and by using it in two of the video pipes we are able to get the entire design to fit within the 
+resource constraints of these devices.
+
+The consequences of using the "bilinear" scaling algorithm on the video pipes for cameras 2 and 3 are as follows:
+* **Reduced quality of the scaled images:** As described in the documentation for the [Video Processing Subsystem IP],
+  "Bilinear interpolation produces a greater number of interpolation artifacts (such as aliasing, blurring, and 
+  edge halos) than more computationally demanding techniques such as bicubic interpolation."
+* **No PetaLinux support:** The Linux driver for [Video Processing Subsystem IP] seems to only work when the 
+  IP is configured to use the "polyphase" scaling algorithm. If you try to use camera 2 or 3 in PetaLinux, you will
+  notice the following error message:
+  ```
+  [  123.456789] xilinx-csi2rxss a0002000.mipi_csi2_rx_subsystem: Stream Line Buffer Full!
+  ```
+  We have not yet found a workaround for this problem.
+
+
 [RPi Camera FMC]: https://camerafmc.com/docs/rpi-camera-fmc/overview/
 [Raspberry Pi camera module v2]: https://www.raspberrypi.com/products/camera-module-v2/
 [supported Linux distributions]: https://docs.xilinx.com/r/2022.1-English/ug1144-petalinux-tools-reference-guide/Setting-Up-Your-Environment
+[Video Processing Subsystem IP]: https://docs.xilinx.com/r/en-US/pg231-v-proc-ss
+
 
