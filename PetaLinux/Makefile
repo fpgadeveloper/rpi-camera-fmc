@@ -17,7 +17,7 @@ VIV_XSA = $(VIV_PRJ_DIR)/$(BD_NAME)_wrapper.xsa
 VIV_BIT = $(VIV_PRJ_DIR)/$(TARGET).runs/impl_1/$(BD_NAME)_wrapper.bit
 
 # valid targets
-TARGET_LIST = zcu104 zcu102_hpc0 zcu102_hpc1 zcu106_hpc0 pynqzu genesyszu uzev
+TARGET_LIST = zcu104 zcu102_hpc0 zcu102_hpc1 zcu106_hpc0 pynqzu uzev
 
 # target board (the first word in the target name, before the first underscore)
 TARGET_BOARD=$(word 1,$(subst _, ,$(TARGET)))

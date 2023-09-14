@@ -1,73 +1,74 @@
-================================
-Stand-alone application
-================================
+# Stand-alone application
 
 The reference designs in this project can be used with a standalone application that runs on
-the ARM processor of the Zynq UltraScale+ device. The purpose of the application is to configure
-the cameras, the video pipes and the DisplayPort monitor. Once the application has configured
-all the hardware, it goes into an infinite loop that regularly switches the monitor's video feed
-from one camera to the next, every 8 seconds.
+the ARM processor of the Zynq UltraScale+ device. The application performs configuration of
+the cameras, the video pipes, the video mixer and the DisplayPort monitor. When running, the
+video streams from all connected cameras are displayed in a 2x2 grid on the monitor.
 
-Building the Vitis workspace
-================================
+## Building the Vitis workspace
 
 To build the Vitis workspace and standalone application, you must first generate
-the Vivado project hardware design (the bitstream) and export the hardware.
+the Vivado project hardware design (the bitstream) and export the hardware to XSA file.
 Once the bitstream is generated and exported, then you can build the
-Vitis workspace using the provided ``Vitis/build-vitis.tcl`` script.
+Vitis workspace using the provided scripts. Follow the instructions appropriate for your
+operating system:
 
-Windows users
--------------
+* **Windows**: Follow the [build instructions for Windows users](/build_instructions.md#windows-users)
+* **Linux**: Follow the [build instructions for Linux users](/build_instructions.md#linux-users)
 
-To build the Vitis workspace, Windows users can run the ``build-vitis.bat`` file which
-launches the Tcl script.
+## Hardware setup
 
-Linux users
------------
+Before running the application, you will need to setup the hardware.
 
-Linux users must use the following commands to run the build script:
+1. Connect one or more cameras to the [RPi Camera FMC] and then plug it into the target board.
+   Instructions for doing this, including images of the correct flex cable orientation, can be 
+   found in the [Getting started](https://camerafmc.com/docs/rpi-camera-fmc/getting-started/#hardware-setup)
+   guide.
+2. Connect a DisplayPort monitor to the target board. This monitor must be able to support 1080p
+   resolution.
+3. To receive the UART output of this standalone application, you will need to connect the
+   USB-UART of the development board to your PC and run a console program such as 
+   [Putty]. The UART speed must be set to 115200.
 
-.. code-block::
 
-  cd <path-to-repo>/Vitis
-  /<path-to-xilinx-tools>/Vitis/2020.2/bin/xsct build-vitis.tcl
+## Run the application
 
-Hardware setup
-==============
-
-Before running the application, you will need to setup the hardware. This involves connecting
-one or more cameras to the `RPi Camera FMC`_ and then plugging it into the target board.
-Instructions for doing this, including images of the correct flex cable orientation, can be 
-found in the 
-`Getting started <https://camerafmc.com/docs/rpi-camera-fmc/getting-started/#hardware-setup>`_
-guide.
-
-Run the application
-===================
-
-#. Open Xilinx Vitis.
-#. Power up your hardware platform and ensure that the JTAG is connected properly.
-#. In the Vitis Explorer panel, double-click on the System project that you want to run -
-   this will reveal the applications contained in the project. The System project will have 
+1. Launch the Xilinx Vitis GUI.
+2. Power up your hardware platform and ensure that the JTAG is connected properly.
+3. In the Vitis Explorer panel, double-click on the System project that you want to run -
+   this will reveal the application contained in the project. The System project will have 
    the postfix "_system".
-#. Now click on the application that you want to run. It should have the postfix "_app".
-#. Select the option "Run Configurations" from the drop-down menu contained under the Run
-   button on the toolbar (play symbol).
-#. Double-click on "Single Application Debug" to create a run configuration for this 
-   application. Then click "Run".
+4. Now right click on the application (it should have the postfix "_app") then navigate the
+   drop down menu to **Run As->Launch on Hardware (Single Application Debug (GDB)).**.
+
+![Vitis Launch on hardware](images/vitis-launch-on-hardware.png)
 
 The run configuration will first program the FPGA with the bitstream, then load and run the 
-application. You can view the UART output of the application in a console window.
+application. You can view the UART output of the application in a console window and it should
+appear as follows:
 
-UART settings
-=============
+```
+Xilinx Zynq MP First Stage Boot Loader
+Release 2022.1   Sep 14 2023  -  15:24:31
+PMU-FW is not running, certain applications may not be supported.
+---------------------------------------
+ 4x RPi camera to Display Port example
+---------------------------------------
+Detected 4 connected cameras
+HPD event .......... ! Connected.
+Lane count =    2
+Link rate =     20
 
-To receive the UART output of this standalone application, you will need to connect the
-USB-UART of the development board to your PC and run a console program such as 
-`Putty`_. The UART speed must be set to 115200.
+Starting Training...
+        ! Training succeeded.
+DONE!
+.......... HPD event
+IMX219 camera configured
+IMX219 camera configured
+IMX219 camera configured
+IMX219 camera configured
+```
 
 
-
-
-.. _RPi Camera FMC: https://camerafmc.com/docs/rpi-camera-fmc/overview/
-.. _Putty: https://www.putty.org
+[RPi Camera FMC]: https://camerafmc.com/docs/rpi-camera-fmc/overview/
+[Putty]: https://www.putty.org

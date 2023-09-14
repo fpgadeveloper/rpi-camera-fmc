@@ -36,7 +36,7 @@ workspace:
 .PHONY: clean
 clean:
 	for targ in $(TARGET_LIST); do \
-		$(RM) $$targ $$targ$(APP_POSTFIX) $$targ$(SYS_POSTFIX); \
+		$(RM) $${targ} $${targ}$(APP_POSTFIX) $${targ}$(SYS_POSTFIX); \
 	done
-	$(RM) boot .metadata .Xil IDE.log .analytics
+	$(RM) boot .metadata .Xil IDE.log .analytics RemoteSystemsTempFiles embeddedsw
 

@@ -58,8 +58,6 @@ Thank you to everyone who supports us!
 ### The TODO list
 
 * Get a Genesys-ZU board and test the design on hardware.
-* Develop the PetaLinux project and test on HW.
-* Write the ref design documentation (build and usage instructions, troubleshooting, etc).
 * Software support for more cameras (this will be an ongoing task due to the number of cameras available).
 * Debug: We are having trouble getting the UltraZed EV Carrier DisplayPort working with the standalone
   application. More time needed to debug.

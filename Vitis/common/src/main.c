@@ -192,8 +192,60 @@ uint8_t NumActiveCams;
 #define RSVD_GPIO_DEF_VAL_MASK (CAM_IO0_DIR_MASK|CAM_IO1_DIR_MASK)
 
 // EMIO GPIO mapping
-#define EMIO_GPIO_VMIX_RST_N (78+0)
-#define EMIO_GPIO_VTPG_RST_N (78+1)
+#define EMIO_GPIO_VMIX_RST_N          (78+0)
+#define EMIO_GPIO_VTPG_RST_N          (78+1)
+#define EMIO_GPIO_CAM0_DEMOSAIC_RST_N (78+8)  // CAM0 Demosaic IP reset
+#define EMIO_GPIO_CAM0_VPROC_RST_N    (78+9)  // CAM0 Vproc IP reset
+#define EMIO_GPIO_CAM0_GAMMA_RST_N    (78+10) // CAM0 Gamma LUT IP reset
+#define EMIO_GPIO_CAM0_FRMBUFRD_RST_N (78+11) // CAM0 Frame Buffer Read IP reset
+#define EMIO_GPIO_CAM0_FRMBUFWR_RST_N (78+12) // CAM0 Frame Buffer Write IP reset
+#define EMIO_GPIO_CAM1_DEMOSAIC_RST_N (78+16) // CAM1 Demosaic IP reset
+#define EMIO_GPIO_CAM1_VPROC_RST_N    (78+17) // CAM1 Vproc IP reset
+#define EMIO_GPIO_CAM1_GAMMA_RST_N    (78+18) // CAM1 Gamma LUT IP reset
+#define EMIO_GPIO_CAM1_FRMBUFRD_RST_N (78+19) // CAM1 Frame Buffer Read IP reset
+#define EMIO_GPIO_CAM1_FRMBUFWR_RST_N (78+20) // CAM1 Frame Buffer Write IP reset
+#define EMIO_GPIO_CAM2_DEMOSAIC_RST_N (78+24) // CAM2 Demosaic IP reset
+#define EMIO_GPIO_CAM2_VPROC_RST_N    (78+25) // CAM2 Vproc IP reset
+#define EMIO_GPIO_CAM2_GAMMA_RST_N    (78+26) // CAM2 Gamma LUT IP reset
+#define EMIO_GPIO_CAM2_FRMBUFRD_RST_N (78+27) // CAM2 Frame Buffer Read IP reset
+#define EMIO_GPIO_CAM2_FRMBUFWR_RST_N (78+28) // CAM2 Frame Buffer Write IP reset
+#define EMIO_GPIO_CAM3_DEMOSAIC_RST_N (78+32) // CAM3 Demosaic IP reset
+#define EMIO_GPIO_CAM3_VPROC_RST_N    (78+33) // CAM3 Vproc IP reset
+#define EMIO_GPIO_CAM3_GAMMA_RST_N    (78+34) // CAM3 Gamma LUT IP reset
+#define EMIO_GPIO_CAM3_FRMBUFRD_RST_N (78+35) // CAM3 Frame Buffer Read IP reset
+#define EMIO_GPIO_CAM3_FRMBUFWR_RST_N (78+36) // CAM3 Frame Buffer Write IP reset
+
+// EMIO GPIO masks (bank 3 in ZynqMP)
+#define EMIO_GPIO_VMIX_RST_N_MASK          (0x1 << 0)
+#define EMIO_GPIO_VTPG_RST_N_MASK          (0x1 << 1)
+#define EMIO_GPIO_CAM0_DEMOSAIC_RST_N_MASK (0x1 << 8)  // CAM0 Demosaic IP reset
+#define EMIO_GPIO_CAM0_VPROC_RST_N_MASK    (0x1 << 9)  // CAM0 Vproc IP reset
+#define EMIO_GPIO_CAM0_GAMMA_RST_N_MASK    (0x1 << 10) // CAM0 Gamma LUT IP reset
+#define EMIO_GPIO_CAM0_FRMBUFRD_RST_N_MASK (0x1 << 11) // CAM0 Frame Buffer Read IP reset
+#define EMIO_GPIO_CAM0_FRMBUFWR_RST_N_MASK (0x1 << 12) // CAM0 Frame Buffer Write IP reset
+#define EMIO_GPIO_CAM1_DEMOSAIC_RST_N_MASK (0x1 << 16) // CAM1 Demosaic IP reset
+#define EMIO_GPIO_CAM1_VPROC_RST_N_MASK    (0x1 << 17) // CAM1 Vproc IP reset
+#define EMIO_GPIO_CAM1_GAMMA_RST_N_MASK    (0x1 << 18) // CAM1 Gamma LUT IP reset
+#define EMIO_GPIO_CAM1_FRMBUFRD_RST_N_MASK (0x1 << 19) // CAM1 Frame Buffer Read IP reset
+#define EMIO_GPIO_CAM1_FRMBUFWR_RST_N_MASK (0x1 << 20) // CAM1 Frame Buffer Write IP reset
+#define EMIO_GPIO_CAM2_DEMOSAIC_RST_N_MASK (0x1 << 24) // CAM2 Demosaic IP reset
+#define EMIO_GPIO_CAM2_VPROC_RST_N_MASK    (0x1 << 25) // CAM2 Vproc IP reset
+#define EMIO_GPIO_CAM2_GAMMA_RST_N_MASK    (0x1 << 26) // CAM2 Gamma LUT IP reset
+#define EMIO_GPIO_CAM2_FRMBUFRD_RST_N_MASK (0x1 << 27) // CAM2 Frame Buffer Read IP reset
+#define EMIO_GPIO_CAM2_FRMBUFWR_RST_N_MASK (0x1 << 28) // CAM2 Frame Buffer Write IP reset
+// EMIO GPIO masks (bank 4 in ZynqMP)
+#define EMIO_GPIO_B4_CAM3_DEMOSAIC_RST_N_MASK (0x1 << 0) // CAM3 Demosaic IP reset
+#define EMIO_GPIO_B4_CAM3_VPROC_RST_N_MASK    (0x1 << 1) // CAM3 Vproc IP reset
+#define EMIO_GPIO_B4_CAM3_GAMMA_RST_N_MASK    (0x1 << 2) // CAM3 Gamma LUT IP reset
+#define EMIO_GPIO_B4_CAM3_FRMBUFRD_RST_N_MASK (0x1 << 3) // CAM3 Frame Buffer Read IP reset
+#define EMIO_GPIO_B4_CAM3_FRMBUFWR_RST_N_MASK (0x1 << 4) // CAM3 Frame Buffer Write IP reset
+// EMIO GPIO masks combined
+#define EMIO_GPIO_B3_CAM0_RST_N               (0x1F << 8)
+#define EMIO_GPIO_B3_CAM1_RST_N               (0x1F << 16)
+#define EMIO_GPIO_B3_CAM2_RST_N               (0x1F << 24)
+#define EMIO_GPIO_B4_CAM3_RST_N               (0x1F << 0)
+#define EMIO_GPIO_B3_ALL_RST_N                (0x3 | EMIO_GPIO_B3_CAM0_RST_N | EMIO_GPIO_B3_CAM1_RST_N | EMIO_GPIO_B3_CAM2_RST_N)
+#define EMIO_GPIO_B4_ALL_RST_N                EMIO_GPIO_B4_CAM3_RST_N
 
 int main()
 {
@@ -221,12 +273,14 @@ int main()
 		xil_printf("ERROR: EmioGpio Initialization Failed\r\n");
 		return XST_FAILURE;
 	}
-	XGpioPs_SetDirectionPin(&EmioGpio, EMIO_GPIO_VMIX_RST_N, 1);
-	XGpioPs_WritePin(&EmioGpio, EMIO_GPIO_VMIX_RST_N, 1);
-	XGpioPs_SetOutputEnablePin(&EmioGpio, EMIO_GPIO_VMIX_RST_N, 1);
-	XGpioPs_SetDirectionPin(&EmioGpio, EMIO_GPIO_VTPG_RST_N, 1);
-	XGpioPs_WritePin(&EmioGpio, EMIO_GPIO_VTPG_RST_N, 1);
-	XGpioPs_SetOutputEnablePin(&EmioGpio, EMIO_GPIO_VTPG_RST_N, 1);
+	// Enable and release all reset outputs in bank 3
+	XGpioPs_SetDirection(&EmioGpio, 3, EMIO_GPIO_B3_ALL_RST_N);
+	XGpioPs_Write(&EmioGpio, 3, EMIO_GPIO_B3_ALL_RST_N);
+	XGpioPs_SetOutputEnable(&EmioGpio, 3, EMIO_GPIO_B3_ALL_RST_N);
+	// Enable and release all reset outputs in bank 4
+	XGpioPs_SetDirection(&EmioGpio, 4, EMIO_GPIO_B4_ALL_RST_N);
+	XGpioPs_Write(&EmioGpio, 4, EMIO_GPIO_B4_ALL_RST_N);
+	XGpioPs_SetOutputEnable(&EmioGpio, 4, EMIO_GPIO_B4_ALL_RST_N);
 
 	/*
 	 * Initialize the Reserved GPIO driver
