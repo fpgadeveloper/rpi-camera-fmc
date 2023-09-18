@@ -103,6 +103,7 @@ $(PETL_BL31_ELF) $(PETL_PMUFW_ELF) $(PETL_FSBL_ELF) $(PETL_DTB): $(PETL_CFG_DONE
 
 $(PETL_CFG_DONE): | $(PETL_COMP_DIR)
 	cp -R ./bsp/$(TARGET_BOARD)/project-spec ./$(TARGET)/.
+	-cp -R ./bsp/$(TARGET)/project-spec ./$(TARGET)/.
 	touch $(TARGET)/configdone.txt
 	cd $(TARGET) && petalinux-config --silentconfig
 	
