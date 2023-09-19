@@ -7,6 +7,7 @@ In order to test this design on hardware, you will need the following:
 * PetaLinux Tools 2022.1
 * One [RPi Camera FMC]
 * One or more Raspberry Pi compatible cameras (see below)
+* One DisplayPort monitor supporting 1080p video
 * One of the supported [target boards](supported_carriers)
 
 

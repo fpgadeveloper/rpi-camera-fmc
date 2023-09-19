@@ -147,6 +147,8 @@ losing data on one of your hard drives.
 
 ## Debugging tips
 
+### Video pipe settings
+
 The `media-ctl` command can be useful in debugging issues with your video pipe design. Below we show an
 example of the `media-ctl -p /dev/media0` output, which shows each of the elements in the video pipe as well
 as how they are connected and configured.
@@ -230,10 +232,68 @@ media-ctl -V '"a0040000.v_proc_ss":0  [fmt:VYYUYY8_1X24/1920x1080 field:none col
 media-ctl -V '"a0040000.v_proc_ss":1  [fmt:VYYUYY8_1X24/1920x1080 field:none colorspace:srgb]' -d /dev/media0
 ```
 
+### Yavta
+
 An alternative way to get images from the cameras is to use the `yavta` tool, for example:
 
 ```
 yavta -n 3 -c1 -f NV12 -s 1920x1080 --skip 9 -F /dev/video0
+```
+
+### Changing camera settings
+
+It is possible to change certain camera settings to improve the quality of the images from the cameras, 
+to change the colors or to flip the images. The settings that can be changed will depend on the camera
+that is being used. To get a list of the settings, use the `v4l2-ctl -d /dev/video0 --list-ctrls` command.
+In the case of the Raspberry Pi camera v2, this is the output from running that command:
+
+```
+uzevrpicamfmc20221:~$ v4l2-ctl -d /dev/video0 --list-ctrls
+
+User Controls
+
+                       exposure 0x00980911 (int)    : min=4 max=1759 step=1 default=1600 value=1600
+                horizontal_flip 0x00980914 (bool)   : default=0 value=0 flags=modify-layout
+                  vertical_flip 0x00980915 (bool)   : default=0 value=0 flags=modify-layout
+  red_gamma_correction_1_0_1_10 0x0098c9c1 (int)    : min=1 max=40 step=1 default=10 value=10 flags=slider
+ blue_gamma_correction_1_0_1_10 0x0098c9c2 (int)    : min=1 max=40 step=1 default=10 value=10 flags=slider
+ green_gamma_correction_1_0_1_1 0x0098c9c3 (int)    : min=1 max=40 step=1 default=10 value=10 flags=slider
+           low_latency_controls 0x0098ca21 (int)    : min=2 max=8 step=1 default=4 value=4
+
+Image Source Controls
+
+              vertical_blanking 0x009e0901 (int)    : min=4 max=64455 step=1 default=683 value=683
+            horizontal_blanking 0x009e0902 (int)    : min=1528 max=1528 step=1 default=1528 value=1528 flags=read-only
+                  analogue_gain 0x009e0903 (int)    : min=0 max=232 step=1 default=0 value=0
+                red_pixel_value 0x009e0904 (int)    : min=0 max=1023 step=1 default=1023 value=1023
+          green_red_pixel_value 0x009e0905 (int)    : min=0 max=1023 step=1 default=1023 value=1023
+               blue_pixel_value 0x009e0906 (int)    : min=0 max=1023 step=1 default=1023 value=1023
+         green_blue_pixel_value 0x009e0907 (int)    : min=0 max=1023 step=1 default=1023 value=1023
+
+Image Processing Controls
+
+                 link_frequency 0x009f0901 (intmenu): min=0 max=0 default=0 value=0 flags=read-only
+                     pixel_rate 0x009f0902 (int64)  : min=182400000 max=182400000 step=1 default=182400000 value=182400000 flags=read-only
+                   test_pattern 0x009f0903 (menu)   : min=0 max=4 default=0 value=0
+                   digital_gain 0x009f0905 (int)    : min=256 max=4095 step=1 default=256 value=256
+```
+
+To change the exposure setting, we can run this command:
+
+```
+v4l2-ctl -d /dev/video0 --set-ctrl=exposure=1000
+```
+
+To change the analogue gain setting, we can run this command:
+
+```
+v4l2-ctl -d /dev/video0 --set-ctrl=analogue_gain=200
+```
+
+To change the digital gain setting, we can run this command:
+
+```
+v4l2-ctl -d /dev/video0 --set-ctrl=digital_gain=1000
 ```
 
 ## Known issues and limitations

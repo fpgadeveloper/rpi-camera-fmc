@@ -23,7 +23,7 @@ Important links:
 
 This project is designed for version 2022.1 of the Xilinx tools (Vivado/Vitis/PetaLinux). 
 If you are using an older version of the Xilinx tools, then refer to the 
-[release tags](https://github.com/fpgadeveloper/rpi-camera-fmc/releases "releases")
+[release tags](https://github.com/fpgadeveloper/rpi-camera-fmc/tags "releases")
 to find the version of this repository that matches your version of the tools.
 
 In order to test this design on hardware, you will need the following:
@@ -34,6 +34,7 @@ In order to test this design on hardware, you will need the following:
 * One or more [Raspberry Pi Camera Module 2](https://www.raspberrypi.com/products/camera-module-v2/) and/or 
   [Digilent Pcam 5C](https://digilent.com/shop/pcam-5c-5-mp-fixed-focus-color-camera-module/) cameras
 * One [RPi Camera FMC](https://camerafmc.com/buy/ "RPi Camera FMC")
+* One DisplayPort monitor that supports 1080p video
 * One of the supported target boards listed below
 
 ### Target boards
@@ -43,7 +44,7 @@ In order to test this design on hardware, you will need the following:
 * [ZCU106](https://www.xilinx.com/zcu106) (HPC0: 4x cameras) **VERIFIED ON HW**
 * [PYNQ-ZU](https://www.tulembedded.com/FPGA/ProductsPYNQ-ZU.html) (LPC: 4x cameras) **VERIFIED ON HW**
 * [Genesys-ZU](https://digilent.com/shop/genesys-zu-zynq-ultrascale-mpsoc-development-board/) (LPC: 4x cameras)
-* [UltraZed EV carrier](https://www.xilinx.com/products/boards-and-kits/1-y3n9v1.html) (HPC: 4x cameras)
+* [UltraZed EV carrier](https://www.xilinx.com/products/boards-and-kits/1-y3n9v1.html) (HPC: 4x cameras)  **VERIFIED ON HW**
 
 ## Contribute
 
@@ -57,6 +58,7 @@ Thank you to everyone who supports us!
 
 ### The TODO list
 
+* Develop PYNQ support
 * Get a Genesys-ZU board and test the design on hardware.
 * Software support for more cameras (this will be an ongoing task due to the number of cameras available).
 * Debug: We are having trouble getting the UltraZed EV Carrier DisplayPort working with the standalone

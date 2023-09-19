@@ -5,6 +5,12 @@ the ARM processor of the Zynq UltraScale+ device. The application performs confi
 the cameras, the video pipes, the video mixer and the DisplayPort monitor. When running, the
 video streams from all connected cameras are displayed in a 2x2 grid on the monitor.
 
+![Video mixer output](images/video_mixer_standalone_app.png)
+
+The standalone application provides a starting platform for developing baremetal video applications.
+It also demonstrates the baremetal use of some key elements in an FPGA based video pipe such as the 
+Video Processing Subsystem IP, the Video Mixer IP, and the live video interface of the ZynqMP.
+
 ## Building the Vitis workspace
 
 To build the Vitis workspace and standalone application, you must first generate
