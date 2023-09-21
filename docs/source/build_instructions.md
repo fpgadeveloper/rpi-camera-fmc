@@ -21,6 +21,28 @@ The ZCU102 board is not supported by the Vivado ML Standard Edition (aka. the We
 so to build the designs for the ZCU102 board, you will need to either buy a license or download
 a 30-day evaluation license for Vivado ML Enterprise Edition.
 
+## Target designs
+
+This repo contains several designs that target the various supported development boards and their
+FMC connectors. The table below lists the target design name, the camera ports supported by the design and 
+the FMC connector on which to connect the RPi Camera FMC.
+
+| Target design | Camera ports   | Target board and connector                                           |
+|---------------|----------------|----------------------------------------------------------------------|
+| `zcu104`      | CAM0,1,2,3     | ZCU104  |
+| `zcu102_hpc0` | CAM0,1,2,3     | ZCU102, HPC0 connector |
+| `zcu102_hpc1` | CAM0,1         | ZCU102, HPC1 connector |
+| `zcu106_hpc0` | CAM0,1,2,3     | ZCU106, HPC0 connector |
+| `pynqzu`      | CAM0,1,2,3     | PYNQ-ZU  |
+| `genesyszu`   | CAM0,1,2,3     | Genesys-ZU  |
+| `uzev`        | CAM0,1,2,3     | UltraZed-EV Carrier |
+| `zcu106_pcie` | CAM1,2,3       | ZCU106, HPC0 connector<br> and [FPGA Drive FMC Gen4] on HPC1 |
+
+The `zcu106_pcie` design is unique in that it supports the use of the [FPGA Drive FMC Gen4] alongside
+the RPi Camera FMC. The [FPGA Drive FMC Gen4] allows an M.2 PCIe module to be connected to the board
+and can be used for a solid-state drive (SSD) or accelerator module. To use this design, you will need
+to have the [FPGA Drive FMC Gen4] mezzanine card.
+
 ## Windows users
 
 Windows users will be able to build the Vivado projects and compile the standalone applications,
@@ -55,8 +77,13 @@ physical or virtual) running one of the [supported Linux distributions].
 
 ## Linux users
 
-These projects can be build using a machine (either physical or virtual) with one of the 
+These projects can be built using a machine (either physical or virtual) with one of the 
 [supported Linux distributions].
+
+```{tip} The build steps can be completed in the order shown below, or
+you can go directly to the [build PetaLinux](#build-petalinux-project-in-linux) instructions below
+to build the Vivado and PetaLinux projects with a single command.
+```
 
 ### Build Vivado project in Linux
 
@@ -75,7 +102,7 @@ These projects can be build using a machine (either physical or virtual) with on
    make project TARGET=<target>
    ```
    Valid targets are: `zcu104`, `zcu102_hpc0`, `zcu102_hpc1`, `zcu106_hpc0`, `pynqzu`, `genesyszu`,
-   `uzev`.
+   `uzev` and `zcu106_pcie`.
    That will create the Vivado project and block design without generating a bitstream or exporting to XSA.
 4. Open the generated project in the Vivado GUI and click **Generate Bitstream**. Once the build is
    complete, select **File->Export->Export Hardware** and be sure to tick **Include bitstream** and use
@@ -88,7 +115,7 @@ These projects can be build using a machine (either physical or virtual) with on
    
 ### Build Vitis workspace in Linux
 
-The following steps are required if you wish to build and run the standalone application. You can
+The following steps are required if you wish to build and run the [standalone application](standalone). You can
 skip to the following section if you instead want to use PetaLinux. We are assuming that you have 
 completed the above steps and an XSA file has been generated for your selected target.
 
@@ -107,20 +134,28 @@ completed the above steps and an XSA file has been generated for your selected t
 
 ### Build PetaLinux project in Linux
 
-These steps assume that you have already followed the above steps to build the Vivado project for your
-target.
+These steps will build the PetaLinux project for the target design. You are not required to have built the
+Vivado design before following these steps, as the Makefile triggers the Vivado build for the corresponding
+design if it has not already been done.
 
-1. Launch PetaLinux by sourcing the `settings.sh` bash script, eg:
+1. Launch the setup script for Vivado (only if you skipped the Vivado build steps above):
+   ```
+   source <path-to-vivado-install>/2022.1/settings64.sh
+   ```
+2. Launch PetaLinux by sourcing the `settings.sh` bash script, eg:
    ```
    source <path-to-petalinux-install>/2022.1/settings.sh
    ```
-3. Build the Vivado and PetaLinux project for your specific target platform by running the following
+3. Build the PetaLinux project for your specific target platform by running the following
    commands and replacing `<target>` with one of the following: `zcu104`, `zcu102_hpc0`, `zcu102_hpc1`,
-   `zcu106_hpc0`, `pynqzu`, `uzev`
+   `zcu106_hpc0`, `pynqzu`, `uzev`, `zcu106_pcie`
    ```
    cd PetaLinux
    make petalinux TARGET=<target>
    ```
+   Note that if you skipped the Vivado build steps above, the Makefile will first generate and
+   and build the Vivado project, and then build the PetaLinux project.
 
 [supported Linux distributions]: https://docs.xilinx.com/r/2022.1-English/ug1144-petalinux-tools-reference-guide/Setting-Up-Your-Environment
+[FPGA Drive FMC Gen4]: https://fpgadrive.com
 
