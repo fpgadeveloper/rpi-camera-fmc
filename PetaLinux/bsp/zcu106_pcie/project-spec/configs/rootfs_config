@@ -2101,14 +2101,14 @@ CONFIG_libdfx=y
 #
 # xrt
 #
-# CONFIG_xrt is not set
+CONFIG_xrt=y
 # CONFIG_xrt-dev is not set
 # CONFIG_xrt-dbg is not set
 
 #
 # zocl
 #
-# CONFIG_zocl is not set
+CONFIG_zocl=y
 # CONFIG_zocl-dev is not set
 # CONFIG_zocl-dbg is not set
 
@@ -2120,7 +2120,7 @@ CONFIG_libdfx=y
 #
 # opencl-headers
 #
-# CONFIG_opencl-headers is not set
+CONFIG_opencl-headers=y
 
 #
 # protobuf
@@ -2624,7 +2624,7 @@ CONFIG_packagegroup-core-boot=y
 #
 # packagegroup-core-ssh-dropbear 
 #
-# CONFIG_packagegroup-core-ssh-dropbear is not set
+CONFIG_packagegroup-core-ssh-dropbear=y
 # CONFIG_packagegroup-core-ssh-dropbear-dev is not set
 # CONFIG_packagegroup-core-ssh-dropbear-dbg is not set
 
@@ -3591,15 +3591,15 @@ CONFIG_u-boot-tools=y
 #
 # libdrm 
 #
-# CONFIG_libdrm is not set
-# CONFIG_libdrm-tests is not set
+CONFIG_libdrm=y
+CONFIG_libdrm-tests=y
 # CONFIG_libdrm-drivers is not set
 # CONFIG_libdrm-amdgpu is not set
 # CONFIG_libdrm-nouveau is not set
 # CONFIG_libdrm-dev is not set
 # CONFIG_libdrm-freedreno is not set
 # CONFIG_libdrm-radeon is not set
-# CONFIG_libdrm-kms is not set
+CONFIG_libdrm-kms=y
 # CONFIG_libdrm-dbg is not set
 # CONFIG_libdrm-omap is not set
 
@@ -3935,7 +3935,7 @@ CONFIG_u-boot-tools=y
 #
 # packagegroup-petalinux-audio 
 #
-# CONFIG_packagegroup-petalinux-audio is not set
+CONFIG_packagegroup-petalinux-audio=y
 # CONFIG_packagegroup-petalinux-audio-dbg is not set
 # CONFIG_packagegroup-petalinux-audio-dev is not set
 
@@ -3956,7 +3956,7 @@ CONFIG_u-boot-tools=y
 #
 # packagegroup-petalinux-gstreamer 
 #
-# CONFIG_packagegroup-petalinux-gstreamer is not set
+CONFIG_packagegroup-petalinux-gstreamer=y
 # CONFIG_packagegroup-petalinux-gstreamer-dev is not set
 # CONFIG_packagegroup-petalinux-gstreamer-dbg is not set
 
@@ -3970,7 +3970,7 @@ CONFIG_u-boot-tools=y
 #
 # packagegroup-petalinux-matchbox 
 #
-# CONFIG_packagegroup-petalinux-matchbox is not set
+CONFIG_packagegroup-petalinux-matchbox=y
 # CONFIG_packagegroup-petalinux-matchbox-dbg is not set
 # CONFIG_packagegroup-petalinux-matchbox-dev is not set
 
@@ -4062,7 +4062,7 @@ CONFIG_u-boot-tools=y
 #
 # packagegroup-petalinux-v4lutils 
 #
-# CONFIG_packagegroup-petalinux-v4lutils is not set
+CONFIG_packagegroup-petalinux-v4lutils=y
 # CONFIG_packagegroup-petalinux-v4lutils-dbg is not set
 # CONFIG_packagegroup-petalinux-v4lutils-dev is not set
 
@@ -4076,7 +4076,7 @@ CONFIG_u-boot-tools=y
 #
 # packagegroup-petalinux-x11 
 #
-# CONFIG_packagegroup-petalinux-x11 is not set
+CONFIG_packagegroup-petalinux-x11=y
 # CONFIG_packagegroup-petalinux-x11-dev is not set
 # CONFIG_packagegroup-petalinux-x11-dbg is not set
 
@@ -4102,7 +4102,10 @@ CONFIG_Init-manager-systemd=y
 #
 # user packages 
 #
+CONFIG_board-fpga-autoload=y
 # CONFIG_gpio-demo is not set
+CONFIG_gstreamer-vcu-examples=y
+# CONFIG_gstreamer-vcu-notebooks is not set
 # CONFIG_peekpoke is not set
 
 #
@@ -4158,4 +4161,23 @@ CONFIG_opencv-staticdev=y
 CONFIG_initcams=y
 
 CONFIG_ADD_USERS_TO_GROUPS="petalinux:audio,video,disk,kmem;"
+
+# Tools for FPGA Drive FMC
+
+CONFIG_e2fsprogs=y
+CONFIG_e2fsprogs-mke2fs=y
+CONFIG_e2fsprogs-badblocks=y
+CONFIG_mtd-utils=y
+CONFIG_util-linux=y
+CONFIG_util-linux-mount=y
+CONFIG_util-linux-mkfs=y
+CONFIG_util-linux-blkid=y
+CONFIG_util-linux-fdisk=y
+CONFIG_pciutils=y
+CONFIG_bridge-utils=y
+
+# Add coreutils for full version of dd, and nvme-cli for NVMe tools
+
+CONFIG_coreutils=y
+CONFIG_nvme-cli=y
 

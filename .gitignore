@@ -9,6 +9,7 @@ Vi*/zcu102_hpc0/
 Vi*/zcu102_hpc1/
 Vi*/zcu104/
 Vi*/zcu106_hpc0/
+Vi*/zcu106_pcie/
 Vitis/*_app/
 Vitis/*_app_*/
 Vitis/.*/
@@ -23,5 +24,6 @@ PetaLinux/zcu102_hpc0/
 PetaLinux/zcu102_hpc1/
 PetaLinux/zcu104/
 PetaLinux/zcu106_hpc0/
+PetaLinux/zcu106_pcie/
 docs/build/
 Packages/

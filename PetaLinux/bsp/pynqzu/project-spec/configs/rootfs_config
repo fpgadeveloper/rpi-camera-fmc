@@ -4155,6 +4155,7 @@ CONFIG_packagegroup-petalinux-self-hosted=y
 CONFIG_packagegroup-petalinux-v4lutils=y
 CONFIG_cmake=y
 CONFIG_opencv-staticdev=y
+CONFIG_initcams=y
 
 CONFIG_ADD_USERS_TO_GROUPS="petalinux:audio,video,disk,kmem;"
 

@@ -13,7 +13,7 @@ BD_NAME = rpi
 JOBS ?= 8
 
 # valid targets
-TARGET_LIST = zcu104 zcu102_hpc0 zcu102_hpc1 zcu106_hpc0 pynqzu genesyszu uzev
+TARGET_LIST = zcu104 zcu102_hpc0 zcu102_hpc1 zcu106_hpc0 pynqzu genesyszu uzev zcu106_pcie
 
 # default target
 TARGET ?= none

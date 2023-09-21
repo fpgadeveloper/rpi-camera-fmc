@@ -18,4 +18,5 @@ CONFIG_packagegroup-petalinux-x11
 CONFIG_packagegroup-petalinux-v4lutils
 CONFIG_cmake
 CONFIG_opencv-staticdev
+CONFIG_initcams
 

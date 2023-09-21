@@ -131,7 +131,22 @@ losing data on one of your hard drives.
    connected, so if you have only connected 2 cameras for example, then you should only see 2 video devices
    and 2 media devices listed.
 
-3. Use Gstreamer to display the video from a single camera on the DisplayPort monitor. First disable the 
+3. Run the init script with the command `init_cams`.
+   ```
+   zcu104rpicamfmc20221:~$ init_cams
+   Detected and configured the following cameras on RPi Camera FMC:
+    - CAM0: /dev/media0 = /dev/video0
+    - CAM1: /dev/media1 = /dev/video1
+    - CAM2: /dev/media2 = /dev/video2
+    - CAM3: /dev/media3 = /dev/video3
+   ```
+   The init script is located in `/usr/bin` and it can be used to show all of the connected RPi cameras
+   and the media and video devices to which they are associated. It is not necessary to use the init script
+   but it can make it easier to find the media and video devices for the camera that you wish to target with
+   GStreamer or other applications. It also initializes each camera's analog and digital gain parameters,
+   which otherwise default to their lowest values, causing dark images.
+
+4. Use Gstreamer to display the video from a single camera on the DisplayPort monitor. First disable the 
    desktop environment so that GStreamer can take over the monitor, then run Gstreamer as follows:
    ```
    sudo systemctl isolate multi-user.target
@@ -140,7 +155,7 @@ losing data on one of your hard drives.
    To test a different camera, change the targeted media device from `/dev/media0` to another, such as
    `/dev/media1`. To stop streaming the video, press *Ctrl-C*.
 
-4. If you wish to get the PetaLinux GUI desktop environment back, run the following command:
+5. If you wish to get the PetaLinux GUI desktop environment back, run the following command:
    ```
    sudo systemctl isolate graphical.target
    ```
@@ -150,11 +165,11 @@ losing data on one of your hard drives.
 ### Video pipe settings
 
 The `media-ctl` command can be useful in debugging issues with your video pipe design. Below we show an
-example of the `media-ctl -p /dev/media0` output, which shows each of the elements in the video pipe as well
+example of the `media-ctl -d /dev/media0 -p` output, which shows each of the elements in the video pipe as well
 as how they are connected and configured.
 
 ```
-zcu104rpicamfmc20221:~$ media-ctl -p /dev/media0
+zcu104rpicamfmc20221:~$ media-ctl -d /dev/media0 -p
 Media controller API version 5.15.19
 
 Media device information
@@ -232,6 +247,130 @@ media-ctl -V '"a0040000.v_proc_ss":0  [fmt:VYYUYY8_1X24/1920x1080 field:none col
 media-ctl -V '"a0040000.v_proc_ss":1  [fmt:VYYUYY8_1X24/1920x1080 field:none colorspace:srgb]' -d /dev/media0
 ```
 
+```{tip}
+In these designs, the device tree has usually configured these interfaces correctly already
+and you don't need to change them.
+```
+
+### Video and media devices
+
+In PetaLinux, each connected RPi camera will be associated with a video device and a media device.
+When using tools such as GStreamer, we need to specify the video or media device to use, so
+it is important to know which cameras (which ports) are associated with which video devices and 
+which media devices. Note that they are not necessarily aligned by index (ie. `/dev/video0` and 
+`/dev/media0` are not necessarily associated with the same camera). So in the case that we have not 
+connected a camera to every port that is supported by our hardware design, we need to determine the 
+video and media device associations.
+
+When you list the video devices using `v4l2-ctl --list-devices`, you will find a video device 
+(eg. `/dev/video0`) for every video pipe in the hardware (Vivado) design. In other words, you will
+find a video device for every camera that the hardware is *capable of connecting with*. However,
+it is important to know that you will only find a media device (eg. `/dev/media0`) for every camera 
+that *has actually been physically connected* to the hardware and successfully enumerated.
+
+To make this clear, let's consider a typical example. Most of the designs in this project are built 
+to handle 4 cameras, but let's say that we only connect 2x RPi cameras, one on port CAM1 and another 
+on port CAM2. This would result in the following list of devices:
+
+```
+zcu104rpicamfmc20221:~$ v4l2-ctl --list-devices
+vcap_mipi_0_v_proc output 0 (platform:vcap_mipi_0_v_proc:0):
+        /dev/video0
+
+vcap_mipi_1_v_proc output 0 (platform:vcap_mipi_1_v_proc:0):
+        /dev/video1
+
+vcap_mipi_2_v_proc output 0 (platform:vcap_mipi_2_v_proc:0):
+        /dev/video2
+
+vcap_mipi_3_v_proc output 0 (platform:vcap_mipi_3_v_proc:0):
+        /dev/video3
+
+Xilinx Video Composite Device (platform:xilinx-video):
+        /dev/media0
+        /dev/media1
+```
+
+Notice that we have 4 video devices, but only 2 media devices. That is because the hardware can support
+4 cameras, but only 2 have been connected and enumerated. From the above, we can determine these associations:
+
+* CAM1 is associated with `/dev/video1` (since `platform:vcap_mipi_1_v_proc` is CAM1)
+* CAM2 is associated with `/dev/video2` (since `platform:vcap_mipi_2_v_proc` is CAM2)
+
+To determine the associations with the media devices, we need to use a different tool: `media-ctl`.
+As shown in the previous section, we can use the command `media-ctl -p /dev/media0` to inspect
+the video pipe elements of a particular media device. One of those elements, usually the first one,
+is the video device. We can use `grep` to filter out the specific line indicating the associated
+video device:
+
+```
+zcu104rpicamfmc20221:~$ media-ctl -d /dev/media0 -p | grep "dev/video"
+            device node name /dev/video1
+zcu104rpicamfmc20221:~$ media-ctl -d /dev/media1 -p | grep "dev/video"
+            device node name /dev/video2
+```
+
+From the above, we determined these associations:
+
+* `/dev/video1` (which we know is CAM1) is associated with `/dev/media0`
+* `/dev/video2` (which we know is CAM2) is associated with `/dev/media1`
+
+Below are a few examples of camera connections and the resulting video and media device
+associations.
+
+#### Only CAM1 and CAM2 connected
+
+| Port  | Video device  | Media device  |
+|-------|---------------|---------------|
+| CAM0  | `/dev/video0` | N/C           |
+| CAM1  | `/dev/video1` | `/dev/media0` |
+| CAM2  | `/dev/video2` | `/dev/media1` |
+| CAM3  | `/dev/video3` | N/C           |
+
+#### Only CAM0 and CAM1 connected
+
+| Port  | Video device  | Media device  |
+|-------|---------------|---------------|
+| CAM0  | `/dev/video0` | `/dev/media0` |
+| CAM1  | `/dev/video1` | `/dev/media1` |
+| CAM2  | `/dev/video2` | N/C           |
+| CAM3  | `/dev/video3` | N/C           |
+
+#### Only CAM2 and CAM3 connected
+
+| Port  | Video device  | Media device  |
+|-------|---------------|---------------|
+| CAM0  | `/dev/video0` | N/C           |
+| CAM1  | `/dev/video1` | N/C           |
+| CAM2  | `/dev/video2` | `/dev/media0` |
+| CAM3  | `/dev/video3` | `/dev/media1` |
+
+### Init script
+
+To make it easier for the user to identify the connected cameras, and their associated video and
+media devices, a bash script is included in the root file system. When executed, the script lists the
+detected cameras, their physical ports, and their video and media devices. It also initializes the 
+analog and digital gain parameters of each camera.
+
+The script is located in `/usr/bin` and can be called from the command line by typing `init_cams`.
+An example output of the script is shown below:
+
+```
+zcu104rpicamfmc20221:~$ init_cams
+Detected and configured the following cameras on RPi Camera FMC:
+ - CAM1: /dev/media0 = /dev/video1
+ - CAM2: /dev/media1 = /dev/video2
+ - CAM3: /dev/media2 = /dev/video3
+```
+
+In the example above, only cameras CAM1, CAM2 and CAM3 are physically connected. Notice that the
+video and media device indices don't align, which can occur when less than 4 cameras are connected.
+
+If you want to modify the init script, you can find it in the BSP files for your target board in this
+location of the repository: `PetaLinux/bsp/<target>/project-spec/meta-user/recipes-apps/init_cams/files/init_cams`
+Alternatively, from PetaLinux you can copy the file from `/usr/bin/init_cams` to the home directory
+and modify the copy.
+
 ### Yavta
 
 An alternative way to get images from the cameras is to use the `yavta` tool, for example:
@@ -295,6 +434,19 @@ To change the digital gain setting, we can run this command:
 ```
 v4l2-ctl -d /dev/video0 --set-ctrl=digital_gain=1000
 ```
+
+```{tip}
+If you find that you cannot change one of the settings above, or that some of them are missing, you might
+be targetting the wrong video device. If you target a video device that has no camera physically connected
+to it (thus also does not have an associated media device), you will find that not all of the settings are
+listed and available to modify. Read section [Video and media devices](#video-and-media-devices) for more
+information on determining the correct video device for the camera you intend to target.
+```
+
+If you wish to change certain settings on all of the connected cameras, one easy way to do that is to copy
+the [init script](#init-script) located at `/usr/bin/init_cams` and add the desired configuration commands
+in the appropriate section of the script. Then you can run your modified version of the script from the 
+command line and the configurations will be made to all of the connected cameras.
 
 ## Known issues and limitations
 

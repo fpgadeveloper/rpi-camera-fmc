@@ -34,13 +34,14 @@ if {![string equal $ver $version_required]} {
 set_param board.repoPaths [get_property LOCAL_ROOT_DIR [xhub::get_xstores xilinx_board_store]]
 
 # Possible targets
-dict set target_dict zcu104 { zcu104 { 0 1 2 3 } zynqmp }
-dict set target_dict zcu102_hpc0 { zcu102 { 0 1 2 3 } zynqmp }
-dict set target_dict zcu102_hpc1 { zcu102 { 0 1 } zynqmp }
-dict set target_dict zcu106_hpc0 { zcu106 { 0 1 2 3 } zynqmp }
-dict set target_dict pynqzu { pynqzu { 0 1 2 3 } zynqmp }
-dict set target_dict genesyszu { gzu_5ev { 0 1 2 3 } zynqmp }
-dict set target_dict uzev { ultrazed_7ev_cc { 0 1 2 3 } zynqmp }
+dict set target_dict zcu104 { zcu104 { 0 1 2 3 } "" zynqmp }
+dict set target_dict zcu102_hpc0 { zcu102 { 0 1 2 3 } "" zynqmp }
+dict set target_dict zcu102_hpc1 { zcu102 { 0 1 } "" zynqmp }
+dict set target_dict zcu106_hpc0 { zcu106 { 0 1 2 3 } "" zynqmp }
+dict set target_dict pynqzu { pynqzu { 0 1 2 3 } "" zynqmp }
+dict set target_dict genesyszu { gzu_5ev { 0 1 2 3 } "" zynqmp }
+dict set target_dict uzev { ultrazed_7ev_cc { 0 1 2 3 } "" zynqmp }
+dict set target_dict zcu106_pcie { zcu106 { 1 2 3 } hpc1 zynqmp_pcie }
 
 if { $argc == 1 } {
   set target [lindex $argv 0]
@@ -95,7 +96,8 @@ if { $proj_board == "" } {
 
 set fpga_part [get_property PART_NAME [get_board_parts $proj_board]]
 set cams [lindex [dict get $target_dict $target] 1]
-set bd_script [lindex [dict get $target_dict $target] 2]
+set pcie_fmc [lindex [dict get $target_dict $target] 2]
+set bd_script [lindex [dict get $target_dict $target] 3]
 
 # Set the reference directory for source file relative paths (by default the value is script directory path)
 set origin_dir "."
@@ -187,7 +189,7 @@ puts "INFO: Project created:${design_name}"
 source $origin_dir/src/bd/mipi_locs.tcl
 
 # Create block design
-source $origin_dir/src/bd/design_1-${bd_script}.tcl
+source $origin_dir/src/bd/bd_${bd_script}.tcl
 
 # Generate the wrapper
 make_wrapper -files [get_files *${block_name}.bd] -top
