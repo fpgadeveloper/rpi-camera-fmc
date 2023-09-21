@@ -146,16 +146,20 @@ losing data on one of your hard drives.
    GStreamer or other applications. It also initializes each camera's analog and digital gain parameters,
    which otherwise default to their lowest values, causing dark images.
 
-4. Use Gstreamer to display the video from a single camera on the DisplayPort monitor. First disable the 
-   desktop environment so that GStreamer can take over the monitor, then run Gstreamer as follows:
+4. If you see the PetaLinux desktop environment on the monitor, you will need to disable it before running
+   GStreamer in the next step. Run this command to disable the desktop environment:
    ```
    sudo systemctl isolate multi-user.target
-   gst-launch-1.0 mediasrcbin media-device=/dev/media0 v4l2src0::io-mode=mmap ! "video/x-raw, width=1920, height=1080, format=NV12, framerate=30/1" ! kmssink plane-id=39 fullscreen-overlay=true -v
+   ```
+
+5. Use Gstreamer to display the video from a single camera on the DisplayPort monitor:
+   ```
+   gst-launch-1.0 mediasrcbin media-device=/dev/media0 v4l2src0::io-mode=mmap ! "video/x-raw, width=1920, height=1080, format=NV12, framerate=60/1" ! kmssink plane-id=39 fullscreen-overlay=true -v
    ```
    To test a different camera, change the targeted media device from `/dev/media0` to another, such as
    `/dev/media1`. To stop streaming the video, press *Ctrl-C*.
 
-5. If you wish to get the PetaLinux GUI desktop environment back, run the following command:
+6. If you wish to get the PetaLinux GUI desktop environment back, run the following command:
    ```
    sudo systemctl isolate graphical.target
    ```
