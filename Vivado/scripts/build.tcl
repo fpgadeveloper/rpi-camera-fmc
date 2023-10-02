@@ -34,14 +34,14 @@ if {![string equal $ver $version_required]} {
 set_param board.repoPaths [get_property LOCAL_ROOT_DIR [xhub::get_xstores xilinx_board_store]]
 
 # Possible targets
-dict set target_dict zcu104 { zcu104 { 0 1 2 3 } "" zynqmp }
-dict set target_dict zcu102_hpc0 { zcu102 { 0 1 2 3 } "" zynqmp }
-dict set target_dict zcu102_hpc1 { zcu102 { 0 1 } "" zynqmp }
-dict set target_dict zcu106_hpc0 { zcu106 { 0 1 2 3 } "" zynqmp }
-dict set target_dict pynqzu { pynqzu { 0 1 2 3 } "" zynqmp }
-dict set target_dict genesyszu { gzu_5ev { 0 1 2 3 } "" zynqmp }
-dict set target_dict uzev { ultrazed_7ev_cc { 0 1 2 3 } "" zynqmp }
-dict set target_dict zcu106_pcie { zcu106 { 1 2 3 } hpc1 zynqmp_pcie }
+dict set target_dict zcu104 { xilinx.com zcu104 { 0 1 2 3 } "" zynqmp }
+dict set target_dict zcu102_hpc0 { xilinx.com zcu102 { 0 1 2 3 } "" zynqmp }
+dict set target_dict zcu102_hpc1 { xilinx.com zcu102 { 0 1 } "" zynqmp }
+dict set target_dict zcu106_hpc0 { xilinx.com zcu106 { 0 1 2 3 } "" zynqmp }
+dict set target_dict pynqzu { tul.com.tw pynqzu { 0 1 2 3 } "" zynqmp }
+dict set target_dict genesyszu { digilentinc.com gzu_5ev { 0 1 2 3 } "" zynqmp }
+dict set target_dict uzev { avnet.com ultrazed_7ev_cc { 0 1 2 3 } "" zynqmp }
+dict set target_dict zcu106_pcie { xilinx.com zcu106 { 1 2 3 } hpc1 zynqmp_pcie }
 
 if { $argc == 1 } {
   set target [lindex $argv 0]
@@ -83,21 +83,23 @@ if { $argc == 1 } {
 
 set design_name ${target}
 set block_name rpi
-set board_name [lindex [dict get $target_dict $target] 0]
-set proj_board [get_board_parts "*:$board_name:*" -latest_file_version]
+set board_url [lindex [dict get $target_dict $target] 0]
+set board_name [lindex [dict get $target_dict $target] 1]
+set proj_board [get_board_parts "$board_url:$board_name:*" -latest_file_version]
 # Check if the board files are installed, if not, install them
 if { $proj_board == "" } {
     puts "Failed to find board files for $board_name. Installing board files..."
-    xhub::install [xhub::get_xitems *$board_name*]
-    set proj_board [get_board_parts "*:$board_name:*" -latest_file_version]
+    xhub::refresh_catalog [xhub::get_xstores xilinx_board_store]
+    xhub::install [xhub::get_xitems $board_url:xilinx_board_store:$board_name*]
+    set proj_board [get_board_parts "$board_url:$board_name:*" -latest_file_version]
 } else {
     puts "Board files found for $board_name"
 }
 
 set fpga_part [get_property PART_NAME [get_board_parts $proj_board]]
-set cams [lindex [dict get $target_dict $target] 1]
-set pcie_fmc [lindex [dict get $target_dict $target] 2]
-set bd_script [lindex [dict get $target_dict $target] 3]
+set cams [lindex [dict get $target_dict $target] 2]
+set pcie_fmc [lindex [dict get $target_dict $target] 3]
+set bd_script [lindex [dict get $target_dict $target] 4]
 
 # Set the reference directory for source file relative paths (by default the value is script directory path)
 set origin_dir "."

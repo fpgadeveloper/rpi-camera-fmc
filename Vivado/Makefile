@@ -1,29 +1,35 @@
 # Opsero Electronic Design Inc. 2023
 #
-# This Makefile can be used to build these projects from sources.
+# This Makefile can be used to build the Vivado projects.
 
 CP = cp -rf
 MKDIR = mkdir -p
 RM = rm -rf
-XSCT = $(XILINX_VITIS)/bin/xsct
+ROOT_DIR = $(shell pwd)
 VIVADO = $(XILINX_VIVADO)/bin/vivado
 BD_NAME = rpi
 
-# default number of jobs
+# defaults
+.DEFAULT_GOAL := xsa
+TARGET ?= none
 JOBS ?= 8
 
 # valid targets
-TARGET_LIST = zcu104 zcu102_hpc0 zcu102_hpc1 zcu106_hpc0 pynqzu genesyszu uzev zcu106_pcie
+zcu104_target := 0
+zcu102_hpc0_target := 0
+zcu102_hpc1_target := 0
+zcu106_hpc0_target := 0
+pynqzu_target := 0
+genesyszu_target := 0
+uzev_target := 0
+zcu106_pcie_target := 0
 
-# default target
-TARGET ?= none
+TARGET_LIST := $(patsubst %_target,%,$(filter %_target,$(.VARIABLES)))
 
+# Vivado paths
 VIV_SCRIPT_BD = scripts/build.tcl
 VIV_SCRIPT_XSA = scripts/xsa.tcl
 VIV_DIR = $(TARGET)
-
-# source files
-VIV_SRC_XDC = src/
 
 # output files
 VIV_XPR = $(VIV_DIR)/$(TARGET).xpr
@@ -32,8 +38,8 @@ VIV_XPR_LOG = $(TARGET)_xpr.log
 VIV_XPR_JOU = $(TARGET)_xpr.jou
 VIV_XSA_LOG = $(TARGET)_xsa.log
 VIV_XSA_JOU = $(TARGET)_xsa.jou
-VIV_BD = $(VIV_DIR)/$(TARGET).srcs/sources_1/bd/$(BD_NAME)/$(BD_NAME).bd
 VIV_BIT = $(VIV_DIR)/$(TARGET).runs/impl_1/$(BD_NAME)_wrapper.bit
+VIV_LOCK = $(ROOT_DIR)/.$(TARGET).lock
 
 .PHONY: help
 help:
@@ -58,15 +64,31 @@ help:
 	@echo '  make clean_all'
 	@echo '    Same as make clean but for all targets.'
 	@echo ''
-	@echo '  Valid TARGET: ${TARGET_LIST}'
-	@echo '  Valid JOBS: optional param to set number of synthesis jobs (default 8)'
+	@echo 'Parameters:'
+	@echo ''
+	@echo '  TARGET: Name of the target design, must be one of the following:'
+	@$(foreach targ,$(sort $(TARGET_LIST)),echo "    - $(targ)";)
+	@echo ''
+	@echo '  JOBS: Optional param to set number of synthesis jobs (default 8)'
+	@echo ''
+	@echo 'Example usage:'
+	@echo '  make xsa TARGET=$(word 1,$(TARGET_LIST))'
 	@echo ''
 
 .PHONY: all
 all: xsa_all
 
 .PHONY: xsa
-xsa: $(VIV_XSA) check_warnings
+xsa:
+	@if [ -f $(VIV_LOCK) ]; then \
+		echo "$(TARGET) is locked. Skipping..."; \
+	else \
+		touch $(VIV_LOCK); \
+		$(MAKE) xsa_locked TARGET=$(TARGET) JOBS=$(JOBS); \
+		rm -f $(VIV_LOCK); \
+	fi
+
+xsa_locked: $(VIV_XSA) check_warnings
 $(VIV_XSA): $(VIV_XPR)
 	$(RM) $(VIV_XSA_LOG) $(VIV_XSA_JOU)
 	$(VIVADO) -mode batch -notrace -source $(VIV_SCRIPT_XSA) -log $(VIV_XSA_LOG) -journal $(VIV_XSA_JOU) -tclargs $(TARGET) $(JOBS)
@@ -87,22 +109,18 @@ xsa_all:
 	done
 
 .PHONY: project
-project: $(VIV_XPR)
+project: check_target
+	@if [ -f $(VIV_LOCK) ]; then \
+		echo "$(TARGET) is locked. Skipping..."; \
+	else \
+		touch $(VIV_LOCK); \
+		$(MAKE) project_locked TARGET=$(TARGET) JOBS=$(JOBS); \
+		rm -f $(VIV_LOCK); \
+	fi
+
+project_locked: $(VIV_XPR)
 $(VIV_XPR):
-	@valid=0; \
-	for p in $(TARGET_LIST); do \
-	  if [ "$$p" = "$(TARGET)" ]; then \
-	    valid=1; \
-	    break; \
-	  fi \
-	done; \
-	if [ "$$valid" -ne 1 ]; then \
-	  echo 'Valid target required; you specified: TARGET=$(TARGET).'; \
-	  echo 'Example: make project TARGET=zcu104'; \
-	  echo 'Valid TARGETs: $(TARGET_LIST)'; \
-	  exit 1; \
-	fi; \
-	echo 'Create Vivado project $(TARGET)'; \
+	@echo 'Create Vivado project $(TARGET)'
 	$(RM) $(VIV_XPR_LOG) $(VIV_XPR_JOU)
 	$(VIVADO) -mode batch -notrace -source $(VIV_SCRIPT_BD) -log $(VIV_XPR_LOG) -journal $(VIV_XPR_JOU) -tclargs $(TARGET)
 	$(CP) $(VIV_XPR_LOG) $(VIV_XPR_JOU) $(TARGET)/.
@@ -111,25 +129,12 @@ $(VIV_XPR):
 .PHONY: project_all
 project_all:
 	for targ in $(TARGET_LIST); do \
-		$(MAKE) project TARGET=$$targ; \
+		$(MAKE) project TARGET=$$targ JOBS=$(JOBS); \
 	done
 
 .PHONY: clean
-clean:
-	@valid=0; \
-	for p in $(TARGET_LIST); do \
-	  if [ "$$p" = "$(TARGET)" ]; then \
-	    valid=1; \
-	    break; \
-	  fi \
-	done; \
-	if [ "$$valid" -ne 1 ]; then \
-	  echo 'Valid target required; you specified: TARGET=$(TARGET).'; \
-	  echo 'Example usage: make clean TARGET=zcu104'; \
-	  echo 'Valid TARGETs: $(TARGET_LIST)'; \
-	  exit 1; \
-	fi; \
-	echo 'Cleaning project $(TARGET)'; \
+clean: check_target
+	@echo 'Cleaning project $(TARGET)'
 	$(RM) $(VIV_DIR)
 
 .PHONY: clean_all
@@ -138,4 +143,10 @@ clean_all:
 		$(MAKE) clean TARGET=$$targ; \
 	done
 	$(RM) .Xil vivado*.log vivado*.jou
+
+check_target:
+ifndef $(TARGET)_target
+	$(error "Please specify a TARGET. Use 'make help' to see valid targets.")
+endif
+
 

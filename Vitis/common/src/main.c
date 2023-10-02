@@ -72,6 +72,9 @@
 #define CAM2_FRMBUF_BUFR_ADDR 0x30000000
 #define CAM3_FRMBUF_BUFR_ADDR 0x40000000
 
+// Number of cameras = Number of MIPI instances
+#define NUM_CAMS XPAR_XCSISS_NUM_INSTANCES
+
 // Common IP
 XScuGic Intc;
 XVtc VtcInst;
@@ -81,8 +84,9 @@ XGpioPs EmioGpio;
 XV_tpg Tpg;
 XV_axi4s_remap Remap;
 
-// Video pipes 0 and 1
-VideoPipe Cam0,Cam1;
+#ifdef XPAR_MIPI_0_AXI_IIC_0_DEVICE_ID
+// Video pipe 0
+VideoPipe Cam0;
 
 // Provide the device IDs for the elements of each video pipe
 VideoPipeDevIds CamDevIds0 = {
@@ -93,11 +97,17 @@ VideoPipeDevIds CamDevIds0 = {
 		CAM0_FRMBUF_BUFR_ADDR,
 		XPAR_MIPI_0_DEMOSAIC_0_DEVICE_ID,
 		XPAR_MIPI_0_V_GAMMA_LUT_DEVICE_ID,
-		XPAR_XVPROCSS_0_DEVICE_ID,
+		XPAR_MIPI_0_V_PROC_DEVICE_ID,
 		XPAR_FABRIC_MIPI_0_AXI_IIC_0_IIC2INTC_IRPT_INTR,
 		XPAR_FABRIC_MIPI_0_V_FRMBUF_WR_INTERRUPT_INTR,
 		XPAR_FABRIC_MIPI_0_V_FRMBUF_RD_INTERRUPT_INTR
 };
+#endif
+
+#ifdef XPAR_MIPI_1_AXI_IIC_0_DEVICE_ID
+// Video pipe 1
+VideoPipe Cam1;
+
 VideoPipeDevIds CamDevIds1 = {
 		XPAR_MIPI_1_AXI_IIC_0_DEVICE_ID,
 		XPAR_MIPI_1_AXI_GPIO_0_DEVICE_ID,
@@ -106,16 +116,16 @@ VideoPipeDevIds CamDevIds1 = {
 		CAM1_FRMBUF_BUFR_ADDR,
 		XPAR_MIPI_1_DEMOSAIC_0_DEVICE_ID,
 		XPAR_MIPI_1_V_GAMMA_LUT_DEVICE_ID,
-		XPAR_XVPROCSS_1_DEVICE_ID,
+		XPAR_MIPI_1_V_PROC_DEVICE_ID,
 		XPAR_FABRIC_MIPI_1_AXI_IIC_0_IIC2INTC_IRPT_INTR,
 		XPAR_FABRIC_MIPI_1_V_FRMBUF_WR_INTERRUPT_INTR,
 		XPAR_FABRIC_MIPI_1_V_FRMBUF_RD_INTERRUPT_INTR
 };
+#endif
 
 #ifdef XPAR_MIPI_2_AXI_IIC_0_DEVICE_ID
-#define NUM_CAMS 4
-// Video pipes 2 and 3
-VideoPipe Cam2,Cam3;
+// Video pipe 2
+VideoPipe Cam2;
 
 VideoPipeDevIds CamDevIds2 = {
 		XPAR_MIPI_2_AXI_IIC_0_DEVICE_ID,
@@ -125,11 +135,17 @@ VideoPipeDevIds CamDevIds2 = {
 		CAM2_FRMBUF_BUFR_ADDR,
 		XPAR_MIPI_2_DEMOSAIC_0_DEVICE_ID,
 		XPAR_MIPI_2_V_GAMMA_LUT_DEVICE_ID,
-		XPAR_XVPROCSS_2_DEVICE_ID,
+		XPAR_MIPI_2_V_PROC_DEVICE_ID,
 		XPAR_FABRIC_MIPI_2_AXI_IIC_0_IIC2INTC_IRPT_INTR,
 		XPAR_FABRIC_MIPI_2_V_FRMBUF_WR_INTERRUPT_INTR,
 		XPAR_FABRIC_MIPI_2_V_FRMBUF_RD_INTERRUPT_INTR
 };
+#endif
+
+#ifdef XPAR_MIPI_3_AXI_IIC_0_DEVICE_ID
+// Video pipe 3
+VideoPipe Cam3;
+
 VideoPipeDevIds CamDevIds3 = {
 		XPAR_MIPI_3_AXI_IIC_0_DEVICE_ID,
 		XPAR_MIPI_3_AXI_GPIO_0_DEVICE_ID,
@@ -138,13 +154,11 @@ VideoPipeDevIds CamDevIds3 = {
 		CAM3_FRMBUF_BUFR_ADDR,
 		XPAR_MIPI_3_DEMOSAIC_0_DEVICE_ID,
 		XPAR_MIPI_3_V_GAMMA_LUT_DEVICE_ID,
-		XPAR_XVPROCSS_3_DEVICE_ID,
+		XPAR_MIPI_3_V_PROC_DEVICE_ID,
 		XPAR_FABRIC_MIPI_3_AXI_IIC_0_IIC2INTC_IRPT_INTR,
 		XPAR_FABRIC_MIPI_3_V_FRMBUF_WR_INTERRUPT_INTR,
 		XPAR_FABRIC_MIPI_3_V_FRMBUF_RD_INTERRUPT_INTR
 };
-#else
-#define NUM_CAMS 2
 #endif
 
 /*
@@ -160,7 +174,6 @@ static const XVidC_VideoWindow MixLayerConfig[4] =
 };
 
 VideoPipe *ActiveCams[NUM_CAMS];
-uint8_t ActiveCamIndex[NUM_CAMS];
 uint8_t NumActiveCams;
 
 // Common target device IDs
@@ -321,29 +334,31 @@ int main()
 	 * Initialize Video pipe for each camera
 	 */
 	NumActiveCams = 0;
+#ifdef XPAR_MIPI_0_AXI_IIC_0_DEVICE_ID
 	pipe_init(&Cam0, &CamDevIds0, &Intc);
 	if(Cam0.IsConnected) {
 		ActiveCams[NumActiveCams] = &Cam0;
-		ActiveCamIndex[NumActiveCams] = 0;
 		NumActiveCams++;
 	}
+#endif
+#ifdef XPAR_MIPI_1_AXI_IIC_0_DEVICE_ID
 	pipe_init(&Cam1, &CamDevIds1, &Intc);
 	if(Cam1.IsConnected) {
 		ActiveCams[NumActiveCams] = &Cam1;
-		ActiveCamIndex[NumActiveCams] = 1;
 		NumActiveCams++;
 	}
+#endif
 #ifdef XPAR_MIPI_2_AXI_IIC_0_DEVICE_ID
 	pipe_init(&Cam2, &CamDevIds2, &Intc);
 	if(Cam2.IsConnected) {
 		ActiveCams[NumActiveCams] = &Cam2;
-		ActiveCamIndex[NumActiveCams] = 2;
 		NumActiveCams++;
 	}
+#endif
+#ifdef XPAR_MIPI_3_AXI_IIC_0_DEVICE_ID
 	pipe_init(&Cam3, &CamDevIds3, &Intc);
 	if(Cam3.IsConnected) {
 		ActiveCams[NumActiveCams] = &Cam3;
-		ActiveCamIndex[NumActiveCams] = 3;
 		NumActiveCams++;
 	}
 #endif
@@ -482,7 +497,7 @@ int main()
 	 */
 	for(int i = 0; i < NumActiveCams; i++) {
 		pipe_start_camera(ActiveCams[i]);
-		XVMix_LayerEnable(&VMix, ActiveCamIndex[i]+1);
+		XVMix_LayerEnable(&VMix, i+1);
 	}
 
 	while(1){

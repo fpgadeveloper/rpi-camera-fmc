@@ -27,3 +27,6 @@ PetaLinux/zcu106_hpc0/
 PetaLinux/zcu106_pcie/
 docs/build/
 Packages/
+bootimages/
+PetaLinux/offline.txt
+
