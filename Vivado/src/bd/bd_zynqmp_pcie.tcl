@@ -222,9 +222,9 @@ proc create_mipi_pipe { index loc_dict } {
   set v_demosaic_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:v_demosaic demosaic_0 ]
   set_property -dict [ list \
     CONFIG.SAMPLES_PER_CLOCK $samples_pc \
-    CONFIG.MAX_COLS {1920} \
+    CONFIG.MAX_COLS {3280} \
     CONFIG.MAX_DATA_WIDTH {8} \
-    CONFIG.MAX_ROWS {1080} \
+    CONFIG.MAX_ROWS {2464} \
     CONFIG.ALGORITHM {1} \
     CONFIG.USE_URAM {1} \
   ] $v_demosaic_0
@@ -233,16 +233,16 @@ proc create_mipi_pipe { index loc_dict } {
   set v_gamma_lut [ create_bd_cell -type ip -vlnv xilinx.com:ip:v_gamma_lut v_gamma_lut ]
   set_property -dict [ list \
     CONFIG.SAMPLES_PER_CLOCK $samples_pc \
-    CONFIG.MAX_COLS {1920} \
+    CONFIG.MAX_COLS {3280} \
     CONFIG.MAX_DATA_WIDTH {8} \
-    CONFIG.MAX_ROWS {1080} \
+    CONFIG.MAX_ROWS {2464} \
   ] $v_gamma_lut
   
   # Add and configure the Video Processor subsystem
   set v_proc [ create_bd_cell -type ip -vlnv xilinx.com:ip:v_proc_ss v_proc ]
   set_property -dict [ list \
-    CONFIG.C_MAX_COLS {1920} \
-    CONFIG.C_MAX_ROWS {1080} \
+    CONFIG.C_MAX_COLS {3280} \
+    CONFIG.C_MAX_ROWS {2464} \
     CONFIG.C_ENABLE_DMA {false} \
     CONFIG.C_MAX_DATA_WIDTH {8} \
     CONFIG.C_TOPOLOGY {0} \
@@ -268,9 +268,10 @@ proc create_mipi_pipe { index loc_dict } {
    CONFIG.AXIMM_DATA_WIDTH {128} \
    CONFIG.HAS_BGR8 {1} \
    CONFIG.HAS_Y_UV8_420 {1} \
+   CONFIG.HAS_YUYV8 {1} \
    CONFIG.MAX_NR_PLANES {2} \
-   CONFIG.MAX_COLS {1920} \
-   CONFIG.MAX_ROWS {1080} \
+   CONFIG.MAX_COLS {3280} \
+   CONFIG.MAX_ROWS {2464} \
   ] $v_frmbuf_wr
   
   # Add and configure the Video Frame Buffer Read
@@ -281,9 +282,10 @@ proc create_mipi_pipe { index loc_dict } {
    CONFIG.AXIMM_DATA_WIDTH {128} \
    CONFIG.HAS_BGR8 {1} \
    CONFIG.HAS_Y_UV8_420 {1} \
+   CONFIG.HAS_YUYV8 {1} \
    CONFIG.MAX_NR_PLANES {2} \
-   CONFIG.MAX_COLS {1920} \
-   CONFIG.MAX_ROWS {1080} \
+   CONFIG.MAX_COLS {3280} \
+   CONFIG.MAX_ROWS {2464} \
   ] $v_frmbuf_rd
 
   # Slice for Demosaic reset signal

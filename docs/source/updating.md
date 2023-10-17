@@ -38,7 +38,7 @@ The BSP files for each supported target platform are contained in the `PetaLinux
 2. Download and install the BSP for the target platform for the release that you intend to use.
    * For ZCU104, ZCU106, ZCU102 download the BSP from the 
      [Xilinx downloads] page
-   * For UltraZed-EV contact your [Avnet rep](https://www.avnet.com)
+   * For UltraZed-EV download the BSP from the [Avnet downloads] page
    * For PYNQ-ZU, there is a PetaLinux BSP maintainted in the [PYNQ-ZU Git repo](https://github.com/Xilinx/PYNQ-ZU)
 3. Update the BSP files for the target platform in the `PetaLinux/bsp/<platform>` directory. 
    These are the specific directories to update:
@@ -362,4 +362,5 @@ CONFIG_SUBSYSTEM_FPGA_MANAGER=n
 ```
 
 [Xilinx downloads]: https://www.xilinx.com/support/download/index.html/content/xilinx/en/downloadNav/embedded-design-tools.html
+[Avnet downloads]: https://avnet.me/zedsupport
 
