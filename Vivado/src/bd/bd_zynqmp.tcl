@@ -110,6 +110,15 @@ dict set dp_dict genesyszu ref_clk_sel "Ref Clk2"
 dict set dp_dict genesyszu dp_lane0 "GT Lane3"
 dict set dp_dict genesyszu dp_lane1 "GT Lane2"
 
+# Video pipe max res depends on the target board (resources)
+if { $target == "pynqzu" | $target == "genesyszu" } {
+  set max_cols 1920
+  set max_rows 1232
+} else {
+  set max_cols 3280
+  set max_rows 2464
+}
+
 # Set the samples-per-clock for the video pipelines (1)
 # Set this to 2 to double the throughput at the cost of higher resource usage
 set samples_pc 1
@@ -120,6 +129,8 @@ proc create_mipi_pipe { index loc_dict } {
   current_bd_instance $hier_obj
   global samples_pc
   global target
+  global max_cols
+  global max_rows
   
   # Create pins of the block
   create_bd_pin -dir I dphy_clk_200M
@@ -199,9 +210,9 @@ proc create_mipi_pipe { index loc_dict } {
   set v_demosaic_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:v_demosaic demosaic_0 ]
   set_property -dict [ list \
     CONFIG.SAMPLES_PER_CLOCK $samples_pc \
-    CONFIG.MAX_COLS {1920} \
+    CONFIG.MAX_COLS $max_cols \
     CONFIG.MAX_DATA_WIDTH {8} \
-    CONFIG.MAX_ROWS {1080} \
+    CONFIG.MAX_ROWS $max_rows \
     CONFIG.ALGORITHM {1} \
     CONFIG.USE_URAM {1} \
   ] $v_demosaic_0
@@ -210,16 +221,16 @@ proc create_mipi_pipe { index loc_dict } {
   set v_gamma_lut [ create_bd_cell -type ip -vlnv xilinx.com:ip:v_gamma_lut v_gamma_lut ]
   set_property -dict [ list \
     CONFIG.SAMPLES_PER_CLOCK $samples_pc \
-    CONFIG.MAX_COLS {1920} \
+    CONFIG.MAX_COLS $max_cols \
     CONFIG.MAX_DATA_WIDTH {8} \
-    CONFIG.MAX_ROWS {1080} \
+    CONFIG.MAX_ROWS $max_rows \
   ] $v_gamma_lut
   
   # Add and configure the Video Processor subsystem
   set v_proc [ create_bd_cell -type ip -vlnv xilinx.com:ip:v_proc_ss v_proc ]
   set_property -dict [ list \
-    CONFIG.C_MAX_COLS {1920} \
-    CONFIG.C_MAX_ROWS {1080} \
+    CONFIG.C_MAX_COLS $max_cols \
+    CONFIG.C_MAX_ROWS $max_rows \
     CONFIG.C_ENABLE_DMA {false} \
     CONFIG.C_MAX_DATA_WIDTH {8} \
     CONFIG.C_TOPOLOGY {0} \
@@ -246,8 +257,8 @@ proc create_mipi_pipe { index loc_dict } {
    CONFIG.HAS_BGR8 {1} \
    CONFIG.HAS_Y_UV8_420 {1} \
    CONFIG.MAX_NR_PLANES {2} \
-   CONFIG.MAX_COLS {1920} \
-   CONFIG.MAX_ROWS {1080} \
+   CONFIG.MAX_COLS $max_cols \
+   CONFIG.MAX_ROWS $max_rows \
   ] $v_frmbuf_wr
   
   # Add and configure the Video Frame Buffer Read
@@ -259,8 +270,8 @@ proc create_mipi_pipe { index loc_dict } {
    CONFIG.HAS_BGR8 {1} \
    CONFIG.HAS_Y_UV8_420 {1} \
    CONFIG.MAX_NR_PLANES {2} \
-   CONFIG.MAX_COLS {1920} \
-   CONFIG.MAX_ROWS {1080} \
+   CONFIG.MAX_COLS $max_cols \
+   CONFIG.MAX_ROWS $max_rows \
   ] $v_frmbuf_rd
 
   # Slice for Demosaic reset signal
