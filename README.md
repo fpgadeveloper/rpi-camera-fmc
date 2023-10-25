@@ -61,8 +61,6 @@ Thank you to everyone who supports us!
 * Develop PYNQ support
 * Get a Genesys-ZU board and test the design on hardware.
 * Software support for more cameras (this will be an ongoing task due to the number of cameras available).
-* Debug: We are having trouble getting the UltraZed EV Carrier DisplayPort working with the standalone
-  application. More time needed to debug.
 * The example design has run out of PL-to-PS interrupts, so we need to add the AXI Interrupt Controller and
   adapt the software application to AXI Intc.
 

@@ -443,8 +443,9 @@ proc create_mipi_pipe { index loc_dict } {
 # AXI Lite ports
 set axi_lite_ports {}
 
-# List of interrupt pins
+# List of interrupt pins (AXI Intc and direct PL-PS-IRQ1)
 set intr_list {}
+set priority_intr_list {}
 
 # Number of cameras
 set num_cams [llength $cams]
@@ -521,16 +522,15 @@ connect_bd_net [get_bd_pins clk_wiz_0/clk_out3] [get_bd_pins rst_video_250M/slow
 connect_bd_net [get_bd_pins rst_ps_100M/peripheral_aresetn] [get_bd_pins rst_video_250M/ext_reset_in]
 connect_bd_net [get_bd_pins clk_wiz_0/locked] [get_bd_pins rst_video_250M/dcm_locked]
 
-# # Add and configure AXI interrupt controller with concat
-# set axi_interrupt [create_bd_cell -type ip -vlnv xilinx.com:ip:axi_intc axi_intc_0]
-# set_property -dict [list CONFIG.C_IRQ_CONNECTION {1}] $axi_interrupt
+# Add AXI Intc
+set axi_intc_0 [create_bd_cell -type ip -vlnv xilinx.com:ip:axi_intc axi_intc_0]
+set_property -dict [list CONFIG.C_IRQ_CONNECTION {1}] $axi_intc_0
 set concat_0 [create_bd_cell -type ip -vlnv xilinx.com:ip:xlconcat xlconcat_0]
-# connect_bd_net [get_bd_pins clk_wiz_0/clk_out2] [get_bd_pins axi_intc_0/s_axi_aclk]
-# connect_bd_net [get_bd_pins xlconcat_0/dout] [get_bd_pins axi_intc_0/intr]
-# connect_bd_net [get_bd_pins axi_intc_0/irq] [get_bd_pins zynq_ultra_ps_e_0/pl_ps_irq0]
-# connect_bd_net [get_bd_pins rst_ps_axi_150M/peripheral_aresetn] [get_bd_pins axi_intc_0/s_axi_aresetn]
-# lappend axi_lite_ports [list "axi_intc_0/s_axi" "clk_wiz_0/clk_out2" "rst_ps_axi_150M/peripheral_aresetn"]
-connect_bd_net [get_bd_pins xlconcat_0/dout] [get_bd_pins zynq_ultra_ps_e_0/pl_ps_irq0]
+connect_bd_net [get_bd_pins clk_wiz_0/clk_out2] [get_bd_pins axi_intc_0/s_axi_aclk]
+connect_bd_net [get_bd_pins xlconcat_0/dout] [get_bd_pins axi_intc_0/intr]
+connect_bd_net [get_bd_pins axi_intc_0/irq] [get_bd_pins zynq_ultra_ps_e_0/pl_ps_irq0]
+connect_bd_net [get_bd_pins rst_ps_axi_150M/peripheral_aresetn] [get_bd_pins axi_intc_0/s_axi_aresetn]
+lappend axi_lite_ports [list "axi_intc_0/s_axi" "clk_wiz_0/clk_out2" "rst_ps_axi_150M/peripheral_aresetn"]
 
 # Add constant for the CAM1 and CAM3 CLK_SEL pin (01b for UltraZed-EV Carrier and 00b for Genesys ZU, 10b for all other boards)
 set clk_sel [create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant clk_sel]
@@ -1095,17 +1095,16 @@ if {$dual_design} {
 
 # Connect interrupts
 if {$dual_design} {
-  lappend intr_list "mipi_$i/iic2intc_irpt"
-  lappend intr_list "xdma_0/interrupt_out"
-  lappend intr_list "xdma_1/interrupt_out"
-  lappend intr_list "xdma_0/interrupt_out_msi_vec0to31"
-  lappend intr_list "xdma_0/interrupt_out_msi_vec32to63"
-  lappend intr_list "xdma_1/interrupt_out_msi_vec0to31"
-  lappend intr_list "xdma_1/interrupt_out_msi_vec32to63"
+  lappend priority_intr_list "xdma_0/interrupt_out"
+  lappend priority_intr_list "xdma_1/interrupt_out"
+  lappend priority_intr_list "xdma_0/interrupt_out_msi_vec0to31"
+  lappend priority_intr_list "xdma_0/interrupt_out_msi_vec32to63"
+  lappend priority_intr_list "xdma_1/interrupt_out_msi_vec0to31"
+  lappend priority_intr_list "xdma_1/interrupt_out_msi_vec32to63"
 } else {
-  lappend intr_list "xdma_0/interrupt_out"
-  lappend intr_list "xdma_0/interrupt_out_msi_vec0to31"
-  lappend intr_list "xdma_0/interrupt_out_msi_vec32to63"
+  lappend priority_intr_list "xdma_0/interrupt_out"
+  lappend priority_intr_list "xdma_0/interrupt_out_msi_vec0to31"
+  lappend priority_intr_list "xdma_0/interrupt_out_msi_vec32to63"
 }
 
 # Add proc system reset for xdma_0/axi_ctl_aresetn
@@ -1174,26 +1173,25 @@ foreach port $axi_lite_ports {
   set port_num [expr {$port_num+1}]
 }
 
-# Connect the interrupts
+# Connect the interrupts to AXI Intc to pl_ps_irq0 (max 32 interrupts)
 set n_interrupts [llength $intr_list]
-if { $n_interrupts > 8 } {
-  set_property -dict [list CONFIG.NUM_PORTS 8] $concat_0
+set_property -dict [list CONFIG.NUM_PORTS $n_interrupts] $concat_0
+set intr_index 0
+foreach intr $intr_list {
+  connect_bd_net [get_bd_pins $intr] [get_bd_pins ${concat_0}/In$intr_index]
+  set intr_index [expr {$intr_index+1}]
+}
+
+# Connect the "priority" interrupts (direct to PL-PS interrupt) to pl_ps_irq1
+set n_interrupts [llength $priority_intr_list]
+if { $n_interrupts > 0 } {
   set_property -dict [list CONFIG.PSU__USE__IRQ1 {1}] [get_bd_cells zynq_ultra_ps_e_0]
   set concat_1 [create_bd_cell -type ip -vlnv xilinx.com:ip:xlconcat xlconcat_1]
   connect_bd_net [get_bd_pins xlconcat_1/dout] [get_bd_pins zynq_ultra_ps_e_0/pl_ps_irq1]
-  set extra_intrs [expr {$n_interrupts-8}]
-  set_property -dict [list CONFIG.NUM_PORTS $extra_intrs] $concat_1
-} else {
-  set_property -dict [list CONFIG.NUM_PORTS $n_interrupts] $concat_0
-}
-set intr_index 0
-set concat_target xlconcat_0
-foreach intr $intr_list {
-  connect_bd_net [get_bd_pins $intr] [get_bd_pins ${concat_target}/In$intr_index]
-  if { $intr_index == 7 } {
-    set intr_index 0
-    set concat_target xlconcat_1
-  } else {
+  set_property -dict [list CONFIG.NUM_PORTS $n_interrupts] $concat_1
+  set intr_index 0
+  foreach intr $priority_intr_list {
+    connect_bd_net [get_bd_pins $intr] [get_bd_pins ${concat_1}/In$intr_index]
     set intr_index [expr {$intr_index+1}]
   }
 }

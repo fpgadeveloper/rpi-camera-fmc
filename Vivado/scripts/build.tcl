@@ -41,7 +41,7 @@ dict set target_dict zcu106_hpc0 { xilinx.com zcu106 { 0 1 2 3 } "" zynqmp }
 dict set target_dict pynqzu { tul.com.tw pynqzu { 0 1 2 3 } "" zynqmp }
 dict set target_dict genesyszu { digilentinc.com gzu_5ev { 0 1 2 3 } "" zynqmp }
 dict set target_dict uzev { avnet.com ultrazed_7ev_cc { 0 1 2 3 } "" zynqmp }
-dict set target_dict zcu106_pcie { xilinx.com zcu106 { 1 2 3 } hpc1 zynqmp_pcie }
+dict set target_dict zcu106_pcie { xilinx.com zcu106 { 0 1 2 3 } hpc1 zynqmp_pcie }
 
 if { $argc == 1 } {
   set target [lindex $argv 0]
