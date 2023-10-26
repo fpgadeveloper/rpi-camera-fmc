@@ -39,12 +39,15 @@ Before running the application, you will need to setup the hardware.
 
 ## Run the application
 
+You must have followed the build instructions before you can run the application.
+
 1. Launch the Xilinx Vitis GUI.
-2. Power up your hardware platform and ensure that the JTAG is connected properly.
-3. In the Vitis Explorer panel, double-click on the System project that you want to run -
+2. When asked to select the workspace path, select the `Vitis/<target>_workspace` directory.
+3. Power up your hardware platform and ensure that the JTAG is connected properly.
+4. In the Vitis Explorer panel, double-click on the System project that you want to run -
    this will reveal the application contained in the project. The System project will have 
    the postfix "_system".
-4. Now right click on the application (it should have the postfix "_app") then navigate the
+5. Now right click on the application ("cams_to_dp") then navigate the
    drop down menu to **Run As->Launch on Hardware (Single Application Debug (GDB)).**.
 
 ![Vitis Launch on hardware](images/vitis-launch-on-hardware.png)
