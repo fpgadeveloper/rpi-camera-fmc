@@ -21,9 +21,8 @@ we cannot always provide support if you have trouble updating the designs.
 3. In a text editor, open the `Vivado/scripts/xsa.tcl` file and perform the following changes:
    * Update the `version_required` variable value to the tools version number 
      that you are using.
-4. **Windows users only:** In a text editor, open the `Vivado/build-<target>.bat` file for
-   the design that you wish to update, and update the tools version number to the one you are using 
-   (eg. 2022.1).
+4. **Windows users only:** In a text editor, open the `Vivado/build-vivado.bat` file and update 
+   the tools version number to the one you are using (eg. 2022.1).
 
 After completing the above, you should now be able to use the [build instructions](build_instructions) to
 build the Vivado project. If there were no significant changes to the tools and/or IP, the build script 
@@ -66,8 +65,8 @@ CONFIG_SUBSYSTEM_ROOTFS_EXT4=y
 CONFIG_SUBSYSTEM_SDROOT_DEV="/dev/mmcblk0p2"
 CONFIG_SUBSYSTEM_RFS_FORMATS="tar.gz ext4 ext4.gz "
 
-CONFIG_SUBSYSTEM_HOSTNAME="rpi_cam_fmc"
-CONFIG_SUBSYSTEM_PRODUCT="rpi_cam_fmc"
+CONFIG_SUBSYSTEM_HOSTNAME="rpi-cam-fmc"
+CONFIG_SUBSYSTEM_PRODUCT="rpi-cam-fmc"
 ```
 
 2. Replace the last line in `project-spec/meta-user/conf/petalinuxbsp.conf` with this one:
@@ -130,6 +129,7 @@ CONFIG_packagegroup-petalinux-self-hosted=y
 CONFIG_packagegroup-petalinux-v4lutils=y
 CONFIG_cmake=y
 CONFIG_opencv-staticdev=y
+CONFIG_initcams=y
 
 CONFIG_ADD_USERS_TO_GROUPS="petalinux:audio,video,disk,kmem;"
 ```
@@ -146,9 +146,14 @@ CONFIG_packagegroup-petalinux-x11
 CONFIG_packagegroup-petalinux-v4lutils
 CONFIG_cmake
 CONFIG_opencv-staticdev
+CONFIG_initcams
 ```
 
-### Add support for the cameras
+```{note}
+Note that for the PYNQ-ZU BSP, you may have to create this file.
+```
+
+### Add support for the cameras and NFS
 
 This BSP modification applies to all target platforms.
 
@@ -157,6 +162,7 @@ This BSP modification applies to all target platforms.
 ```
 CONFIG_VIDEO_IMX219=y
 CONFIG_VIDEO_OV5640=y
+CONFIG_NFSD=y
 ```
 
 2. Append the following lines to device tree file
@@ -339,13 +345,44 @@ CONFIG_VIDEO_OV5640=y
 };
 ```
 
+### Add the initcams script
+
+The initcams script must be added to the BSPs for all targets. This can be done by copying the following files
+into the BSP:
+
+```
+project-spec
+           +--- meta-user
+                        +--- recipes-apps
+                                        +--- initcams
+                                                    +--- files
+                                                    |        +--- init_cams
+                                                    +--- .gbdinit
+                                                    +--- initcams.bb
+```
+
+```{note}
+These files can be copied over from one of the BSPs in the repository, but the directory structure and/or the
+`initcams.bb` file may need updating to work with newer versions of PetaLinux.
+```
+
 ### Mods for ZCU104
 
 These modifications are specific to the ZCU104 BSP.
 
-1. Add patch for FSBL to `project-spec/meta-user/recipes-bsp/fsbl/`. You will have to update this
+1. Add patch for FSBL to `project-spec/meta-user/recipes-bsp/embeddedsw/`. You will have to update this
    patch for the version of PetaLinux that you are using. Refer to the existing patch files in that
    location for guidance.
+   
+```
+project-spec
+           +--- meta-user
+                        +--- recipes-bsp
+                                       +--- embeddedsw
+                                                     +--- files
+                                                     |        +--- zcu104_vadj_fsbl.patch
+                                                     +--- fsbl-firmware_%.bbappend
+```
 
 ### Mods for ZCU106
 
@@ -361,6 +398,93 @@ CONFIG_SUBSYSTEM_REMOVE_PL_DTB=n
 CONFIG_SUBSYSTEM_FPGA_MANAGER=n
 ```
 
+### Mods for UltraZed EV
+
+These modifications are specific to the UltraZed-EV BSP.
+
+```{note}
+When copying the UltraZed-EV BSP, you can ignore the `meta-avnet` folder because we do not use it in this
+design.
+```
+
+1. Append the following lines to `project-spec/configs/config`:
+
+```
+# UltraZed-EV configs
+
+CONFIG_YOCTO_MACHINE_NAME="zynqmp-generic"
+CONFIG_USER_LAYER_0=""
+CONFIG_SUBSYSTEM_SDROOT_DEV="/dev/mmcblk1p2"
+CONFIG_SUBSYSTEM_USER_CMDLINE=" earlycon console=ttyPS0,115200 clk_ignore_unused root=/dev/mmcblk1p2 rw rootwait cma=1000M"
+CONFIG_SUBSYSTEM_PRIMARY_SD_PSU_SD_0_SELECT=n
+CONFIG_SUBSYSTEM_PRIMARY_SD_PSU_SD_1_SELECT=y
+CONFIG_SUBSYSTEM_SD_PSU_SD_0_SELECT=n
+```
+
+2. Overwrite the device tree file 
+   `project-spec/meta-user/recipes-bsp/device-tree/files/system-user.dtsi` with the one that is in the
+   repository.
+
+### Mods for the ZCU106 design with FPGA Drive FMC support
+
+These modifications are specific to the ZCU106 BSP that is applied to the `zcu106_pcie` target design
+that has support for the [FPGA Drive FMC Gen4] with a single M.2 PCIe device on the HPC1 connector.
+
+1. Append the following lines to `project-spec/configs/rootfs_config`:
+
+```
+# Tools for FPGA Drive FMC
+
+CONFIG_e2fsprogs=y
+CONFIG_e2fsprogs-mke2fs=y
+CONFIG_e2fsprogs-badblocks=y
+CONFIG_mtd-utils=y
+CONFIG_util-linux=y
+CONFIG_util-linux-mount=y
+CONFIG_util-linux-mkfs=y
+CONFIG_util-linux-blkid=y
+CONFIG_util-linux-fdisk=y
+CONFIG_pciutils=y
+CONFIG_bridge-utils=y
+
+# Add coreutils for full version of dd, and nvme-cli for NVMe tools
+
+CONFIG_coreutils=y
+CONFIG_nvme-cli=y
+```
+
+2. Append the following lines to `project-spec/meta-user/conf/user-rootfsconfig`:
+
+```
+# FPGA Drive FMC additions
+
+CONFIG_e2fsprogs
+CONFIG_e2fsprogs-mke2fs
+CONFIG_e2fsprogs-badblocks
+CONFIG_mtd-utils
+CONFIG_util-linux
+CONFIG_util-linux-mount
+CONFIG_util-linux-mkfs
+CONFIG_util-linux-blkid
+CONFIG_util-linux-fdisk
+CONFIG_pciutils
+CONFIG_bridge-utils
+CONFIG_nvme-cli
+```
+
+3. Append the following lines to file `project-spec/meta-user/recipes-kernel/linux/linux-xlnx/bsp.cfg`:
+
+```
+# FPGA Drive FMC configs
+
+CONFIG_PCI_REALLOC_ENABLE_AUTO=y
+CONFIG_PCIE_XDMA_PL=y
+CONFIG_NVME_CORE=y
+CONFIG_BLK_DEV_NVME=y
+CONFIG_NVME_TARGET=y
+```
+
 [Xilinx downloads]: https://www.xilinx.com/support/download/index.html/content/xilinx/en/downloadNav/embedded-design-tools.html
 [Avnet downloads]: https://avnet.me/zedsupport
+[FPGA Drive FMC Gen4]: https://www.fpgadrive.com/docs/fpga-drive-fmc-gen4/overview/
 
