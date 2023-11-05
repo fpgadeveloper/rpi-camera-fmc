@@ -29,27 +29,33 @@ if {![string equal $ver $version_required]} {
   return
 }
 
-if { $argc == 2 } {
+if { $argc == 3 } {
   set target [lindex $argv 0]
   puts "Target for the build: $target"
   set jobs [lindex $argv 1]
   puts "Number of jobs: $jobs"
+  set synth_only [lindex $argv 2]
+  puts "Synthesis only: $synth_only"
 } elseif { [info exists target] } {
   puts "Target for the build: $target"
   if { ![info exists jobs] } {
     set jobs 8
+  }
+  if { ![info exists synth_only] } {
+    set synth_only 0
   }
 } else {
   puts ""
   puts "This script runs synthesis, implementation and exports the hardware for a project."
   puts "It can be launched in two ways:"
   puts ""
-  puts "  1. Using two arguments passed to the script via tclargs."
-  puts "     eg. vivado -mode batch -source xsa.tcl -notrace -tclargs <target-name> <jobs>"
+  puts "  1. Using three arguments passed to the script via tclargs."
+  puts "     eg. vivado -mode batch -source xsa.tcl -notrace -tclargs <target-name> <jobs> <synth_only>"
   puts ""
   puts "  2. By setting the target variables before sourcing the script."
   puts "     eg. set target <target-name>"
   puts "         set jobs <number-of-jobs>"
+  puts "         set synth_only <synth-only>"
   puts "         source xsa.tcl -notrace"
   return
 }
@@ -68,8 +74,12 @@ open_project $origin_dir/$design_name/$design_name.xpr
 
 launch_runs synth_1 -jobs $jobs
 wait_on_run synth_1
-launch_runs impl_1 -jobs $jobs -to_step write_bitstream
-wait_on_run impl_1
-write_hw_platform -fixed -include_bit -force -file $origin_dir/$design_name/${block_name}_wrapper.xsa
-validate_hw_platform -verbose $origin_dir/$design_name/${block_name}_wrapper.xsa
+if {$synth_only == 1} {
+  write_hw_platform -force -file $origin_dir/$design_name/${block_name}_wrapper.xsa
+} else {
+  launch_runs impl_1 -jobs $jobs -to_step write_bitstream
+  wait_on_run impl_1
+  write_hw_platform -fixed -include_bit -force -file $origin_dir/$design_name/${block_name}_wrapper.xsa
+}
+  validate_hw_platform -verbose $origin_dir/$design_name/${block_name}_wrapper.xsa
 

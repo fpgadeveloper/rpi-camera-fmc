@@ -11,14 +11,14 @@ BD_NAME = rpi
 TARGET ?= none
 JOBS ?= 8
 
-# valid targets (template name, flash size, flash interface)
-zcu104_target := zynqMP 0 0
-zcu102_hpc0_target := zynqMP 0 0
-zcu102_hpc1_target := zynqMP 0 0
-zcu106_hpc0_target := zynqMP 0 0
-pynqzu_target := zynqMP 0 0
-uzev_target := zynqMP 0 0
-zcu106_pcie_target := zynqMP 0 0
+# valid targets (template name, flash size, flash interface, accelerator)
+zcu104_target := zynqMP 0 0 no_accel
+zcu102_hpc0_target := zynqMP 0 0 no_accel
+zcu102_hpc1_target := zynqMP 0 0 no_accel
+zcu106_hpc0_target := zynqMP 0 0 no_accel
+pynqzu_target := zynqMP 0 0 no_accel
+uzev_target := zynqMP 0 0 no_accel
+zcu106_pcie_target := zynqMP 0 0 accel
 
 TARGET_LIST := $(sort $(patsubst %_target,%,$(filter %_target,$(.VARIABLES))))
 
@@ -29,7 +29,9 @@ TARGET_BOARD=$(word 1,$(subst _, ,$(TARGET)))
 VIV_DIR = $(PETL_ROOT)/../Vivado
 VIV_PRJ_DIR = $(VIV_DIR)/$(TARGET)
 VIV_XSA = $(VIV_PRJ_DIR)/$(BD_NAME)_wrapper.xsa
-VIV_BIT = $(VIV_PRJ_DIR)/$(TARGET).runs/impl_1/$(BD_NAME)_wrapper.bit
+
+# Vitis Accel paths
+VIT_ACC_DIR = $(PETL_ROOT)/../VitisAccel
 
 # petalinux paths and files
 PETL_DIR = $(PETL_ROOT)/$(TARGET)
@@ -64,6 +66,10 @@ define get_flash_intf
 $(word 3,$($(1)_target))
 endef
 
+define get_has_accel
+$(word 4,$($(1)_target))
+endef
+
 # For offline PetaLinux builds
 SSTATE_PATH ?= $(shell test -e $(PETL_OFFLINE) && head -n 1 $(PETL_OFFLINE))
 
@@ -79,6 +85,12 @@ else ifeq ($(call get_template_name,$(TARGET)), zynqMP)
 	SSTATE_ARCH = arch64
 	BUILD_PRODUCTS = $(PETL_BL31_ELF) $(PETL_PMUFW_ELF) $(PETL_ZYNQMP_FSBL_ELF) $(PETL_DTB)
 	PKG_PRODUCTS = $(PETL_BOOT_BIN)
+endif
+
+ifeq ($(call get_has_accel,$(TARGET)), accel)
+	VIV_BIT = $(VIT_ACC_DIR)/$(TARGET)_container/link/int/system.bit
+else
+	VIV_BIT = $(VIV_PRJ_DIR)/$(TARGET).runs/impl_1/$(BD_NAME)_wrapper.bit
 endif
 
 ifneq ($(SSTATE_PATH),)

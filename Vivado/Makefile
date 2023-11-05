@@ -14,15 +14,15 @@ BD_NAME = rpi
 TARGET ?= none
 JOBS ?= 8
 
-# valid targets
-zcu104_target := 0
-zcu102_hpc0_target := 0
-zcu102_hpc1_target := 0
-zcu106_hpc0_target := 0
-pynqzu_target := 0
-genesyszu_target := 0
-uzev_target := 0
-zcu106_pcie_target := 0
+# valid targets (accelerator)
+zcu104_target := no_accel
+zcu102_hpc0_target := no_accel
+zcu102_hpc1_target := no_accel
+zcu106_hpc0_target := no_accel
+pynqzu_target := no_accel
+genesyszu_target := no_accel
+uzev_target := no_accel
+zcu106_pcie_target := accel
 
 TARGET_LIST := $(sort $(patsubst %_target,%,$(filter %_target,$(.VARIABLES))))
 
@@ -40,6 +40,18 @@ VIV_XSA_LOG = $(TARGET)_xsa.log
 VIV_XSA_JOU = $(TARGET)_xsa.jou
 VIV_BIT = $(VIV_DIR)/$(TARGET).runs/impl_1/$(BD_NAME)_wrapper.bit
 VIV_LOCK = $(ROOT_DIR)/.$(TARGET).lock
+
+# These macros return values from the valid target lists defined above
+define get_has_accel
+$(word 1,$($(1)_target))
+endef
+
+# Targets with accelerators don't need to run implementation, only synth
+ifeq ($(call get_has_accel,$(TARGET)), accel)
+	SYNTH_ONLY = 1
+else
+	SYNTH_ONLY = 0
+endif
 
 .PHONY: help
 help:
@@ -91,7 +103,7 @@ xsa:
 xsa_locked: $(VIV_XSA) check_warnings
 $(VIV_XSA): $(VIV_XPR)
 	$(RM) $(VIV_XSA_LOG) $(VIV_XSA_JOU)
-	$(VIVADO) -mode batch -notrace -source $(VIV_SCRIPT_XSA) -log $(VIV_XSA_LOG) -journal $(VIV_XSA_JOU) -tclargs $(TARGET) $(JOBS)
+	$(VIVADO) -mode batch -notrace -source $(VIV_SCRIPT_XSA) -log $(VIV_XSA_LOG) -journal $(VIV_XSA_JOU) -tclargs $(TARGET) $(JOBS) $(SYNTH_ONLY)
 	$(CP) $(VIV_XSA_LOG) $(VIV_XSA_JOU) $(TARGET)/.
 	$(RM) $(VIV_XSA_LOG) $(VIV_XSA_JOU)
 

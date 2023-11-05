@@ -19,6 +19,9 @@ CONFIG_packagegroup-petalinux-v4lutils
 CONFIG_cmake
 CONFIG_opencv-staticdev
 CONFIG_initcams
+CONFIG_xrt
+CONFIG_xrt-dev
+CONFIG_zocl
 
 # FPGA Drive FMC additions
 

@@ -7,6 +7,7 @@
 ################################################################
 # 0  - Video Mixer reset
 # 1  - Video TPG reset
+# 2  - VCU
 # 2-7 Reserved
 # 8  - CAM0 Demosaic IP reset
 # 9  - CAM0 Vproc IP reset
@@ -159,7 +160,8 @@ proc create_mipi_pipe { index loc_dict } {
   create_bd_pin -dir I emio_gpio
   
   # Create the interfaces of the block
-  create_bd_intf_pin -mode Slave -vlnv xilinx.com:interface:aximm_rtl:1.0 S_AXI_LITE
+  create_bd_intf_pin -mode Slave -vlnv xilinx.com:interface:aximm_rtl:1.0 S_AXI_CTRL
+  create_bd_intf_pin -mode Slave -vlnv xilinx.com:interface:aximm_rtl:1.0 S_AXI_VIDEO
   create_bd_intf_pin -mode Master -vlnv xilinx.com:interface:aximm_rtl:1.0 m_axi_mm_video_wr
   create_bd_intf_pin -mode Master -vlnv xilinx.com:interface:aximm_rtl:1.0 m_axi_mm_video_rd
   create_bd_intf_pin -mode Master -vlnv xilinx.com:interface:axis_rtl:1.0 m_axis_video
@@ -195,11 +197,17 @@ proc create_mipi_pipe { index loc_dict } {
     CONFIG.HP_IO_BANK_SELECTION $bank \
   ] $mipi_csi2_rx_subsyst
  
-  # Add and configure the AXI Interconnect
-  set axi_int_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect axi_int_0 ]
+  # Add and configure the AXI Interconnect (LPD)
+  set axi_int_ctrl [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect axi_int_ctrl ]
   set_property -dict [list \
-  CONFIG.NUM_MI {8} \
-  ] $axi_int_0
+  CONFIG.NUM_MI {3} \
+  ] $axi_int_ctrl
+  
+  # Add and configure the AXI Interconnect (HPD)
+  set axi_int_video [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect axi_int_video ]
+  set_property -dict [list \
+  CONFIG.NUM_MI {5} \
+  ] $axi_int_video
   
   # Add and configure the AXIS Subset Converter
   if { $samples_pc == 1 } {
@@ -372,47 +380,53 @@ proc create_mipi_pipe { index loc_dict } {
   connect_bd_net [get_bd_pins video_aclk] [get_bd_pins v_proc/aclk_axis]
   connect_bd_net [get_bd_pins video_aclk] [get_bd_pins v_proc/aclk_ctrl]
   connect_bd_net [get_bd_pins video_aclk] [get_bd_pins v_gamma_lut/ap_clk]
-  connect_bd_net [get_bd_pins video_aclk] [get_bd_pins axi_int_0/M01_ACLK]
-  connect_bd_net [get_bd_pins video_aclk] [get_bd_pins axi_int_0/M02_ACLK]
-  connect_bd_net [get_bd_pins video_aclk] [get_bd_pins axi_int_0/M03_ACLK]
-  connect_bd_net [get_bd_pins video_aclk] [get_bd_pins axi_int_0/M04_ACLK]
-  connect_bd_net [get_bd_pins video_aclk] [get_bd_pins axi_int_0/M07_ACLK]
+  connect_bd_net [get_bd_pins video_aclk] [get_bd_pins axi_int_video/ACLK]
+  connect_bd_net [get_bd_pins video_aclk] [get_bd_pins axi_int_video/S00_ACLK]
+  connect_bd_net [get_bd_pins video_aclk] [get_bd_pins axi_int_video/M00_ACLK]
+  connect_bd_net [get_bd_pins video_aclk] [get_bd_pins axi_int_video/M01_ACLK]
+  connect_bd_net [get_bd_pins video_aclk] [get_bd_pins axi_int_video/M02_ACLK]
+  connect_bd_net [get_bd_pins video_aclk] [get_bd_pins axi_int_video/M03_ACLK]
+  connect_bd_net [get_bd_pins video_aclk] [get_bd_pins axi_int_video/M04_ACLK]
   # Connect the 100M AXI-Lite clock
-  connect_bd_net [get_bd_pins s_axi_lite_aclk] [get_bd_pins axi_int_0/ACLK]
-  connect_bd_net [get_bd_pins s_axi_lite_aclk] [get_bd_pins axi_int_0/S00_ACLK]
-  connect_bd_net [get_bd_pins s_axi_lite_aclk] [get_bd_pins axi_int_0/M00_ACLK]
-  connect_bd_net [get_bd_pins s_axi_lite_aclk] [get_bd_pins axi_int_0/M05_ACLK]
-  connect_bd_net [get_bd_pins s_axi_lite_aclk] [get_bd_pins axi_int_0/M06_ACLK]
+  connect_bd_net [get_bd_pins s_axi_lite_aclk] [get_bd_pins axi_int_ctrl/ACLK]
+  connect_bd_net [get_bd_pins s_axi_lite_aclk] [get_bd_pins axi_int_ctrl/S00_ACLK]
+  connect_bd_net [get_bd_pins s_axi_lite_aclk] [get_bd_pins axi_int_ctrl/M00_ACLK]
+  connect_bd_net [get_bd_pins s_axi_lite_aclk] [get_bd_pins axi_int_ctrl/M01_ACLK]
+  connect_bd_net [get_bd_pins s_axi_lite_aclk] [get_bd_pins axi_int_ctrl/M02_ACLK]
   connect_bd_net [get_bd_pins s_axi_lite_aclk] [get_bd_pins mipi_csi2_rx_subsyst_0/lite_aclk]
   connect_bd_net [get_bd_pins s_axi_lite_aclk] [get_bd_pins axi_iic_0/s_axi_aclk]
   connect_bd_net [get_bd_pins s_axi_lite_aclk] [get_bd_pins axi_gpio_0/s_axi_aclk]
   # Connect the video resets
   connect_bd_net [get_bd_pins video_aresetn] [get_bd_pins subset_conv_0/aresetn]
-  connect_bd_net [get_bd_pins video_aresetn] [get_bd_pins axi_int_0/M01_ARESETN] -boundary_type upper
-  connect_bd_net [get_bd_pins video_aresetn] [get_bd_pins axi_int_0/M02_ARESETN] -boundary_type upper
-  connect_bd_net [get_bd_pins video_aresetn] [get_bd_pins axi_int_0/M03_ARESETN] -boundary_type upper
-  connect_bd_net [get_bd_pins video_aresetn] [get_bd_pins axi_int_0/M04_ARESETN] -boundary_type upper
-  connect_bd_net [get_bd_pins video_aresetn] [get_bd_pins axi_int_0/M07_ARESETN] -boundary_type upper
+  connect_bd_net [get_bd_pins video_aresetn] [get_bd_pins axi_int_video/ARESETN] -boundary_type upper
+  connect_bd_net [get_bd_pins video_aresetn] [get_bd_pins axi_int_video/S00_ARESETN] -boundary_type upper
+  connect_bd_net [get_bd_pins video_aresetn] [get_bd_pins axi_int_video/M00_ARESETN] -boundary_type upper
+  connect_bd_net [get_bd_pins video_aresetn] [get_bd_pins axi_int_video/M01_ARESETN] -boundary_type upper
+  connect_bd_net [get_bd_pins video_aresetn] [get_bd_pins axi_int_video/M02_ARESETN] -boundary_type upper
+  connect_bd_net [get_bd_pins video_aresetn] [get_bd_pins axi_int_video/M03_ARESETN] -boundary_type upper
+  connect_bd_net [get_bd_pins video_aresetn] [get_bd_pins axi_int_video/M04_ARESETN] -boundary_type upper
   connect_bd_net [get_bd_pins video_aresetn] [get_bd_pins mipi_csi2_rx_subsyst_0/video_aresetn]
   # Connect the AXI-Lite resets
-  connect_bd_net [get_bd_pins aresetn] [get_bd_pins axi_int_0/ARESETN] -boundary_type upper
-  connect_bd_net [get_bd_pins aresetn] [get_bd_pins axi_int_0/S00_ARESETN] -boundary_type upper
-  connect_bd_net [get_bd_pins aresetn] [get_bd_pins axi_int_0/M00_ARESETN] -boundary_type upper
-  connect_bd_net [get_bd_pins aresetn] [get_bd_pins axi_int_0/M05_ARESETN] -boundary_type upper
-  connect_bd_net [get_bd_pins aresetn] [get_bd_pins axi_int_0/M06_ARESETN] -boundary_type upper
+  connect_bd_net [get_bd_pins aresetn] [get_bd_pins axi_int_ctrl/ARESETN] -boundary_type upper
+  connect_bd_net [get_bd_pins aresetn] [get_bd_pins axi_int_ctrl/S00_ARESETN] -boundary_type upper
+  connect_bd_net [get_bd_pins aresetn] [get_bd_pins axi_int_ctrl/M00_ARESETN] -boundary_type upper
+  connect_bd_net [get_bd_pins aresetn] [get_bd_pins axi_int_ctrl/M01_ARESETN] -boundary_type upper
+  connect_bd_net [get_bd_pins aresetn] [get_bd_pins axi_int_ctrl/M02_ARESETN] -boundary_type upper
   connect_bd_net [get_bd_pins aresetn] [get_bd_pins mipi_csi2_rx_subsyst_0/lite_aresetn]
   connect_bd_net [get_bd_pins aresetn] [get_bd_pins axi_iic_0/s_axi_aresetn]
   connect_bd_net [get_bd_pins aresetn] [get_bd_pins axi_gpio_0/s_axi_aresetn]
-  # Connect AXI Lite interfaces
-  connect_bd_intf_net -boundary_type upper [get_bd_intf_pins S_AXI_LITE] [get_bd_intf_pins axi_int_0/S00_AXI]
-  connect_bd_intf_net -boundary_type upper [get_bd_intf_pins axi_int_0/M00_AXI] [get_bd_intf_pins mipi_csi2_rx_subsyst_0/csirxss_s_axi]
-  connect_bd_intf_net -boundary_type upper [get_bd_intf_pins axi_int_0/M01_AXI] [get_bd_intf_pins demosaic_0/s_axi_CTRL]
-  connect_bd_intf_net -boundary_type upper [get_bd_intf_pins axi_int_0/M02_AXI] [get_bd_intf_pins v_gamma_lut/s_axi_CTRL]
-  connect_bd_intf_net -boundary_type upper [get_bd_intf_pins axi_int_0/M03_AXI] [get_bd_intf_pins v_frmbuf_wr/s_axi_CTRL]
-  connect_bd_intf_net -boundary_type upper [get_bd_intf_pins axi_int_0/M04_AXI] [get_bd_intf_pins v_frmbuf_rd/s_axi_CTRL]
-  connect_bd_intf_net -boundary_type upper [get_bd_intf_pins axi_int_0/M05_AXI] [get_bd_intf_pins axi_iic_0/S_AXI]
-  connect_bd_intf_net -boundary_type upper [get_bd_intf_pins axi_int_0/M06_AXI] [get_bd_intf_pins axi_gpio_0/S_AXI]
-  connect_bd_intf_net -boundary_type upper [get_bd_intf_pins axi_int_0/M07_AXI] [get_bd_intf_pins v_proc/s_axi_ctrl]
+  # Connect AXI Lite CTRL interfaces
+  connect_bd_intf_net -boundary_type upper [get_bd_intf_pins S_AXI_CTRL] [get_bd_intf_pins axi_int_ctrl/S00_AXI]
+  connect_bd_intf_net -boundary_type upper [get_bd_intf_pins axi_int_ctrl/M00_AXI] [get_bd_intf_pins mipi_csi2_rx_subsyst_0/csirxss_s_axi]
+  connect_bd_intf_net -boundary_type upper [get_bd_intf_pins axi_int_ctrl/M01_AXI] [get_bd_intf_pins axi_iic_0/S_AXI]
+  connect_bd_intf_net -boundary_type upper [get_bd_intf_pins axi_int_ctrl/M02_AXI] [get_bd_intf_pins axi_gpio_0/S_AXI]
+  # Connect AXI Lite VIDEO interfaces
+  connect_bd_intf_net -boundary_type upper [get_bd_intf_pins S_AXI_VIDEO] [get_bd_intf_pins axi_int_video/S00_AXI]
+  connect_bd_intf_net -boundary_type upper [get_bd_intf_pins axi_int_video/M00_AXI] [get_bd_intf_pins demosaic_0/s_axi_CTRL]
+  connect_bd_intf_net -boundary_type upper [get_bd_intf_pins axi_int_video/M01_AXI] [get_bd_intf_pins v_gamma_lut/s_axi_CTRL]
+  connect_bd_intf_net -boundary_type upper [get_bd_intf_pins axi_int_video/M02_AXI] [get_bd_intf_pins v_frmbuf_wr/s_axi_CTRL]
+  connect_bd_intf_net -boundary_type upper [get_bd_intf_pins axi_int_video/M03_AXI] [get_bd_intf_pins v_frmbuf_rd/s_axi_CTRL]
+  connect_bd_intf_net -boundary_type upper [get_bd_intf_pins axi_int_video/M04_AXI] [get_bd_intf_pins v_proc/s_axi_ctrl]
   # Connect the AXI Streaming interfaces
   connect_bd_intf_net [get_bd_intf_pins mipi_csi2_rx_subsyst_0/video_out] [get_bd_intf_pins subset_conv_0/S_AXIS]
   connect_bd_intf_net [get_bd_intf_pins subset_conv_0/M_AXIS] [get_bd_intf_pins demosaic_0/s_axis_video]
@@ -441,7 +455,8 @@ proc create_mipi_pipe { index loc_dict } {
 }
 
 # AXI Lite ports
-set axi_lite_ports {}
+set hpm0_fpd_ports {}
+set hpm0_lpd_ports {}
 
 # List of interrupt pins (AXI Intc and direct PL-PS-IRQ1)
 set intr_list {}
@@ -455,11 +470,18 @@ create_bd_cell -type ip -vlnv xilinx.com:ip:zynq_ultra_ps_e zynq_ultra_ps_e_0
 apply_bd_automation -rule xilinx.com:bd_rule:zynq_ultra_ps_e -config {apply_board_preset "1" }  [get_bd_cells zynq_ultra_ps_e_0]
 
 # Configure the PS
-set_property -dict [list CONFIG.PSU__USE__S_AXI_GP0 {1} \
+set_property -dict [list \
+  CONFIG.PSU__USE__S_AXI_GP0 {1} \
+  CONFIG.PSU__USE__S_AXI_GP1 {1} \
   CONFIG.PSU__USE__S_AXI_GP2 {1} \
+  CONFIG.PSU__USE__S_AXI_GP3 {1} \
+  CONFIG.PSU__USE__S_AXI_GP4 {1} \
+  CONFIG.PSU__USE__S_AXI_GP5 {1} \
+  CONFIG.PSU__USE__S_AXI_GP6 {1} \
   CONFIG.PSU__USE__M_AXI_GP0 {1} \
   CONFIG.PSU__USE__M_AXI_GP1 {1} \
-  CONFIG.PSU__USE__M_AXI_GP2 {0} \
+  CONFIG.PSU__USE__M_AXI_GP2 {1} \
+  CONFIG.PSU__USE__S_AXI_GP6 {1} \
   CONFIG.PSU__USE__IRQ0 {1} \
   CONFIG.PSU__DISPLAYPORT__LANE0__ENABLE [expr {[dict get $dp_dict $board_name dp_lane0] ne ""}] \
   CONFIG.PSU__DISPLAYPORT__LANE0__IO [dict get $dp_dict $board_name dp_lane0] \
@@ -483,7 +505,7 @@ connect_bd_net [get_bd_pins zynq_ultra_ps_e_0/pl_resetn0] [get_bd_pins rst_ps_10
 
 # Add and configure the clock wizard
 set clk_wiz_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:clk_wiz clk_wiz_0 ]
-set_property -dict [ list \
+set_property -dict [list \
   CONFIG.CLKOUT1_JITTER {85.182} \
   CONFIG.CLKOUT1_PHASE_ERROR {76.967} \
   CONFIG.CLKOUT1_REQUESTED_OUT_FREQ {200.000} \
@@ -495,30 +517,41 @@ set_property -dict [ list \
   CONFIG.CLKOUT3_PHASE_ERROR {76.967} \
   CONFIG.CLKOUT3_REQUESTED_OUT_FREQ {250.000} \
   CONFIG.CLKOUT3_USED {true} \
+  CONFIG.CLKOUT4_JITTER {108.964} \
+  CONFIG.CLKOUT4_PHASE_ERROR {76.973}\
+  CONFIG.CLKOUT4_REQUESTED_OUT_FREQ {50} \
+  CONFIG.CLKOUT4_USED {true} \
   CONFIG.MMCM_CLKFBOUT_MULT_F {15.000} \
   CONFIG.MMCM_CLKOUT0_DIVIDE_F {7.500} \
   CONFIG.MMCM_CLKOUT1_DIVIDE {10} \
   CONFIG.MMCM_CLKOUT2_DIVIDE {6} \
-  CONFIG.NUM_OUT_CLKS {3} \
+  CONFIG.MMCM_CLKOUT3_DIVIDE {30} \
   CONFIG.RESET_PORT {resetn} \
   CONFIG.RESET_TYPE {ACTIVE_LOW} \
-] $clk_wiz_0
+  CONFIG.CLK_OUT1_PORT {clk_200M} \
+  CONFIG.CLK_OUT2_PORT {clk_150M} \
+  CONFIG.CLK_OUT3_PORT {clk_250M} \
+  CONFIG.CLK_OUT4_PORT {clk_50M} \
+  CONFIG.NUM_OUT_CLKS {4} \
+  ] $clk_wiz_0
 connect_bd_net [get_bd_pins zynq_ultra_ps_e_0/pl_clk0] [get_bd_pins clk_wiz_0/clk_in1]
 connect_bd_net [get_bd_pins rst_ps_100M/peripheral_aresetn] [get_bd_pins clk_wiz_0/resetn]
 
 # Connect PS interface clocks
-connect_bd_net [get_bd_pins clk_wiz_0/clk_out2] [get_bd_pins zynq_ultra_ps_e_0/maxihpm0_fpd_aclk]
-connect_bd_net [get_bd_pins clk_wiz_0/clk_out3] [get_bd_pins zynq_ultra_ps_e_0/saxihpc0_fpd_aclk]
+connect_bd_net [get_bd_pins clk_wiz_0/clk_250M] [get_bd_pins zynq_ultra_ps_e_0/saxihpc0_fpd_aclk]
+connect_bd_net [get_bd_pins clk_wiz_0/clk_250M] [get_bd_pins zynq_ultra_ps_e_0/saxihp1_fpd_aclk]
+connect_bd_net [get_bd_pins clk_wiz_0/clk_250M] [get_bd_pins zynq_ultra_ps_e_0/saxihp2_fpd_aclk]
+connect_bd_net [get_bd_pins clk_wiz_0/clk_250M] [get_bd_pins zynq_ultra_ps_e_0/saxihp3_fpd_aclk]
 
 # Add and configure reset processor system for the AXI clock
 set rst_ps_axi_150M [ create_bd_cell -type ip -vlnv xilinx.com:ip:proc_sys_reset rst_ps_axi_150M ]
-connect_bd_net [get_bd_pins clk_wiz_0/clk_out2] [get_bd_pins rst_ps_axi_150M/slowest_sync_clk]
+connect_bd_net [get_bd_pins clk_wiz_0/clk_150M] [get_bd_pins rst_ps_axi_150M/slowest_sync_clk]
 connect_bd_net [get_bd_pins rst_ps_100M/peripheral_aresetn] [get_bd_pins rst_ps_axi_150M/ext_reset_in]
 connect_bd_net [get_bd_pins clk_wiz_0/locked] [get_bd_pins rst_ps_axi_150M/dcm_locked]
 
 # Add and configure reset processor system for the video clock
 set rst_video_250M [ create_bd_cell -type ip -vlnv xilinx.com:ip:proc_sys_reset rst_video_250M ]
-connect_bd_net [get_bd_pins clk_wiz_0/clk_out3] [get_bd_pins rst_video_250M/slowest_sync_clk]
+connect_bd_net [get_bd_pins clk_wiz_0/clk_250M] [get_bd_pins rst_video_250M/slowest_sync_clk]
 connect_bd_net [get_bd_pins rst_ps_100M/peripheral_aresetn] [get_bd_pins rst_video_250M/ext_reset_in]
 connect_bd_net [get_bd_pins clk_wiz_0/locked] [get_bd_pins rst_video_250M/dcm_locked]
 
@@ -526,11 +559,11 @@ connect_bd_net [get_bd_pins clk_wiz_0/locked] [get_bd_pins rst_video_250M/dcm_lo
 set axi_intc_0 [create_bd_cell -type ip -vlnv xilinx.com:ip:axi_intc axi_intc_0]
 set_property -dict [list CONFIG.C_IRQ_CONNECTION {1}] $axi_intc_0
 set concat_0 [create_bd_cell -type ip -vlnv xilinx.com:ip:xlconcat xlconcat_0]
-connect_bd_net [get_bd_pins clk_wiz_0/clk_out2] [get_bd_pins axi_intc_0/s_axi_aclk]
+connect_bd_net [get_bd_pins clk_wiz_0/clk_150M] [get_bd_pins axi_intc_0/s_axi_aclk]
 connect_bd_net [get_bd_pins xlconcat_0/dout] [get_bd_pins axi_intc_0/intr]
 connect_bd_net [get_bd_pins axi_intc_0/irq] [get_bd_pins zynq_ultra_ps_e_0/pl_ps_irq0]
 connect_bd_net [get_bd_pins rst_ps_axi_150M/peripheral_aresetn] [get_bd_pins axi_intc_0/s_axi_aresetn]
-lappend axi_lite_ports [list "axi_intc_0/s_axi" "clk_wiz_0/clk_out2" "rst_ps_axi_150M/peripheral_aresetn"]
+lappend hpm0_lpd_ports [list "axi_intc_0/s_axi" "clk_wiz_0/clk_150M" "rst_ps_axi_150M/peripheral_aresetn"]
 
 # Add constant for the CAM1 and CAM3 CLK_SEL pin (01b for UltraZed-EV Carrier and 00b for Genesys ZU, 10b for all other boards)
 set clk_sel [create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant clk_sel]
@@ -548,15 +581,15 @@ connect_bd_net [get_bd_ports clk_sel] [get_bd_pins clk_sel/dout]
 # Add and configure GPIO for the reserved GPIOs
 set rsvd_gpio [create_bd_cell -type ip -vlnv xilinx.com:ip:axi_gpio rsvd_gpio]
 set_property -dict [list CONFIG.C_GPIO_WIDTH {10} CONFIG.C_ALL_OUTPUTS {1}] $rsvd_gpio
-connect_bd_net [get_bd_pins clk_wiz_0/clk_out2] [get_bd_pins rsvd_gpio/s_axi_aclk]
+connect_bd_net [get_bd_pins clk_wiz_0/clk_150M] [get_bd_pins rsvd_gpio/s_axi_aclk]
 connect_bd_net [get_bd_pins rst_ps_axi_150M/peripheral_aresetn] [get_bd_pins rsvd_gpio/s_axi_aresetn]
-lappend axi_lite_ports [list "rsvd_gpio/S_AXI" "clk_wiz_0/clk_out2" "rst_ps_axi_150M/peripheral_aresetn"]
+lappend hpm0_lpd_ports [list "rsvd_gpio/S_AXI" "clk_wiz_0/clk_150M" "rst_ps_axi_150M/peripheral_aresetn"]
 create_bd_intf_port -mode Master -vlnv xilinx.com:interface:gpio_rtl:1.0 rsvd_gpio
 connect_bd_intf_net [get_bd_intf_pins rsvd_gpio/GPIO] [get_bd_intf_ports rsvd_gpio]
 
 # Add the AXI SmartConnect for the Frame Buffers
 create_bd_cell -type ip -vlnv xilinx.com:ip:smartconnect smartconnect_0
-connect_bd_net [get_bd_pins clk_wiz_0/clk_out3] [get_bd_pins smartconnect_0/aclk]
+connect_bd_net [get_bd_pins clk_wiz_0/clk_250M] [get_bd_pins smartconnect_0/aclk]
 connect_bd_net [get_bd_pins rst_video_250M/peripheral_aresetn] [get_bd_pins smartconnect_0/aresetn]
 connect_bd_intf_net [get_bd_intf_pins smartconnect_0/M00_AXI] [get_bd_intf_pins zynq_ultra_ps_e_0/S_AXI_HPC0_FPD]
 set smartcon_ports [expr {$num_cams*2}]
@@ -575,9 +608,9 @@ foreach i $cams {
     connect_bd_net [get_bd_ports mipi_${i}_$strobe_pin_name] [get_bd_pins $strobe]
   }
   # Connect clocks
-  connect_bd_net [get_bd_pins clk_wiz_0/clk_out1] [get_bd_pins mipi_$i/dphy_clk_200M]
-  connect_bd_net [get_bd_pins clk_wiz_0/clk_out2] [get_bd_pins mipi_$i/s_axi_lite_aclk]
-  connect_bd_net [get_bd_pins clk_wiz_0/clk_out3] [get_bd_pins mipi_$i/video_aclk]
+  connect_bd_net [get_bd_pins clk_wiz_0/clk_200M] [get_bd_pins mipi_$i/dphy_clk_200M]
+  connect_bd_net [get_bd_pins clk_wiz_0/clk_150M] [get_bd_pins mipi_$i/s_axi_lite_aclk]
+  connect_bd_net [get_bd_pins clk_wiz_0/clk_250M] [get_bd_pins mipi_$i/video_aclk]
   # Connect resets
   connect_bd_net [get_bd_pins rst_ps_axi_150M/peripheral_aresetn] [get_bd_pins mipi_$i/aresetn]
   connect_bd_net [get_bd_pins rst_video_250M/peripheral_aresetn] [get_bd_pins mipi_$i/video_aresetn]
@@ -590,7 +623,8 @@ foreach i $cams {
   lappend intr_list "mipi_$i/iic2intc_irpt"
   
   # AXI Lite interfaces to be connected later
-  lappend axi_lite_ports [list "mipi_$i/S_AXI_LITE" "clk_wiz_0/clk_out2" "rst_ps_axi_150M/peripheral_aresetn"]
+  lappend hpm0_lpd_ports [list "mipi_$i/S_AXI_CTRL" "clk_wiz_0/clk_150M" "rst_ps_axi_150M/peripheral_aresetn"]
+  lappend hpm0_fpd_ports [list "mipi_$i/S_AXI_VIDEO" "clk_wiz_0/clk_250M" "rst_video_250M/peripheral_aresetn"]
   # Connect the MIPI D-Phy interface
   create_bd_intf_port -mode Slave -vlnv xilinx.com:interface:mipi_phy_rtl:1.0 mipi_phy_if_$i
   connect_bd_intf_net [get_bd_intf_ports mipi_phy_if_$i] -boundary_type upper [get_bd_intf_pins mipi_$i/mipi_phy_if]
@@ -639,7 +673,7 @@ set_property -dict [ list \
   CONFIG.C_NATIVE_COMPONENT_WIDTH {12} \
   CONFIG.C_S_AXIS_VIDEO_DATA_WIDTH {8} \
 ] $axi4s_vid_out
-connect_bd_net [get_bd_pins clk_wiz_0/clk_out3] [get_bd_pins axi4s_vid_out/aclk]
+connect_bd_net [get_bd_pins clk_wiz_0/clk_250M] [get_bd_pins axi4s_vid_out/aclk]
 connect_bd_net [get_bd_pins const_high/dout] [get_bd_pins axi4s_vid_out/aclken]
 connect_bd_net [get_bd_pins const_high/dout] [get_bd_pins axi4s_vid_out/vid_io_out_ce]
 connect_bd_net [get_bd_pins rst_video_250M/peripheral_aresetn] [get_bd_pins axi4s_vid_out/aresetn]
@@ -673,11 +707,11 @@ set_property -dict [ list \
   CONFIG.enable_generation {true} \
 ] $v_tc
 connect_bd_net [get_bd_pins dp_vid_clk/clk_out1] [get_bd_pins v_tc/clk]
-connect_bd_net [get_bd_pins clk_wiz_0/clk_out2] [get_bd_pins v_tc/s_axi_aclk]
+connect_bd_net [get_bd_pins clk_wiz_0/clk_150M] [get_bd_pins v_tc/s_axi_aclk]
 connect_bd_net [get_bd_pins rst_dp_vid_74M/peripheral_aresetn] [get_bd_pins v_tc/resetn]
 connect_bd_net [get_bd_pins rst_ps_axi_150M/peripheral_aresetn] [get_bd_pins v_tc/s_axi_aresetn]
 connect_bd_intf_net [get_bd_intf_pins v_tc/vtiming_out] [get_bd_intf_pins axi4s_vid_out/vtiming_in]
-lappend axi_lite_ports [list "v_tc/ctrl" "clk_wiz_0/clk_out2" "rst_ps_axi_150M/peripheral_aresetn"]
+lappend hpm0_fpd_ports [list "v_tc/ctrl" "clk_wiz_0/clk_150M" "rst_ps_axi_150M/peripheral_aresetn"]
 connect_bd_net [get_bd_pins axi4s_vid_out/vtg_ce] [get_bd_pins v_tc/gen_clken]
 connect_bd_net [get_bd_pins const_high/dout] [get_bd_pins v_tc/clken]
 connect_bd_net [get_bd_pins const_high/dout] [get_bd_pins v_tc/s_axi_aclken]
@@ -721,8 +755,8 @@ set_property -dict [list \
  CONFIG.ZONE_PLATE {0} \
 ] $v_tpg
 
-connect_bd_net [get_bd_pins clk_wiz_0/clk_out3] [get_bd_pins v_tpg/ap_clk]
-lappend axi_lite_ports [list "v_tpg/s_axi_CTRL" "clk_wiz_0/clk_out3" "rst_video_250M/peripheral_aresetn"]
+connect_bd_net [get_bd_pins clk_wiz_0/clk_250M] [get_bd_pins v_tpg/ap_clk]
+lappend hpm0_fpd_ports [list "v_tpg/s_axi_CTRL" "clk_wiz_0/clk_250M" "rst_video_250M/peripheral_aresetn"]
 
 # Slice for Video TPG reset signal
 set reset_v_tpg [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlslice reset_v_tpg ]
@@ -775,14 +809,14 @@ set_property -dict [ list \
 ] $v_mix
 
 connect_bd_intf_net [get_bd_intf_pins v_tpg/m_axis_video] [get_bd_intf_pins v_mix/s_axis_video]
-connect_bd_net [get_bd_pins clk_wiz_0/clk_out3] [get_bd_pins v_mix/ap_clk]
+connect_bd_net [get_bd_pins clk_wiz_0/clk_250M] [get_bd_pins v_mix/ap_clk]
 set port_index 1
 foreach i $cams {
   connect_bd_intf_net [get_bd_intf_pins mipi_$i/m_axis_video] [get_bd_intf_pins v_mix/s_axis_video$port_index]
   set port_index [expr {$port_index+1}]
 }
 #connect_bd_intf_net [get_bd_intf_pins v_mix/m_axis_video] [get_bd_intf_pins axi4s_vid_out/video_in]
-lappend axi_lite_ports [list "v_mix/s_axi_CTRL" "clk_wiz_0/clk_out3" "rst_video_250M/peripheral_aresetn"]
+lappend hpm0_fpd_ports [list "v_mix/s_axi_CTRL" "clk_wiz_0/clk_250M" "rst_video_250M/peripheral_aresetn"]
 
 # Slice for Video Mixer reset signal
 set reset_v_mix [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlslice reset_v_mix ]
@@ -802,9 +836,9 @@ set_property -dict [list \
  CONFIG.IN_SAMPLES_PER_CLOCK $samples_pc \
 ] $v_axi4s_remap
 connect_bd_intf_net [get_bd_intf_pins v_mix/m_axis_video] [get_bd_intf_pins v_axi4s_remap/s_axis_video]
-connect_bd_net [get_bd_pins v_axi4s_remap/ap_clk] [get_bd_pins clk_wiz_0/clk_out3]
+connect_bd_net [get_bd_pins v_axi4s_remap/ap_clk] [get_bd_pins clk_wiz_0/clk_250M]
 connect_bd_net [get_bd_pins v_axi4s_remap/ap_rst_n] [get_bd_pins rst_video_250M/peripheral_aresetn]
-lappend axi_lite_ports [list "v_axi4s_remap/s_axi_CTRL" "clk_wiz_0/clk_out3" "rst_video_250M/peripheral_aresetn"]
+lappend hpm0_fpd_ports [list "v_axi4s_remap/s_axi_CTRL" "clk_wiz_0/clk_250M" "rst_video_250M/peripheral_aresetn"]
 
 # AXIS Subset converter to swap Blue and Red colors
 set vid_blue_red_swap [create_bd_cell -type ip -vlnv xilinx.com:ip:axis_subset_converter vid_blue_red_swap]
@@ -825,16 +859,16 @@ set_property -dict [ list \
 ] $vid_blue_red_swap
 connect_bd_intf_net [get_bd_intf_pins v_axi4s_remap/m_axis_video] [get_bd_intf_pins vid_blue_red_swap/S_AXIS]
 connect_bd_intf_net [get_bd_intf_pins vid_blue_red_swap/M_AXIS] [get_bd_intf_pins axi4s_vid_out/video_in]
-connect_bd_net [get_bd_pins vid_blue_red_swap/aclk] [get_bd_pins clk_wiz_0/clk_out3]
+connect_bd_net [get_bd_pins vid_blue_red_swap/aclk] [get_bd_pins clk_wiz_0/clk_250M]
 connect_bd_net [get_bd_pins vid_blue_red_swap/aresetn] [get_bd_pins rst_video_250M/peripheral_aresetn]
 
 # Add GPIO for the on-board LEDs (only ZCU104)
 if { $target == "zcu104" } {
   create_bd_cell -type ip -vlnv xilinx.com:ip:axi_gpio axi_gpio_leds
-  connect_bd_net [get_bd_pins clk_wiz_0/clk_out2] [get_bd_pins axi_gpio_leds/s_axi_aclk]
+  connect_bd_net [get_bd_pins clk_wiz_0/clk_150M] [get_bd_pins axi_gpio_leds/s_axi_aclk]
   connect_bd_net [get_bd_pins rst_ps_axi_150M/peripheral_aresetn] [get_bd_pins axi_gpio_leds/s_axi_aresetn]
   apply_bd_automation -rule xilinx.com:bd_rule:board -config { Board_Interface {led_4bits ( LED ) } Manual_Source {Auto}}  [get_bd_intf_pins axi_gpio_leds/GPIO]
-  lappend axi_lite_ports [list "axi_gpio_leds/S_AXI" "clk_wiz_0/clk_out2" "rst_ps_axi_150M/peripheral_aresetn"]
+  lappend hpm0_lpd_ports [list "axi_gpio_leds/S_AXI" "clk_wiz_0/clk_150M" "rst_ps_axi_150M/peripheral_aresetn"]
 }
 
 # Add PCIe system for FPGA Drive FMC
@@ -1149,29 +1183,173 @@ if {$dual_design} {
   set_property -dict [list CONFIG.CONST_VAL {1}] $const_dis_ssd2_pwr
 }
 
+###################################################################
+# VCU
+###################################################################
+
+# Create the VCU sub-block
+proc create_vcu_block { } {
+
+  set hier_obj [create_bd_cell -type hier vcu]
+  current_bd_instance $hier_obj
+  
+  # Create interface pins
+  create_bd_intf_pin -mode Master -vlnv xilinx.com:interface:aximm_rtl:1.0 M00_AXI_VCU_DEC
+  create_bd_intf_pin -mode Master -vlnv xilinx.com:interface:aximm_rtl:1.0 M00_AXI_VCU_EN
+  create_bd_intf_pin -mode Master -vlnv xilinx.com:interface:aximm_rtl:1.0 M_AXI_VCU_MCU
+  create_bd_intf_pin -mode Slave -vlnv xilinx.com:interface:aximm_rtl:1.0 S_AXI_LITE
+
+  # Create pins
+  create_bd_pin -dir I -from 91 -to 0 Din
+  create_bd_pin -dir I -type rst aresetn
+  create_bd_pin -dir I -type clk m_axi_dec_aclk
+  create_bd_pin -dir I -type clk pll_ref_clk
+  create_bd_pin -dir I -type clk s_axi_lite_aclk
+  create_bd_pin -dir O -type intr vcu_host_interrupt
+
+  # Create instance: axi_ic_vcu_dec, and set properties
+  set axi_ic_vcu_dec [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect axi_ic_vcu_dec ]
+  set_property -dict [ list \
+   CONFIG.M00_HAS_REGSLICE {1} \
+   CONFIG.NUM_MI {1} \
+   CONFIG.NUM_SI {2} \
+   CONFIG.S00_HAS_REGSLICE {1} \
+   CONFIG.S01_HAS_REGSLICE {1} \
+ ] $axi_ic_vcu_dec
+
+  # Create instance: axi_ic_vcu_enc, and set properties
+  set axi_ic_vcu_enc [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect axi_ic_vcu_enc ]
+  set_property -dict [ list \
+   CONFIG.M00_HAS_REGSLICE {1} \
+   CONFIG.NUM_MI {1} \
+   CONFIG.NUM_SI {2} \
+   CONFIG.S00_HAS_REGSLICE {1} \
+   CONFIG.S01_HAS_REGSLICE {1} \
+ ] $axi_ic_vcu_enc
+
+  # Create instance: axi_reg_slice_vmcu, and set properties
+  set axi_reg_slice_vmcu [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_register_slice axi_reg_slice_vmcu ]
+
+  # Create instance: vcu_0, and set properties
+  set vcu_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:vcu vcu_0 ]
+  set_property -dict [ list \
+   CONFIG.DEC_CODING_TYPE {0} \
+   CONFIG.DEC_COLOR_DEPTH {0} \
+   CONFIG.DEC_COLOR_FORMAT {0} \
+   CONFIG.DEC_FPS {1} \
+   CONFIG.DEC_FRAME_SIZE {4} \
+   CONFIG.ENABLE_DECODER {true} \
+   CONFIG.ENC_BUFFER_EN {true} \
+   CONFIG.ENC_BUFFER_MANUAL_OVERRIDE {1} \
+   CONFIG.ENC_BUFFER_SIZE {253} \
+   CONFIG.ENC_BUFFER_SIZE_ACTUAL {284} \
+   CONFIG.ENC_BUFFER_TYPE {0} \
+   CONFIG.ENC_CODING_TYPE {1} \
+   CONFIG.ENC_COLOR_DEPTH {0} \
+   CONFIG.ENC_COLOR_FORMAT {0} \
+   CONFIG.ENC_FPS {1} \
+   CONFIG.ENC_FRAME_SIZE {4} \
+   CONFIG.ENC_MEM_BRAM_USED {0} \
+   CONFIG.ENC_MEM_URAM_USED {284} \
+   CONFIG.NO_OF_DEC_STREAMS {1} \
+   CONFIG.NO_OF_STREAMS {1} \
+   CONFIG.TABLE_NO {2} \
+ ] $vcu_0
+
+  # Create instance: xlslice_0, and set properties
+  set xlslice_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlslice xlslice_0 ]
+  set_property -dict [ list \
+   CONFIG.DIN_FROM {2} \
+   CONFIG.DIN_TO {2} \
+   CONFIG.DIN_WIDTH {95} \
+   CONFIG.DOUT_WIDTH {1} \
+ ] $xlslice_0
+
+  # Create interface connections
+  connect_bd_intf_net -intf_net S00_AXI_1 [get_bd_intf_pins axi_ic_vcu_enc/S00_AXI] [get_bd_intf_pins vcu_0/M_AXI_ENC0]
+  connect_bd_intf_net -intf_net S00_AXI_2 [get_bd_intf_pins axi_ic_vcu_dec/S00_AXI] [get_bd_intf_pins vcu_0/M_AXI_DEC0]
+  connect_bd_intf_net -intf_net S01_AXI_1 [get_bd_intf_pins axi_ic_vcu_enc/S01_AXI] [get_bd_intf_pins vcu_0/M_AXI_ENC1]
+  connect_bd_intf_net -intf_net S01_AXI_2 [get_bd_intf_pins axi_ic_vcu_dec/S01_AXI] [get_bd_intf_pins vcu_0/M_AXI_DEC1]
+  connect_bd_intf_net -intf_net axi_ic_vcu_dec_M00_AXI [get_bd_intf_pins M00_AXI_VCU_DEC] [get_bd_intf_pins axi_ic_vcu_dec/M00_AXI]
+  connect_bd_intf_net -intf_net axi_ic_vcu_enc_M00_AXI [get_bd_intf_pins M00_AXI_VCU_EN] [get_bd_intf_pins axi_ic_vcu_enc/M00_AXI]
+  connect_bd_intf_net -intf_net axi_register_slice_0_M_AXI [get_bd_intf_pins M_AXI_VCU_MCU] [get_bd_intf_pins axi_reg_slice_vmcu/M_AXI]
+  connect_bd_intf_net -intf_net smartconnect_0_M02_AXI [get_bd_intf_pins S_AXI_LITE] [get_bd_intf_pins vcu_0/S_AXI_LITE]
+  connect_bd_intf_net -intf_net vcu_0_M_AXI_MCU [get_bd_intf_pins axi_reg_slice_vmcu/S_AXI] [get_bd_intf_pins vcu_0/M_AXI_MCU]
+
+  # Create port connections
+  connect_bd_net -net Din_1 [get_bd_pins Din] [get_bd_pins xlslice_0/Din]
+  connect_bd_net -net clk_wiz_0_clk_100M [get_bd_pins s_axi_lite_aclk] [get_bd_pins vcu_0/s_axi_lite_aclk]
+  connect_bd_net -net clk_wiz_0_clk_300M [get_bd_pins m_axi_dec_aclk] [get_bd_pins axi_ic_vcu_dec/ACLK] [get_bd_pins axi_ic_vcu_dec/M00_ACLK] [get_bd_pins axi_ic_vcu_dec/S00_ACLK] [get_bd_pins axi_ic_vcu_dec/S01_ACLK] [get_bd_pins axi_ic_vcu_enc/ACLK] [get_bd_pins axi_ic_vcu_enc/M00_ACLK] [get_bd_pins axi_ic_vcu_enc/S00_ACLK] [get_bd_pins axi_ic_vcu_enc/S01_ACLK] [get_bd_pins axi_reg_slice_vmcu/aclk] [get_bd_pins vcu_0/m_axi_dec_aclk] [get_bd_pins vcu_0/m_axi_enc_aclk] [get_bd_pins vcu_0/m_axi_mcu_aclk]
+  connect_bd_net -net clk_wiz_0_clk_50M [get_bd_pins pll_ref_clk] [get_bd_pins vcu_0/pll_ref_clk]
+  connect_bd_net -net proc_sys_reset_1_peripheral_aresetn [get_bd_pins aresetn] [get_bd_pins axi_ic_vcu_dec/ARESETN] [get_bd_pins axi_ic_vcu_dec/M00_ARESETN] [get_bd_pins axi_ic_vcu_dec/S00_ARESETN] [get_bd_pins axi_ic_vcu_dec/S01_ARESETN] [get_bd_pins axi_ic_vcu_enc/ARESETN] [get_bd_pins axi_ic_vcu_enc/M00_ARESETN] [get_bd_pins axi_ic_vcu_enc/S00_ARESETN] [get_bd_pins axi_ic_vcu_enc/S01_ARESETN] [get_bd_pins axi_reg_slice_vmcu/aresetn]
+  connect_bd_net -net vcu_0_vcu_host_interrupt [get_bd_pins vcu_host_interrupt] [get_bd_pins vcu_0/vcu_host_interrupt]
+  connect_bd_net -net xlslice_0_Dout [get_bd_pins vcu_0/vcu_resetn] [get_bd_pins xlslice_0/Dout]
+
+  # Restore current instance
+  current_bd_instance \
+}
+
+create_vcu_block
+lappend hpm0_lpd_ports [list "vcu/S_AXI_LITE" "clk_wiz_0/clk_150M" "rst_ps_axi_150M/peripheral_aresetn"]
+connect_bd_net [get_bd_pins clk_wiz_0/clk_150M] [get_bd_pins vcu/s_axi_lite_aclk]
+connect_bd_net [get_bd_pins clk_wiz_0/clk_250M] [get_bd_pins vcu/m_axi_dec_aclk]
+connect_bd_net [get_bd_pins clk_wiz_0/clk_50M] [get_bd_pins vcu/pll_ref_clk]
+connect_bd_net [get_bd_pins rst_video_250M/peripheral_aresetn] [get_bd_pins vcu/aresetn]
+connect_bd_net [get_bd_pins zynq_ultra_ps_e_0/emio_gpio_o] [get_bd_pins vcu/Din]
+set axi_ic_mcu [create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect axi_ic_mcu]
+set_property -dict [list CONFIG.NUM_MI {1}] $axi_ic_mcu
+connect_bd_net [get_bd_pins clk_wiz_0/clk_250M] [get_bd_pins axi_ic_mcu/ACLK]
+connect_bd_net [get_bd_pins clk_wiz_0/clk_250M] [get_bd_pins axi_ic_mcu/S00_ACLK]
+connect_bd_net [get_bd_pins clk_wiz_0/clk_250M] [get_bd_pins axi_ic_mcu/M00_ACLK]
+connect_bd_net [get_bd_pins rst_video_250M/interconnect_aresetn] [get_bd_pins axi_ic_mcu/ARESETN]
+connect_bd_net [get_bd_pins rst_video_250M/peripheral_aresetn] [get_bd_pins axi_ic_mcu/S00_ARESETN]
+connect_bd_net [get_bd_pins rst_video_250M/peripheral_aresetn] [get_bd_pins axi_ic_mcu/M00_ARESETN]
+connect_bd_net [get_bd_pins clk_wiz_0/clk_250M] [get_bd_pins zynq_ultra_ps_e_0/saxi_lpd_aclk]
+connect_bd_intf_net -boundary_type upper [get_bd_intf_pins axi_ic_mcu/M00_AXI] [get_bd_intf_pins zynq_ultra_ps_e_0/S_AXI_LPD]
+connect_bd_intf_net -boundary_type upper [get_bd_intf_pins vcu/M_AXI_VCU_MCU] [get_bd_intf_pins axi_ic_mcu/S00_AXI]
+lappend priority_intr_list "vcu/vcu_host_interrupt"
+connect_bd_intf_net -boundary_type upper [get_bd_intf_pins vcu/M00_AXI_VCU_DEC] [get_bd_intf_pins zynq_ultra_ps_e_0/S_AXI_HP2_FPD]
+connect_bd_intf_net -boundary_type upper [get_bd_intf_pins vcu/M00_AXI_VCU_EN] [get_bd_intf_pins zynq_ultra_ps_e_0/S_AXI_HPC1_FPD]
+connect_bd_net [get_bd_pins clk_wiz_0/clk_250M] [get_bd_pins zynq_ultra_ps_e_0/saxihpc1_fpd_aclk]
+
+#########################################################
+# AXI Interfaces and interrupts
+#########################################################
 
 # Add AXI Interconnect for the AXI Lite interfaces
 
-set n_periph_ports [llength $axi_lite_ports]
-set axi_periph_0 [create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect axi_periph_0]
-set_property -dict [list CONFIG.NUM_MI $n_periph_ports] $axi_periph_0
-connect_bd_net [get_bd_pins clk_wiz_0/clk_out2] [get_bd_pins axi_periph_0/ACLK]
-connect_bd_net [get_bd_pins clk_wiz_0/clk_out2] [get_bd_pins axi_periph_0/S00_ACLK]
-connect_bd_net [get_bd_pins rst_ps_axi_150M/peripheral_aresetn] [get_bd_pins axi_periph_0/ARESETN]
-connect_bd_net [get_bd_pins rst_ps_axi_150M/peripheral_aresetn] [get_bd_pins axi_periph_0/S00_ARESETN]
-connect_bd_intf_net [get_bd_intf_pins zynq_ultra_ps_e_0/M_AXI_HPM0_FPD] -boundary_type upper [get_bd_intf_pins axi_periph_0/S00_AXI]
-# Attach all of the ports, their clocks and resets
-set port_num 0
-foreach port $axi_lite_ports {
-  puts $port
-  set port_label [lindex $port 0]
-  connect_bd_intf_net -boundary_type upper [get_bd_intf_pins axi_periph_0/M0${port_num}_AXI] [get_bd_intf_pins $port_label]
-  set port_clk [lindex $port 1]
-  connect_bd_net [get_bd_pins $port_clk] [get_bd_pins axi_periph_0/M0${port_num}_ACLK]
-  set port_rst [lindex $port 2]
-  connect_bd_net [get_bd_pins $port_rst] [get_bd_pins axi_periph_0/M0${port_num}_ARESETN]
-  set port_num [expr {$port_num+1}]
+proc create_axi_ic {label clk proc_rst master master_clk ports} {
+  # Connect the master clock
+  connect_bd_net [get_bd_pins $clk] [get_bd_pins $master_clk]
+  # Create the AXI interconnect
+  set n_periph_ports [llength $ports]
+  set axi_ic [create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect $label]
+  set_property -dict [list CONFIG.NUM_MI $n_periph_ports] $axi_ic
+  connect_bd_net [get_bd_pins $clk] [get_bd_pins $label/ACLK]
+  connect_bd_net [get_bd_pins $clk] [get_bd_pins $label/S00_ACLK]
+  connect_bd_net [get_bd_pins $proc_rst/interconnect_aresetn] [get_bd_pins $label/ARESETN]
+  connect_bd_net [get_bd_pins $proc_rst/peripheral_aresetn] [get_bd_pins $label/S00_ARESETN]
+  connect_bd_intf_net [get_bd_intf_pins $master] -boundary_type upper [get_bd_intf_pins $label/S00_AXI]
+  # Attach all of the ports, their clocks and resets
+  set port_num 0
+  foreach port $ports {
+    set port_label [lindex $port 0]
+    connect_bd_intf_net -boundary_type upper [get_bd_intf_pins $label/M0${port_num}_AXI] [get_bd_intf_pins $port_label]
+    set port_clk [lindex $port 1]
+    connect_bd_net [get_bd_pins $port_clk] [get_bd_pins $label/M0${port_num}_ACLK]
+    set port_rst [lindex $port 2]
+    connect_bd_net [get_bd_pins $port_rst] [get_bd_pins $label/M0${port_num}_ARESETN]
+    set port_num [expr {$port_num+1}]
+  }
 }
+
+# HPM0 FPD
+create_axi_ic "axi_ic_ctrl_250" "clk_wiz_0/clk_250M" "rst_video_250M" \
+  "zynq_ultra_ps_e_0/M_AXI_HPM0_FPD" "zynq_ultra_ps_e_0/maxihpm0_fpd_aclk" $hpm0_fpd_ports
+
+# HPM0 LPD
+create_axi_ic "axi_ic_ctrl_150" "clk_wiz_0/clk_150M" "rst_ps_axi_150M" \
+  "zynq_ultra_ps_e_0/M_AXI_HPM0_LPD" "zynq_ultra_ps_e_0/maxihpm0_lpd_aclk" $hpm0_lpd_ports
 
 # Connect the interrupts to AXI Intc to pl_ps_irq0 (max 32 interrupts)
 set n_interrupts [llength $intr_list]
@@ -1195,6 +1373,37 @@ if { $n_interrupts > 0 } {
     set intr_index [expr {$intr_index+1}]
   }
 }
+
+# Enable ports, clocks and interrupts for accelerators
+set_property PFM.AXI_PORT { \
+  M08_AXI {memport "M_AXI_GP" sptag "" memory "" is_range "false"} \
+  M09_AXI {memport "M_AXI_GP" sptag "" memory "" is_range "false"} \
+  M10_AXI {memport "M_AXI_GP" sptag "" memory "" is_range "false"} \
+  M11_AXI {memport "M_AXI_GP" sptag "" memory "" is_range "false"} \
+  M12_AXI {memport "M_AXI_GP" sptag "" memory "" is_range "false"} \
+  M13_AXI {memport "M_AXI_GP" sptag "" memory "" is_range "false"} \
+  M14_AXI {memport "M_AXI_GP" sptag "" memory "" is_range "false"} \
+  M15_AXI {memport "M_AXI_GP" sptag "" memory "" is_range "false"} \
+  } [get_bd_cells /axi_ic_ctrl_250]
+
+set_property PFM.AXI_PORT { \
+  S_AXI_HP1_FPD {memport "S_AXI_HP" sptag "HP1" memory "HP1_DDR_LOW" is_range "false"} \
+  S_AXI_HP3_FPD {memport "S_AXI_HP" sptag "HP3" memory "HP3_DDR_LOW" is_range "false"} \
+  } [get_bd_cells /zynq_ultra_ps_e_0]
+  
+set_property PFM.CLOCK { \
+  clk_150M {id "3" is_default "false" proc_sys_reset "/rst_ps_axi_150M" status "fixed" freq_hz "149985000"} \
+  clk_250M {id "4" is_default "true" proc_sys_reset "/rst_video_250M" status "fixed" freq_hz "249975000"} \
+  } [get_bd_cells /clk_wiz_0]
+
+set_property PFM.IRQ { \
+  In4 {is_range "true"} \
+  In5 {is_range "true"} \
+  In6 {is_range "true"} \
+  In7 {is_range "true"} \
+  } [get_bd_cells /xlconcat_1]
+
+set_property pfm_name "xilinx:$board_name:$target:1.0" [get_files -all "$block_name.bd"]
 
 # Assign addresses
 assign_bd_address

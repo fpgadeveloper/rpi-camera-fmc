@@ -142,6 +142,15 @@ set proj_dir [get_property directory [current_project]]
 
 # Set project properties
 set_property board_part $proj_board [current_project]
+set_property platform.board_id $design_name [current_project]
+set_property platform.default_output_type "xclbin" [current_project]
+set_property platform.design_intent.datacenter false [current_project]
+set_property platform.design_intent.embedded true [current_project]
+set_property platform.design_intent.external_host false [current_project]
+set_property platform.design_intent.server_managed false [current_project]
+set_property platform.extensible true [current_project]
+set_property platform.name $design_name [current_project]
+set_property platform.version "1.0" [current_project]
 
 # Create 'sources_1' fileset (if not found)
 if {[string equal [get_filesets -quiet sources_1] ""]} {
