@@ -77,20 +77,25 @@ ifeq ($(call get_template_name,$(TARGET)), microblaze)
 	SSTATE_ARCH = microblaze
 	BUILD_PRODUCTS = $(PETL_FSBOOT_ELF) $(PETL_UBOOT_ELF) $(PETL_DTB)
 	PKG_PRODUCTS = $(PETL_BOOT_MCS)
+	PKG_CMD = petalinux-package --boot --force --fpga $(VIV_BIT) --u-boot --kernel --flash-size $(call get_flash_size,$(TARGET)) --flash-intf $(call get_flash_intf,$(TARGET))
 else ifeq ($(call get_template_name,$(TARGET)), zynq)
 	SSTATE_ARCH = arm
 	BUILD_PRODUCTS = $(PETL_ZYNQ_FSBL_ELF) $(PETL_DTB)
 	PKG_PRODUCTS = $(PETL_BOOT_BIN)
+	PKG_CMD = petalinux-package --boot --fsbl ./images/linux/zynq_fsbl.elf --fpga $(VIV_BIT) --u-boot
 else ifeq ($(call get_template_name,$(TARGET)), zynqMP)
 	SSTATE_ARCH = arch64
 	BUILD_PRODUCTS = $(PETL_BL31_ELF) $(PETL_PMUFW_ELF) $(PETL_ZYNQMP_FSBL_ELF) $(PETL_DTB)
 	PKG_PRODUCTS = $(PETL_BOOT_BIN)
+	PKG_CMD = petalinux-package --boot --fsbl ./images/linux/zynqmp_fsbl.elf --fpga $(VIV_BIT) --u-boot
 endif
 
 ifeq ($(call get_has_accel,$(TARGET)), accel)
 	VIV_BIT = $(VIT_ACC_DIR)/$(TARGET)_container/link/int/system.bit
+	MAKE_BIT_CMD = $(MAKE) -C $(VIT_ACC_DIR) xclbin TARGET=$(TARGET) JOBS=$(JOBS)
 else
 	VIV_BIT = $(VIV_PRJ_DIR)/$(TARGET).runs/impl_1/$(BD_NAME)_wrapper.bit
+	MAKE_BIT_CMD = @echo 'Vivado failed to generate the bitstream'
 endif
 
 ifneq ($(SSTATE_PATH),)
@@ -143,28 +148,14 @@ petalinux: check_target
 
 petalinux_locked: package
 
-# Package rule for microblaze designs
-ifeq ($(call get_template_name,$(TARGET)), microblaze)
 package: $(PKG_PRODUCTS)
-$(PKG_PRODUCTS): $(BUILD_PRODUCTS)
+$(PKG_PRODUCTS): $(BUILD_PRODUCTS) $(VIV_BIT)
 	@echo 'Packaging PetaLinux project for $(TARGET)'
-	cd $(TARGET) && petalinux-package --boot --force --fpga $(VIV_BIT) --u-boot --kernel --flash-size $(call get_flash_size,$(TARGET)) --flash-intf $(call get_flash_intf,$(TARGET))
+	cd $(TARGET) && $(PKG_CMD)
 	
-# Package rule for zynq designs
-else ifeq ($(call get_template_name,$(TARGET)), zynq)
-package: $(PKG_PRODUCTS)
-$(PKG_PRODUCTS): $(BUILD_PRODUCTS)
-	@echo 'Packaging PetaLinux project for $(TARGET)'
-	cd $(TARGET) && petalinux-package --boot --fsbl ./images/linux/zynq_fsbl.elf --fpga $(VIV_BIT) --u-boot
-	
-# Package rule for zynqMP designs
-else ifeq ($(call get_template_name,$(TARGET)), zynqMP)
-package: $(PKG_PRODUCTS)
-$(PKG_PRODUCTS): $(BUILD_PRODUCTS)
-	@echo 'Packaging PetaLinux project for $(TARGET)'
-	cd $(TARGET) && petalinux-package --boot --fsbl ./images/linux/zynqmp_fsbl.elf --fpga $(VIV_BIT) --u-boot
-	
-endif
+# Generate bitstream (should already be done unless target uses an accelerator)
+$(VIV_BIT): 
+	$(MAKE_BIT_CMD)
 
 PETL_BUILD_DEPS = $(PETL_FSBOOT_ELF) $(PETL_UBOOT_ELF) $(PETL_DTB) \
                   $(PETL_ZYNQ_FSBL_ELF) \
