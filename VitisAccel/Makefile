@@ -23,7 +23,7 @@ TARGET_LIST := $(sort $(patsubst %_target,%,$(filter %_target,$(.VARIABLES))))
 
 # Kernel name
 KERNEL_DIR = kernels
-KERNEL = image_processing
+KERNEL = v_multi_scaler
 KERNEL_SUBDIR = $(KERNEL_DIR)/$(KERNEL)
 KERNEL_XO = $(KERNEL_SUBDIR)/xo/$(KERNEL).xo
 TARGET_OPT = hw
@@ -99,6 +99,8 @@ $(XCLBIN_FILE): $(KERNEL_XO)
 	$(XBU) $(XBU_FLAGS) --input $@ --output strip.xclbin
 	@mv strip.xclbin $@
 
+.PHONY: kernel
+kernel: $(KERNEL_XO)
 $(KERNEL_XO): $(PFM_FILE)
 	$(MAKE) -C $(KERNEL_SUBDIR) all PLATFORM_FILE=$(PFM_FILE)
 

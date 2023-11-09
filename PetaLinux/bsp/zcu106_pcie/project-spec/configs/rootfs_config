@@ -4159,6 +4159,17 @@ CONFIG_packagegroup-petalinux-v4lutils=y
 CONFIG_cmake=y
 CONFIG_opencv-staticdev=y
 CONFIG_initcams=y
+CONFIG_htop=y
+CONFIG_jansson=y
+CONFIG_target-factory=y
+CONFIG_unilog=y
+CONFIG_vart=y
+CONFIG_vitis-ai-library=y
+CONFIG_xir=y
+CONFIG_vvas-accel-libs=y
+CONFIG_vvas-gst=y
+CONFIG_vvas-utils=y
+CONFIG_packagegroup-petalinux-matchbox=n
 
 CONFIG_ADD_USERS_TO_GROUPS="petalinux:audio,video,disk,kmem;"
 

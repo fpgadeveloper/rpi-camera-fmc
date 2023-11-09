@@ -29,6 +29,6 @@ bootimages/
 PetaLinux/offline.txt
 VitisAccel/*_workspace/
 VitisAccel/*_container/
-VitisAccel/kernels/image_processing/_x/
-VitisAccel/kernels/image_processing/xo/
+VitisAccel/kernels/*/_x/
+VitisAccel/kernels/*/xo/
 
