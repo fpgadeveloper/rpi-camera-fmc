@@ -252,6 +252,22 @@
 		};
 };
 
+&zynqmp_dpsub {
+    status = "okay";
+    clocks = <&dp_aclk>, <&zynqmp_clk 17>, <&zynqmp_clk 16>, <&display_pipeline_clk_wiz_0 0>;
+    clock-names = "dp_apb_clk", "dp_aud_clk",
+                    "dp_vtc_pixel_clk_in",
+                    "dp_live_video_in_clk";
+    xlnx,bridge = <&display_pipeline_v_tc_0>;
+
+    dp_port: port@0 {
+        reg = <0>;
+        dp_encoder: endpoint {
+            remote-endpoint = <&mixer_crtc>;
+        };
+    };
+};
+
 &amba_pl {
 	imx219_clk: imx219_clk {
 		#clock-cells = <0x0>;
@@ -282,24 +298,12 @@
 		regulator-max-microvolt = <1200000>;
 	};
 	
-};
-
-&mipi_0_axi_iic_0 {
-	imx219_cam0: sensor@10 {
-		compatible = "sony,imx219";
-		reg = <0x10>;
-		clocks = <&imx219_clk>;
-		VANA-supply = <&imx219_vana>;   /* 2.8v */
-		VDIG-supply = <&imx219_vdig>;   /* 1.8v */
-		VDDL-supply = <&imx219_vddl>;   /* 1.2v */
-
-		port {
-		     imx219_cam0_0: endpoint {
-			remote-endpoint = <&mipi_csi_inmipi_0_mipi_csi2_rx_subsyst_0>;
-			data-lanes = <1 2>;
-			link-frequencies = /bits/ 64 <456000000>;
-			};
-		};
+	/* zocl */
+	zyxclmm_drm {
+		compatible = "xlnx,zocl";
+		status = "okay";
+		interrupt-parent = <&gic>;
+		interrupts = <0 110  4>, <0 111  4>;
 	};
 };
 
@@ -341,43 +345,12 @@
 	};
 };
 
-&mipi_3_axi_iic_0 {
-	imx219_cam3: sensor@10 {
-		compatible = "sony,imx219";
-		reg = <0x10>;
-		clocks = <&imx219_clk>;
-		VANA-supply = <&imx219_vana>;   /* 2.8v */
-		VDIG-supply = <&imx219_vdig>;   /* 1.8v */
-		VDDL-supply = <&imx219_vddl>;   /* 1.2v */
-
-		port {
-		     imx219_cam3_0: endpoint {
-			remote-endpoint = <&mipi_csi_inmipi_3_mipi_csi2_rx_subsyst_0>;
-			data-lanes = <1 2>;
-			link-frequencies = /bits/ 64 <456000000>;
-			};
-		};
-	};
-};
-
-&mipi_0_mipi_csi2_rx_subsyst_0 {
-	xlnx,en-active-lanes;
-};
-
 &mipi_1_mipi_csi2_rx_subsyst_0 {
 	xlnx,en-active-lanes;
 };
 
 &mipi_2_mipi_csi2_rx_subsyst_0 {
 	xlnx,en-active-lanes;
-};
-
-&mipi_3_mipi_csi2_rx_subsyst_0 {
-	xlnx,en-active-lanes;
-};
-
-&mipi_csi_inmipi_0_mipi_csi2_rx_subsyst_0 {
-	remote-endpoint = <&imx219_cam0_0>;
 };
 
 &mipi_csi_inmipi_1_mipi_csi2_rx_subsyst_0 {
@@ -388,31 +361,68 @@
 	remote-endpoint = <&imx219_cam2_0>;
 };
 
-&mipi_csi_inmipi_3_mipi_csi2_rx_subsyst_0 {
-	remote-endpoint = <&imx219_cam3_0>;
-};
-
-&xx_mix_masterv_mix {
-	v_mixv_tpg: endpoint {
-		remote-endpoint = <&tpg_outv_tpg>;
-	};
-};
-
-&v_axi4s_remap {
-	remap_ports: ports {
+&mipi_1_isppipeline {
+	compatible = "xlnx,ISPPipeline_accel";
+	reset-gpios = <&gpio 94 1>;
+	xlnx,max-height = <1232>;
+	xlnx,max-width = <1920>;
+	xlnx,rgain = <128>;
+	xlnx,bgain = <210>;
+	xlnx,pawb = <350>;
+	xlnx,mode-reg = <1>;
+	ports {
 		#address-cells = <1>;
 		#size-cells = <0>;
-		remap_port0: port@0 {
+			port@0 {
 			reg = <0>;
-			v_axi4s_remapv_mix: endpoint {
-				remote-endpoint = <&mixer_crtcv_mix>;
+			xlnx,video-width = <10>;
+			xlnx,cfa-pattern = "rggb";
+				mipi_1_isppipelinemipi_1_mipi_csi2_rx_subsyst_0: endpoint {
+				remote-endpoint = <&mipi_csirx_outmipi_1_mipi_csi2_rx_subsyst_0>;
+			};
+		};
+			port@1 {
+			reg = <1>;
+			xlnx,video-width = <8>;
+			xlnx,cfa-pattern = "rggb";
+			
+			imx_cam1_demosaic_out: endpoint {
+				remote-endpoint = <&imx_cam1_scaler_in>;
 			};
 		};
 	};
 };
 
-&mipi_0_v_proc {
-	compatible = "xlnx,v-vpss-scaler-2.2";
+&mipi_2_isppipeline {
+	compatible = "xlnx,ISPPipeline_accel";
+	reset-gpios = <&gpio 102 1>;
+	xlnx,max-height = <1232>;
+	xlnx,max-width = <1920>;
+	xlnx,rgain = <128>;
+	xlnx,bgain = <210>;
+	xlnx,pawb = <350>;
+	xlnx,mode-reg = <1>;
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+			port@0 {
+			reg = <0>;
+			xlnx,video-width = <10>;
+			xlnx,cfa-pattern = "rggb";
+				mipi_2_isppipelinemipi_2_mipi_csi2_rx_subsyst_0: endpoint {
+				remote-endpoint = <&mipi_csirx_outmipi_2_mipi_csi2_rx_subsyst_0>;
+			};
+		};
+			port@1 {
+			reg = <1>;
+			xlnx,video-width = <8>;
+			xlnx,cfa-pattern = "rggb";
+			
+			imx_cam2_demosaic_out: endpoint {
+				remote-endpoint = <&imx_cam2_scaler_in>;
+			};
+		};
+	};
 };
 
 &mipi_1_v_proc {
@@ -423,8 +433,40 @@
 	compatible = "xlnx,v-vpss-scaler-2.2";
 };
 
-&mipi_3_v_proc {
-	compatible = "xlnx,v-vpss-scaler-2.2";
+&display_pipeline_clk_wiz_0 {
+	#address-cells = <2>;
+};
+
+&crtc_mixer_portdisplay_pipeline_v_mix_0 {
+	mixer_crtc: endpoint@0 {
+		reg = <0>;
+		remote-endpoint = <&dp_encoder>;
+	};
+};
+
+&xx_mix_masterdisplay_pipeline_v_mix_0 {
+	xlnx,vformat = "NV16";
+};
+
+&display_pipeline_v_mix_0 {
+	xlnx,disp-bridge = <&zynqmp_dpsub>;
+};
+
+&display_pipeline_v_tc_0 {
+	compatible = "xlnx,bridge-v-tc-6.1";
+	xlnx,pixels-per-clock = <1>;
+};
+
+&scaler_port0mipi_1_v_proc {
+	imx_cam1_scaler_in: endpoint {
+		remote-endpoint = <&imx_cam1_demosaic_out>;
+	};
+};
+
+&scaler_port0mipi_2_v_proc {
+	imx_cam2_scaler_in: endpoint {
+		remote-endpoint = <&imx_cam2_demosaic_out>;
+	};
 };
 
 

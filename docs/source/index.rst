@@ -17,7 +17,6 @@ This is the documentation for the `RPi Camera FMC`_ reference designs.
    requirements
    supported_carriers
    build_instructions
-   standalone
    petalinux
    updating
    troubleshooting

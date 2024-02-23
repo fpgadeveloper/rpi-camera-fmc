@@ -1,4 +1,4 @@
-# Opsero Electronic Design Inc. Copyright 2023
+# Opsero Electronic Design Inc. Copyright 2024
 #
 # This script runs synthesis, implementation and exports the hardware for a project.
 #

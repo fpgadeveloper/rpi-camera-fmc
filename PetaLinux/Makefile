@@ -1,4 +1,4 @@
-# Opsero Electronic Design Inc. 2023
+# Opsero Electronic Design Inc. 2024
 #
 # This Makefile can be used to build the PetaLinux projects.
 
@@ -12,13 +12,12 @@ TARGET ?= none
 JOBS ?= 8
 
 # valid targets (template name, flash size, flash interface, accelerator)
-zcu104_target := zynqMP 0 0 no_accel
-zcu102_hpc0_target := zynqMP 0 0 no_accel
-zcu102_hpc1_target := zynqMP 0 0 no_accel
-zcu106_hpc0_target := zynqMP 0 0 no_accel
-pynqzu_target := zynqMP 0 0 no_accel
-uzev_target := zynqMP 0 0 no_accel
-zcu106_pcie_target := zynqMP 0 0 accel
+zcu104_target := zynqMP 0 0 accel
+zcu102_hpc0_target := zynqMP 0 0 accel
+zcu102_hpc1_target := zynqMP 0 0 accel
+zcu106_hpc0_target := zynqMP 0 0 accel
+pynqzu_target := zynqMP 0 0 accel
+uzev_target := zynqMP 0 0 accel
 
 TARGET_LIST := $(sort $(patsubst %_target,%,$(filter %_target,$(.VARIABLES))))
 

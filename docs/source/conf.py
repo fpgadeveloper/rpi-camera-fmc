@@ -20,7 +20,7 @@ numfig = True
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = 'RPi Camera FMC Reference Designs'
-copyright = '2023, Opsero Electronic Design Inc.'
+copyright = '2024, Opsero Electronic Design Inc.'
 author = 'Jeff Johnson'
 
 # -- General configuration ---------------------------------------------------

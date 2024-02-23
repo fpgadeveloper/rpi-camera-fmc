@@ -1,4 +1,4 @@
-# Opsero Electronic Design Inc. 2023
+# Opsero Electronic Design Inc. 2024
 #
 # This Makefile builds the PL kernels and links them into the hw platform.
 
@@ -17,15 +17,21 @@ TARGET ?= none
 JOBS ?= 8
 
 # valid targets
-zcu106_pcie_target := 0
+zcu104_target := 0 prj_config
+zcu102_hpc0_target := 0 prj_config
+zcu102_hpc1_target := 0 prj_config_1
+zcu106_hpc0_target := 0 prj_config
+pynqzu_target := 0 prj_config
+genesyszu_target := 0 prj_config
+uzev_target := 0 prj_config
 
 TARGET_LIST := $(sort $(patsubst %_target,%,$(filter %_target,$(.VARIABLES))))
 
 # Kernel name
 KERNEL_DIR = kernels
 KERNEL = v_multi_scaler
-KERNEL_SUBDIR = $(KERNEL_DIR)/$(KERNEL)
-KERNEL_XO = $(KERNEL_SUBDIR)/xo/$(KERNEL).xo
+KERNEL_SUBDIR = $(KERNEL_DIR)/build/$(TARGET)/$(KERNEL)
+KERNEL_XO = $(KERNEL_SUBDIR)/$(KERNEL).xo
 TARGET_OPT = hw
 
 # Vivado
@@ -47,6 +53,9 @@ XCLBIN_FILE = $(CONTAINER_DIR)/dpu.xclbin
 LOGS_DIR = $(CONTAINER_DIR)/logs
 IP_CACHE_DIR = $(CONTAINER_DIR)/ip_cache
 SD_CARD_DIR = $(CONTAINER_DIR)/sd_card
+
+# Project config
+PRJ_CFG_FILE = $(word 2,$($(TARGET)_target))
 
 #---------------------------------------------------------------------
 # vitis common setup
@@ -81,7 +90,7 @@ help::
 # # v++ flags
 VPP ?= v++
 
-XOCC_OPTS = -t ${TARGET_OPT} --platform ${PFM_FILE} --save-temps
+XOCC_OPTS = -t ${TARGET_OPT} --platform ${PFM_FILE} --save-temps --config ${DIR_PRJ}/prj_conf/${PRJ_CFG_FILE} --xp param:compiler.userPostSysLinkOverlayTcl=${DIR_PRJ}/prj_conf/strip_interconnects.tcl
 
 .PHONY: all xclbin clean package
 
@@ -102,7 +111,7 @@ $(XCLBIN_FILE): $(KERNEL_XO)
 .PHONY: kernel
 kernel: $(KERNEL_XO)
 $(KERNEL_XO): $(PFM_FILE)
-	$(MAKE) -C $(KERNEL_SUBDIR) all PLATFORM_FILE=$(PFM_FILE)
+	$(MAKE) -C $(KERNEL_DIR) all PLATFORM_FILE=$(PFM_FILE) TARGET=$(TARGET)
 
 $(PFM_FILE): $(VIV_XSA)
 	$(XSCT) $(VIT_SCRIPT_PFM) -xsa $(VIV_XSA) -targ $(TARGET)
@@ -116,10 +125,11 @@ package:
 	cp $(CONTAINER_DIR)/link/vivado/vpl/prj/prj.runs/impl_1/*.bit $(SD_CARD_DIR)
 	cp $(CONTAINER_DIR)/*.xclbin $(SD_CARD_DIR)
 
-#.PHONY: clean
+.PHONY: clean
 clean: check_target
 	-$(RM) $(CONTAINER_DIR)
 	-$(RM) $(PFM_WORKSPACE)
+	$(MAKE) -C $(KERNEL_DIR) clean TARGET=$(TARGET)
 
 .PHONY: clean_all
 clean_all: 
@@ -128,7 +138,7 @@ clean_all:
 		$(MAKE) --no-print-directory clean TARGET=$${targ}; \
 	done; \
 	}
-	$(MAKE) -C $(KERNEL_SUBDIR) clean
+	$(MAKE) -C $(KERNEL_DIR) clean_all
 	-$(RM) *.log _x *.jou v++* *.xclbin *.ini *.xsa .Xil
 	-$(RM) packaged* tmp_*
 

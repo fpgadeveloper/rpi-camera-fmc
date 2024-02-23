@@ -16,7 +16,7 @@ users are advised to use a Linux virtual machine to build the PetaLinux projects
 
 1. From a command terminal, clone the Git repository and `cd` into it.
    ```
-   git clone https://github.com/fpgadeveloper/rpi-camera-fmc.git
+   git clone --recursive https://github.com/fpgadeveloper/rpi-camera-fmc.git
    cd rpi-camera-fmc
    ```
 2. Launch PetaLinux by sourcing the `settings.sh` bash script, eg:
@@ -108,7 +108,7 @@ losing data on one of your hard drives.
 2. Check that the cameras have been enumerated correctly by running the `v4l2-ctl --list-devices` command.
    The output should be similar to the following:
    ```
-   zcu104rpicamfmc20221:~$ v4l2-ctl --list-devices
+   zcu104-rpi-cam-fmc-2022-1:~$ v4l2-ctl --list-devices
    vcap_mipi_0_v_proc output 0 (platform:vcap_mipi_0_v_proc:0):
            /dev/video0
    
@@ -131,38 +131,45 @@ losing data on one of your hard drives.
    connected, so if you have only connected 2 cameras for example, then you should only see 2 video devices
    and 2 media devices listed.
 
-3. Run the init script with the command `init_cams`.
+3. Run the init script with the command `init_cams.sh`.
    ```
-   zcu104rpicamfmc20221:~$ init_cams
+   zcu104-rpi-cam-fmc-2022-1:~$ init_cams.sh
    Detected and configured the following cameras on RPi Camera FMC:
     - CAM0: /dev/media0 = /dev/video0
     - CAM1: /dev/media1 = /dev/video1
     - CAM2: /dev/media2 = /dev/video2
     - CAM3: /dev/media3 = /dev/video3
    ```
-   The init script is located in `/usr/bin` and it can be used to show all of the connected RPi cameras
-   and the media and video devices to which they are associated. It is not necessary to use the init script
-   but it can make it easier to find the media and video devices for the camera that you wish to target with
-   GStreamer or other applications. It also initializes each camera's analog and digital gain parameters,
-   which otherwise default to their lowest values, causing dark images.
+   The init script is located in `/usr/bin` and it serves as an example for setting the video pipe parameters
+   using media-ctl. It configures all of the capture pipelines to a resolution, format and frame rate that
+   is specified by a set of variables at the top of the script. It also lists all of the connected RPi cameras
+   and the media and video devices to which they are associated. 
+   The init script makes it easy to find all of the connected media and video devices, and to configure them
+   so that they can be used with GStreamer or other applications.
 
-4. If you see the PetaLinux desktop environment on the monitor, you will need to disable it before running
-   GStreamer in the next step. Run this command to disable the desktop environment:
+4. Before we can use the display pipeline, we need to set it up with the following command:
    ```
-   sudo systemctl isolate multi-user.target
+   modetest -M xlnx -D a0100000.v_mix -s 52@40:1920x1080@NV16
    ```
+   Here we are setting it up for 1080p resolution and NV16 pixel format, which is the expected format for
+   this hardware.
 
 5. Use Gstreamer to display the video from a single camera on the DisplayPort monitor:
    ```
-   gst-launch-1.0 mediasrcbin media-device=/dev/media0 v4l2src0::io-mode=mmap ! "video/x-raw, width=1920, height=1080, format=NV12, framerate=60/1" ! kmssink plane-id=39 fullscreen-overlay=true -v
+   gst-launch-1.0 v4l2src device=/dev/video0 io-mode=mmap ! \
+   video/x-raw, width=1920, height=1080, format=YUY2, framerate=30/1 ! \
+   kmssink bus-id=a0100000.v_mix plane-id=34 render-rectangle="<0,0,1920,1080>" \
+   show-preroll-frame=false sync=false can-scale=false
    ```
-   To test a different camera, change the targeted media device from `/dev/media0` to another, such as
-   `/dev/media1`. To stop streaming the video, press *Ctrl-C*.
-
-6. If you wish to get the PetaLinux GUI desktop environment back, run the following command:
+   To test a different camera, change the targeted video device from `/dev/video0` to another, such as
+   `/dev/video1`. To stop streaming the video, press *Ctrl-C*.
+   
+6. Run the display cams script to display all cameras on the monitor at the same time.
    ```
-   sudo systemctl isolate graphical.target
+   sudo displaycams.sh
    ```
+   The display cams script is in the `/usr/bin` directory and it serves as an example for setting up the
+   video pipelines and configuring the display pipeline to show all video streams.
 
 ## Debugging tips
 
@@ -173,7 +180,7 @@ example of the `media-ctl -d /dev/media0 -p` output, which shows each of the ele
 as how they are connected and configured.
 
 ```
-zcu104rpicamfmc20221:~$ media-ctl -d /dev/media0 -p
+zcu104-rpi-cam-fmc-2022-1:~$ media-ctl -d /dev/media0 -p
 Media controller API version 5.15.19
 
 Media device information
@@ -190,9 +197,9 @@ Device topology
             type Node subtype V4L flags 0
             device node name /dev/video0
         pad0: Sink
-                <- "a0040000.v_proc_ss":1 [ENABLED]
+                <- "a0000000.v_proc_ss":1 [ENABLED]
 
-- entity 5: a0000000.mipi_csi2_rx_subsystem (2 pads, 2 links)
+- entity 5: 80000000.mipi_csi2_rx_subsystem (2 pads, 2 links)
             type V4L2 subdev subtype Unknown flags 0
             device node name /dev/v4l-subdev0
         pad0: Sink
@@ -200,62 +207,50 @@ Device topology
                 <- "imx219 1-0010":0 [ENABLED]
         pad1: Source
                 [fmt:SRGGB10_1X10/1920x1080 field:none colorspace:srgb]
-                -> "a0140000.v_demosaic":0 [ENABLED]
+                -> "a0110000.ISPPipeline_accel":0 [ENABLED]
 
 - entity 8: imx219 1-0010 (1 pad, 1 link)
             type V4L2 subdev subtype Sensor flags 0
             device node name /dev/v4l-subdev1
         pad0: Source
-                [fmt:SRGGB10_1X10/3280x2464 field:none colorspace:srgb xfer:srgb ycbcr:601 quantization:full-range
+                [fmt:SRGGB10_1X10/1920x1080 field:none colorspace:srgb xfer:srgb ycbcr:601 quantization:full-range
                  crop.bounds:(8,8)/3280x2464
-                 crop:(8,8)/3280x2464]
-                -> "a0000000.mipi_csi2_rx_subsystem":0 [ENABLED]
+                 crop:(688,700)/1920x1080]
+                -> "80000000.mipi_csi2_rx_subsystem":0 [ENABLED]
 
-- entity 10: a0140000.v_demosaic (2 pads, 2 links)
+- entity 10: a0000000.v_proc_ss (2 pads, 2 links)
              type V4L2 subdev subtype Unknown flags 0
              device node name /dev/v4l-subdev2
         pad0: Sink
-                [fmt:SRGGB8_1X8/1280x720 field:none colorspace:srgb]
-                <- "a0000000.mipi_csi2_rx_subsystem":1 [ENABLED]
+                [fmt:RBG888_1X24/1920x1080 field:none colorspace:srgb]
+                <- "a0110000.ISPPipeline_accel":1 [ENABLED]
         pad1: Source
-                [fmt:RBG888_1X24/1280x720 field:none colorspace:srgb]
-                -> "a0170000.v_gamma_lut":0 [ENABLED]
+                [fmt:UYVY8_1X16/960x540 field:none colorspace:srgb]
+                -> "vcap_mipi_0_v_proc output 0":0 [ENABLED]
 
-- entity 13: a0170000.v_gamma_lut (2 pads, 2 links)
+- entity 13: a0110000.ISPPipeline_accel (2 pads, 2 links)
              type V4L2 subdev subtype Unknown flags 0
              device node name /dev/v4l-subdev3
         pad0: Sink
-                [fmt:RBG888_1X24/1280x720 field:none colorspace:srgb]
-                <- "a0140000.v_demosaic":1 [ENABLED]
+                [fmt:SRGGB10_1X10/1920x1080 field:none colorspace:srgb]
+                <- "80000000.mipi_csi2_rx_subsystem":1 [ENABLED]
         pad1: Source
-                [fmt:RBG888_1X24/1280x720 field:none colorspace:srgb]
-                -> "a0040000.v_proc_ss":0 [ENABLED]
-
-- entity 16: a0040000.v_proc_ss (2 pads, 2 links)
-             type V4L2 subdev subtype Unknown flags 0
-             device node name /dev/v4l-subdev4
-        pad0: Sink
-                [fmt:VYYUYY8_1X24/1280x720 field:none colorspace:srgb]
-                <- "a0170000.v_gamma_lut":1 [ENABLED]
-        pad1: Source
-                [fmt:VYYUYY8_1X24/1920x1080 field:none colorspace:srgb]
-                -> "vcap_mipi_0_v_proc output 0":0 [ENABLED]
+                [fmt:RBG888_1X24/1920x1080 field:none colorspace:srgb]
+                -> "a0000000.v_proc_ss":0 [ENABLED]
 ```
 
-Individual interfaces can be configured using `media-ctl -V` as follows:
+Individual interfaces can be configured using `media-ctl -V` with commands similar to the following:
 
 ```
-media-ctl -V '"a0140000.v_demosaic":0  [fmt:SRGGB10_1X8/1920x1080 field:none colorspace:srgb xfer:srgb ycbcr:601 quantization:full-range]' -d /dev/media0
-media-ctl -V '"a0140000.v_demosaic":1  [fmt:RBG888_1X24/1920x1080 field:none colorspace:srgb]' -d /dev/media0
-media-ctl -V '"a0040000.v_proc_ss":0  [fmt:VYYUYY8_1X24/1920x1080 field:none colorspace:srgb]' -d /dev/media0
-media-ctl -V '"a0040000.v_proc_ss":1  [fmt:VYYUYY8_1X24/1920x1080 field:none colorspace:srgb]' -d /dev/media0
+media-ctl -V '"80000000.mipi_csi2_rx_subsystem":0  [fmt:SRGGB10_1X10/1920x1080 field:none colorspace:srgb]' -d /dev/media0
+media-ctl -V '"80000000.mipi_csi2_rx_subsystem":1  [fmt:SRGGB10_1X10/1920x1080 field:none colorspace:srgb]' -d /dev/media0
+media-ctl -V '"a0110000.ISPPipeline_accel":0  [fmt:SRGGB10_1X10/1920x1080 field:none colorspace:srgb]' -d /dev/media0
+media-ctl -V '"a0110000.ISPPipeline_accel":1  [fmt:RBG888_1X24/1920x1080 field:none colorspace:srgb]' -d /dev/media0
+media-ctl -V '"a0040000.v_proc_ss":0  [fmt:RBG888_1X24/1920x1080 field:none colorspace:srgb]' -d /dev/media0
+media-ctl -V '"a0040000.v_proc_ss":1  [fmt:UYVY8_1X16/1920x1080 field:none colorspace:srgb]' -d /dev/media0
 ```
 
-```{tip}
-In these designs, the device tree has usually configured these interfaces correctly already
-and you don't need to change them.
-```
-
+(video-and-media-devices)=
 ### Video and media devices
 
 In PetaLinux, each connected RPi camera will be associated with a video device and a media device.
@@ -277,7 +272,7 @@ to handle 4 cameras, but let's say that we only connect 2x RPi cameras, one on p
 on port CAM2. This would result in the following list of devices:
 
 ```
-zcu104rpicamfmc20221:~$ v4l2-ctl --list-devices
+zcu104-rpi-cam-fmc-2022-1:~$ v4l2-ctl --list-devices
 vcap_mipi_0_v_proc output 0 (platform:vcap_mipi_0_v_proc:0):
         /dev/video0
 
@@ -308,9 +303,9 @@ is the video device. We can use `grep` to filter out the specific line indicatin
 video device:
 
 ```
-zcu104rpicamfmc20221:~$ media-ctl -d /dev/media0 -p | grep "dev/video"
+zcu104-rpi-cam-fmc-2022-1:~$ media-ctl -d /dev/media0 -p | grep "dev/video"
             device node name /dev/video1
-zcu104rpicamfmc20221:~$ media-ctl -d /dev/media1 -p | grep "dev/video"
+zcu104-rpi-cam-fmc-2022-1:~$ media-ctl -d /dev/media1 -p | grep "dev/video"
             device node name /dev/video2
 ```
 
@@ -349,18 +344,20 @@ associations.
 | CAM2  | `/dev/video2` | `/dev/media0` |
 | CAM3  | `/dev/video3` | `/dev/media1` |
 
+(init-script)=
 ### Init script
 
-To make it easier for the user to identify the connected cameras, and their associated video and
-media devices, a bash script is included in the root file system. When executed, the script lists the
-detected cameras, their physical ports, and their video and media devices. It also initializes the 
-analog and digital gain parameters of each camera.
+To make it easier for the user to identify and configure the connected cameras, and their associated
+video and media devices, a bash script is included in the root file system. When executed, the script 
+lists the detected cameras, their physical ports, and their video and media devices. It also configures 
+all of the video pipes according to the variables defined at the top of the script, or passed in as
+command line arguments.
 
-The script is located in `/usr/bin` and can be called from the command line by typing `init_cams`.
+The script is located in `/usr/bin` and can be called from the command line by typing `init_cams.sh`.
 An example output of the script is shown below:
 
 ```
-zcu104rpicamfmc20221:~$ init_cams
+zcu104-rpi-cam-fmc-2022-1:~$ init_cams.sh
 Detected and configured the following cameras on RPi Camera FMC:
  - CAM1: /dev/media0 = /dev/video1
  - CAM2: /dev/media1 = /dev/video2
@@ -370,10 +367,44 @@ Detected and configured the following cameras on RPi Camera FMC:
 In the example above, only cameras CAM1, CAM2 and CAM3 are physically connected. Notice that the
 video and media device indices don't align, which can occur when less than 4 cameras are connected.
 
-If you want to modify the init script, you can find it in the BSP files for your target board in this
-location of the repository: `PetaLinux/bsp/<target>/project-spec/meta-user/recipes-apps/init_cams/files/init_cams`
-Alternatively, from PetaLinux you can copy the file from `/usr/bin/init_cams` to the home directory
-and modify the copy.
+#### Usage
+
+There are two main ways to use the init script: edit/customize it according to your needs; or run it with
+command line arguments to specify the desired configuration. If you edit the file, you will find five variables
+at the top of the script that can be modified to your needs. In below example, the RPi cameras are 
+configured for 1080p resolution and the Video Processing Subsystem is configured to output 720p. The
+video format is set to YUY2:
+
+```
+# Resolution of RPi cameras (must be a resolution supported by the IMX219 Linux driver 640x480, 1640x1232, 1920x1080)
+SRC_RES_W="${1:-1920}"
+SRC_RES_H="${2:-1080}"
+# Resolution of RPi camera pipelines (after Video Processing Subsystem IP)
+OUT_RES_W="${3:-1280}"
+OUT_RES_H="${4:-720}"
+# Output format of the RPi camera pipelines (use a GStreamer pixel format from the dict above)
+OUT_FORMAT="${5:-YUY2}"
+```
+
+The init script can take command line arguments to fill the configuration variables. The usage is shown
+below. Note that if you specify the configuration values in the command line, you must specify ALL variables
+and use the same order as shown below.
+
+```
+./init_cams.sh <SRC_RES_W> <SRC_RES_H> <OUT_RES_W> <OUT_RES_H> <OUT_FORMAT>
+```
+
+An example for configuring the RPi cameras to output 1080p which is then downscaled to 720p is shown below:
+
+```
+./init_cams.sh 1920 1080 1280 720 YUY2
+```
+
+The easy way to modify the script in PetaLinux is to copy the file from `/usr/bin/init_cams.sh` to the home 
+directory and modify the copy from there.
+If you want to modify the init script that gets integrated into your build, you can find it in the BSP files 
+for your target board in this location of the repository: 
+`PetaLinux/bsp/<target>/project-spec/meta-user/recipes-apps/init_cams/files/init_cams.sh`
 
 ### Yavta
 
@@ -448,9 +479,55 @@ information on determining the correct video device for the camera you intend to
 ```
 
 If you wish to change certain settings on all of the connected cameras, one easy way to do that is to copy
-the [init script](#init-script) located at `/usr/bin/init_cams` and add the desired configuration commands
+the [init script](#init-script) located at `/usr/bin/init_cams.sh` and add the desired configuration commands
 in the appropriate section of the script. Then you can run your modified version of the script from the 
 command line and the configurations will be made to all of the connected cameras.
+
+### Display pipeline
+
+This section will provide an example of using the Video Mixer based display pipeline with GStreamer. We will first
+configure the capture/video pipelines as follows:
+
+* RPi cameras will output 1080p resolution
+* Video Processing Subsystem will downscale to 960x540 (one quarter of the 1080p monitor)
+* Video Processing Subsystem will output YUY2 format
+
+We can make the above configuration on ALL video pipes by using the init cams script:
+```
+init_cams.sh 1920 1080 960 540 YUY2
+```
+
+The display pipeline uses the Video Mixer IP to combine up to four video streams and send them to the 
+DisplayPort live interface of the ZynqMP. In order to use the display pipeline in GStreamer, you first
+need to enable it with the following command:
+
+```
+modetest -M xlnx -D a0100000.v_mix -s 52@40:1920x1080@NV16
+```
+
+After running that command, the monitor should show a blue screen. At this point you are ready to use GStreamer
+to drive the Video Mixer. Note the following important points:
+* the `width` and `height` parameters are set to output resolution of the video pipes. 
+* the `format` parameter is set to `YUY2` which is required by the Video Mixer as it is configured for that format
+  in the Vivado design.
+* the `render-rectangle` parameter is set to `<x,y,width,height>` where x and y indicate where to position the top 
+  left corner of the video on the monitor. Width and height are set to the resolution of the video pipes.
+* the `plane-id` is set to 34, 35, 36 or 37, which correspond to the layer inputs of the Video Mixer IP.
+
+```
+sudo gst-launch-1.0 v4l2src device=/dev/video0 io-mode=mmap \
+! video/x-raw, width=960, height=540, format=YUY2, framerate=30/1 \
+! kmssink bus-id=a0100000.v_mix plane-id=34 render-rectangle="<0,0,960,540>" show-preroll-frame=false sync=false can-scale=false \
+v4l2src device=/dev/video1 io-mode=mmap \
+! video/x-raw, width=960, height=540, format=YUY2, framerate=30/1 \
+! kmssink bus-id=a0100000.v_mix plane-id=35 render-rectangle="<960,0,960,540>" show-preroll-frame=false sync=false can-scale=false \
+v4l2src device=/dev/video2 io-mode=mmap \
+! video/x-raw, width=960, height=540, format=YUY2, framerate=30/1 \
+! kmssink bus-id=a0100000.v_mix plane-id=36 render-rectangle="<0,540,960,540>" show-preroll-frame=false sync=false can-scale=false \
+v4l2src device=/dev/video3 io-mode=mmap \
+! video/x-raw, width=960, height=540, format=YUY2, framerate=30/1 \
+! kmssink bus-id=a0100000.v_mix plane-id=37 render-rectangle="<960,540,960,540>" show-preroll-frame=false sync=false can-scale=false
+```
 
 ## Known issues and limitations
 
@@ -458,22 +535,8 @@ command line and the configurations will be made to all of the connected cameras
 
 The ZynqMP devices on the PYNQ-ZU and Genesys-ZU boards are relatively small devices in terms of FPGA resources.
 Fitting the necessary logic to handle four video streams simultaneously can be a challenge on these boards. 
-For this reason, in our Vivado designs for these boards, the [Video Processing Subsystem IP] for cameras 2 and 3,
-has been configured to use the simplest and lowest footprint scaling algorithm. This scaling algorithm is known as
-"bilinear", and by using it in two of the video pipes we are able to get the entire design to fit within the 
-resource constraints of these devices.
-
-The consequences of using the "bilinear" scaling algorithm on the video pipes for cameras 2 and 3 are as follows:
-* **Reduced quality of the scaled images:** As described in the documentation for the [Video Processing Subsystem IP],
-  "Bilinear interpolation produces a greater number of interpolation artifacts (such as aliasing, blurring, and 
-  edge halos) than more computationally demanding techniques such as bicubic interpolation."
-* **No PetaLinux support:** The Linux driver for [Video Processing Subsystem IP] seems to only work when the 
-  IP is configured to use the "polyphase" scaling algorithm. If you try to use camera 2 or 3 in PetaLinux, you will
-  notice the following error message:
-  ```
-  [  123.456789] xilinx-csi2rxss a0002000.mipi_csi2_rx_subsystem: Stream Line Buffer Full!
-  ```
-  We have not yet found a workaround for this problem.
+For this reason, in our Vivado designs for these boards we have included the video pipes for only two cameras:
+CAM1 and CAM2.
 
 
 [RPi Camera FMC]: https://camerafmc.com/docs/rpi-camera-fmc/overview/

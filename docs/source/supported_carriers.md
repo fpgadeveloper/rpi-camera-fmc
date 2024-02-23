@@ -8,7 +8,7 @@
 | AMD Xilinx [ZCU102] Zynq UltraScale+ Evaluation board      | HPC0 and HPC1 (HPC1 limited to 2 cameras) |
 | AMD Xilinx [ZCU106] Zynq UltraScale+ Evaluation board      | HPC0                        |
 | TUL [PYNQ-ZU] Zynq UltraScale+ Development board           | LPC                         |
-| Digilent [Genesys-ZU] Zynq UltraScale+ Development board   | HPC                         |
+| Digilent [Genesys-ZU] Zynq UltraScale+ Development board   | LPC                         |
 | Avnet [UltraZed EV Carrier Card] Zynq UltraScale+          | HPC                         |
  
 ## Unlisted boards

@@ -14,22 +14,26 @@ BD_NAME = rpi
 TARGET ?= none
 JOBS ?= 8
 
-# valid targets (accelerator)
-zcu104_target := no_accel
-zcu102_hpc0_target := no_accel
-zcu102_hpc1_target := no_accel
-zcu106_hpc0_target := no_accel
-pynqzu_target := no_accel
-genesyszu_target := no_accel
-uzev_target := no_accel
-zcu106_pcie_target := accel
+# valid targets
+zcu104_target := xilinx.com zcu104 accel
+zcu102_hpc0_target := xilinx.com zcu102 accel
+zcu102_hpc1_target := xilinx.com zcu102 accel
+zcu106_hpc0_target := xilinx.com zcu106 accel
+pynqzu_target := tul.com.tw pynqzu accel
+genesyszu_target := digilentinc.com gzu_5ev accel
+uzev_target := avnet.com ultrazed_7ev_cc accel
 
 TARGET_LIST := $(sort $(patsubst %_target,%,$(filter %_target,$(.VARIABLES))))
+
+BOARD_URL = $(word 1,$($(TARGET)_target))
+BOARD_NAME = $(word 2,$($(TARGET)_target))
 
 # Vivado paths
 VIV_SCRIPT_BD = scripts/build.tcl
 VIV_SCRIPT_XSA = scripts/xsa.tcl
 VIV_DIR = $(TARGET)
+IP_DIR= ./ip
+IP_DONE = $(IP_DIR)/build/$(BOARD_NAME)/ip_done.txt
 
 # output files
 VIV_XPR = $(VIV_DIR)/$(TARGET).xpr
@@ -43,7 +47,7 @@ VIV_LOCK = $(ROOT_DIR)/.$(TARGET).lock
 
 # These macros return values from the valid target lists defined above
 define get_has_accel
-$(word 1,$($(1)_target))
+$(word 3,$($(1)_target))
 endef
 
 # Targets with accelerators don't need to run implementation, only synth
@@ -90,6 +94,12 @@ help:
 .PHONY: all
 all: xsa_all
 
+.PHONY: ip
+ip: $(IP_DONE)
+
+$(IP_DONE):
+	make -C $(IP_DIR) ip TARGET=$(TARGET)
+
 .PHONY: xsa
 xsa:
 	@if [ -f $(VIV_LOCK) ]; then \
@@ -131,7 +141,7 @@ project: check_target
 	fi
 
 project_locked: $(VIV_XPR)
-$(VIV_XPR):
+$(VIV_XPR): $(IP_DONE)
 	@echo 'Create Vivado project $(TARGET)'
 	$(RM) $(VIV_XPR_LOG) $(VIV_XPR_JOU)
 	$(VIVADO) -mode batch -notrace -source $(VIV_SCRIPT_BD) -log $(VIV_XPR_LOG) -journal $(VIV_XPR_JOU) -tclargs $(TARGET)
@@ -148,12 +158,14 @@ project_all:
 clean: check_target
 	@echo 'Cleaning project $(TARGET)'
 	$(RM) $(VIV_DIR)
+	$(MAKE) -C $(IP_DIR) clean TARGET=$(TARGET)
 
 .PHONY: clean_all
 clean_all:
 	for targ in $(TARGET_LIST); do \
 		$(MAKE) clean TARGET=$$targ; \
 	done
+	$(MAKE) -C $(IP_DIR) clean_all
 	$(RM) .Xil vivado*.log vivado*.jou
 
 check_target:

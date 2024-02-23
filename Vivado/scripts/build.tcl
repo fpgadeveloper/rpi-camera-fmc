@@ -1,4 +1,4 @@
-# Opsero Electronic Design Inc. Copyright 2023
+# Opsero Electronic Design Inc. Copyright 2024
 #
 # Project build script
 #
@@ -34,14 +34,13 @@ if {![string equal $ver $version_required]} {
 set_param board.repoPaths [get_property LOCAL_ROOT_DIR [xhub::get_xstores xilinx_board_store]]
 
 # Possible targets
-dict set target_dict zcu104 { xilinx.com zcu104 { 0 1 2 3 } "" zynqmp }
-dict set target_dict zcu102_hpc0 { xilinx.com zcu102 { 0 1 2 3 } "" zynqmp }
-dict set target_dict zcu102_hpc1 { xilinx.com zcu102 { 0 1 } "" zynqmp }
-dict set target_dict zcu106_hpc0 { xilinx.com zcu106 { 0 1 2 3 } "" zynqmp }
-dict set target_dict pynqzu { tul.com.tw pynqzu { 0 1 2 3 } "" zynqmp }
-dict set target_dict genesyszu { digilentinc.com gzu_5ev { 0 1 2 3 } "" zynqmp }
-dict set target_dict uzev { avnet.com ultrazed_7ev_cc { 0 1 2 3 } "" zynqmp }
-dict set target_dict zcu106_pcie { xilinx.com zcu106 { 0 1 2 3 } hpc1 zynqmp_pcie }
+dict set target_dict zcu104 { xilinx.com zcu104 { 0 1 2 3 } zynqmp 1 }
+dict set target_dict zcu102_hpc0 { xilinx.com zcu102 { 0 1 2 3 } zynqmp 0 }
+dict set target_dict zcu102_hpc1 { xilinx.com zcu102 { 0 1 } zynqmp 0 }
+dict set target_dict zcu106_hpc0 { xilinx.com zcu106 { 0 1 2 3 } zynqmp 1 }
+dict set target_dict pynqzu { tul.com.tw pynqzu { 1 2 } zynqmp 0 }
+dict set target_dict genesyszu { digilentinc.com gzu_5ev { 1 2 } zynqmp 1 }
+dict set target_dict uzev { avnet.com ultrazed_7ev_cc { 0 1 2 3 } zynqmp 1 }
 
 # Function to display the options and get user input
 proc selectTarget {target_dict} {
@@ -125,8 +124,8 @@ if { $proj_board == "" } {
 
 set fpga_part [get_property PART_NAME [get_board_parts $proj_board]]
 set cams [lindex [dict get $target_dict $target] 2]
-set pcie_fmc [lindex [dict get $target_dict $target] 3]
-set bd_script [lindex [dict get $target_dict $target] 4]
+set bd_script [lindex [dict get $target_dict $target] 3]
+set has_vcu [lindex [dict get $target_dict $target] 4]
 
 # Set the reference directory for source file relative paths (by default the value is script directory path)
 set origin_dir "."
@@ -157,6 +156,9 @@ if {[string equal [get_filesets -quiet sources_1] ""]} {
   create_fileset -srcset sources_1
 }
 
+# Set IP repo path
+set_property ip_repo_paths "./ip/build/$board_name/" [current_project]
+update_ip_catalog
 
 # Set 'sources_1' fileset properties
 set obj [get_filesets sources_1]

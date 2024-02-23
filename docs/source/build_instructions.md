@@ -6,10 +6,9 @@ The source code for the reference designs is managed on this Github repository:
 
 * [https://github.com/fpgadeveloper/rpi-camera-fmc](https://github.com/fpgadeveloper/rpi-camera-fmc)
 
-To get the code, you can follow the link and use the **Download ZIP** option, or you can clone it
-using this command:
+As this repository has submodules, you must clone the repository with the `--recursive` option as below:
 ```
-git clone https://github.com/fpgadeveloper/rpi-camera-fmc.git
+git clone --recursive https://github.com/fpgadeveloper/rpi-camera-fmc.git
 ```
 
 ## License requirements
@@ -21,72 +20,41 @@ The ZCU102 board is not supported by the Vivado ML Standard Edition (aka. the We
 so to build the designs for the ZCU102 board, you will need to either buy a license or download
 a 30-day evaluation license for Vivado ML Enterprise Edition.
 
+(target-designs)=
 ## Target designs
 
 This repo contains several designs that target the various supported development boards and their
 FMC connectors. The table below lists the target design name, the camera ports supported by the design and 
-the FMC connector on which to connect the RPi Camera FMC.
+the FMC connector on which to connect the RPi Camera FMC. The VCU column indicates which designs contain
+the Video Codec Unit and which do not.
 
-| Target design | Camera ports   | Target board and connector                                           |
-|---------------|----------------|----------------------------------------------------------------------|
-| `zcu104`      | CAM0,1,2,3     | ZCU104  |
-| `zcu102_hpc0` | CAM0,1,2,3     | ZCU102, HPC0 connector |
-| `zcu102_hpc1` | CAM0,1         | ZCU102, HPC1 connector |
-| `zcu106_hpc0` | CAM0,1,2,3     | ZCU106, HPC0 connector |
-| `pynqzu`      | CAM0,1,2,3     | PYNQ-ZU  |
-| `genesyszu`   | CAM0,1,2,3     | Genesys-ZU  |
-| `uzev`        | CAM0,1,2,3     | UltraZed-EV Carrier |
-| `zcu106_pcie` | CAM1,2,3       | ZCU106, HPC0 connector<br> and [FPGA Drive FMC Gen4] on HPC1 |
+| Target board             | Target design | FMC slot | Cameras | VCU |
+|--------------------------|---------------|----------|---------|-----|
+| [ZCU104][4]              | `zcu104`      | LPC   | 4 | YES |
+| [ZCU102][9]              | `zcu102_hpc0` | HPC0  | 4 | NO |
+| [ZCU102][9]              | `zcu102_hpc1` | HPC1  | 2 (note 1) | NO |
+| [ZCU106][5]              | `zcu106_hpc0` | HPC0  | 4 | YES |
+| [PYNQ-ZU][6]             | `pynqzu`      | LPC   | 2 (note 2) | NO |
+| [Genesys-ZU][7]          | `genesyszu`   | LPC   | 2 (note 2) | YES |
+| [UltraZed EV carrier][8] | `uzev`        | HPC   | 4 | YES |
 
-The `zcu106_pcie` design is unique in that it supports the use of the [FPGA Drive FMC Gen4] alongside
-the RPi Camera FMC. The [FPGA Drive FMC Gen4] allows an M.2 PCIe module to be connected to the board
-and can be used for a solid-state drive (SSD) or accelerator module. To use this design, you will need
-to have the [FPGA Drive FMC Gen4] mezzanine card.
+Notes:
+1. The HPC1 connector of the ZCU102 board can only support 2 cameras due to it's pin assignment. This design uses
+   `CAM0` and `CAM1` as labelled on the RPi Camera FMC.
+2. The `pynqzu` and `genesyszu` target designs have video pipelines for only 2 cameras: `CAM1` and `CAM2` as
+   labelled on the RPi Camera FMC. This is due to the resource limitations of the devices on these boards.
 
-## Windows users
-
-Windows users will be able to build the Vivado projects and compile the standalone applications,
-however Linux is required to build the PetaLinux projects. 
-
-```{tip} If you wish to build the PetaLinux projects,
-we recommend that you build the entire project (including the Vivado project) on a machine (either 
-physical or virtual) running one of the [supported Linux distributions].
-```
-
-### Build Vivado project in Windows
-
-1. Download the repo as a zip file and extract the files to a directory
-   on your hard drive --OR-- clone the repo to your hard drive
-2. Open Windows Explorer, browse to the repo files on your hard drive.
-3. In the `Vivado` directory, double click on the `build-vivado.bat` batch file.
-   You will be prompted to select a target design to build. You will find the project in
-   the folder `Vivado/<target>`.
-4. Run Vivado and open the project that was just created.
-5. Click Generate bitstream.
-6. When the bitstream is successfully generated, select **File->Export->Export Hardware**.
-   In the window that opens, tick **Include bitstream** and use the default name and location
-   for the XSA file.
-
-### Build Vitis workspace in Windows
-
-Before running these steps, you must first build and export the Vivado project as described above.
-
-1. Return to Windows Explorer and browse to the Vitis directory in the repo.
-2. Double click the `build-vitis.bat` batch file. You will be prompted to select a target design.
-   A Vitis workspace with hardware platform and software application will be created for the
-   selected target design. You will find the Vitis workspace in the folder `Vitis/<target>_workspace`.
-
-## Linux users
+## Linux only
 
 These projects can be built using a machine (either physical or virtual) with one of the 
 [supported Linux distributions].
 
 ```{tip} The build steps can be completed in the order shown below, or
-you can go directly to the [build PetaLinux](#build-petalinux-project-in-linux) instructions below
+you can go directly to the [build PetaLinux](#build-petalinux-project) instructions below
 to build the Vivado and PetaLinux projects with a single command.
 ```
 
-### Build Vivado project in Linux
+### Build Vivado project
 
 1. Open a command terminal and launch the setup script for Vivado:
    ```
@@ -94,7 +62,7 @@ to build the Vivado and PetaLinux projects with a single command.
    ```
 2. Clone the Git repository and `cd` into the `Vivado` folder of the repo:
    ```
-   git clone https://github.com/fpgadeveloper/rpi-camera-fmc.git
+   git clone --recursive https://github.com/fpgadeveloper/rpi-camera-fmc.git
    cd rpi-camera-fmc/Vivado
    ```
 3. Run make to create the Vivado project for the target board. You must replace `<target>` with a valid
@@ -102,8 +70,7 @@ to build the Vivado and PetaLinux projects with a single command.
    ```
    make project TARGET=<target>
    ```
-   Valid targets are: `zcu104`, `zcu102_hpc0`, `zcu102_hpc1`, `zcu106_hpc0`, `pynqzu`, `genesyszu`,
-   `uzev` and `zcu106_pcie`.
+   Valid targets are: `zcu104`, `zcu102_hpc0`, `zcu102_hpc1`, `zcu106_hpc0`, `pynqzu`, `genesyszu` and `uzev`.
    That will create the Vivado project and block design without generating a bitstream or exporting to XSA.
 4. Open the generated project in the Vivado GUI and click **Generate Bitstream**. Once the build is
    complete, select **File->Export->Export Hardware** and be sure to tick **Include bitstream** and use
@@ -114,26 +81,8 @@ to build the Vivado and PetaLinux projects with a single command.
    make xsa TARGET=<target>
    ```
    
-### Build Vitis workspace in Linux
-
-The following steps are required if you wish to build and run the [standalone application](stand_alone). You can
-skip to the following section if you instead want to use PetaLinux. You are not required to have built the
-Vivado design before following these steps, as the Makefile triggers the Vivado build for the corresponding
-design if it has not already been done.
-
-1. Launch the setup scripts for Vitis:
-   ```
-   source <path-to-vitis-install>/2022.1/settings64.sh
-   ```
-2. To build the Vitis workspace, `cd` to the Vitis directory in the repo,
-   then run make to create the Vitis workspace and compile the standalone application:
-   ```
-   cd rpi-camera-fmc/Vitis
-   make workspace TARGET=<target>
-   ```
-   You will find the Vitis workspace in the folder `Vitis/<target>_workspace`.
-
-### Build PetaLinux project in Linux
+(build-petalinux-project)=
+### Build PetaLinux project
 
 These steps will build the PetaLinux project for the target design. You are not required to have built the
 Vivado design before following these steps, as the Makefile triggers the Vivado build for the corresponding
@@ -159,8 +108,7 @@ design if it has not already been done.
    `zcu102_hpc1`,
    `zcu106_hpc0`, 
    `pynqzu`, 
-   `uzev`, 
-   `zcu106_pcie`.
+   `uzev`.
    Note that if you skipped the Vivado build steps above, the Makefile will first generate and
    build the Vivado project, and then build the PetaLinux project.
 
@@ -198,4 +146,13 @@ Now when you use `make` to build the PetaLinux projects, they will be configured
 
 [supported Linux distributions]: https://docs.xilinx.com/r/2022.1-English/ug1144-petalinux-tools-reference-guide/Setting-Up-Your-Environment
 [FPGA Drive FMC Gen4]: https://fpgadrive.com
+[1]: https://www.fpgadrive.com/docs/fpga-drive-fmc-gen4/overview/
+[2]: https://www.fpgadrive.com/docs/m2-mkey-stack-fmc/overview/
+[3]: https://camerafmc.com/docs/rpi-camera-fmc/overview/
+[4]: https://www.xilinx.com/zcu104
+[5]: https://www.xilinx.com/zcu106
+[6]: https://www.tulembedded.com/FPGA/ProductsPYNQ-ZU.html
+[7]: https://digilent.com/shop/genesys-zu-zynq-ultrascale-mpsoc-development-board/
+[8]: https://www.xilinx.com/products/boards-and-kits/1-y3n9v1.html
+[9]: https://www.xilinx.com/zcu102
 
