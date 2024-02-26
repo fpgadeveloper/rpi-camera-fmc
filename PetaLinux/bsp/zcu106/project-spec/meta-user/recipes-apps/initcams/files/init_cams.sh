@@ -36,6 +36,24 @@ OUT_FORMAT="${5:-YUY2}"
 # End of example settings
 #--------------------------------------------------------------------------------
 
+# Find the vmixer
+VMIX_PATH=$(find /sys/bus/platform/devices/ -name "*.v_mix" | head -n 1)
+VMIX=$(basename "$VMIX_PATH")
+
+echo "-------------------------------------------------"
+echo " Capture pipeline init: RPi cam -> Scaler -> DDR"
+echo "-------------------------------------------------"
+
+# Print the settings
+echo "Configuring all video capture pipelines to:"
+echo " - RPi Camera output    : $SRC_RES_W x $SRC_RES_H"
+echo " - Scaler (VPSS) output : $OUT_RES_W x $OUT_RES_H $OUT_FORMAT"
+echo " - Frame rate           : $FRM_RATE fps"
+
+# Print the bus_id of the video mixer
+echo "Video Mixer found here:"
+echo " - $VMIX"
+
 # Find all the media devices
 media_devices=($(ls /dev/media*))
 

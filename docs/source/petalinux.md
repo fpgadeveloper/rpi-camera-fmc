@@ -134,6 +134,15 @@ losing data on one of your hard drives.
 3. Run the init script with the command `init_cams.sh`.
    ```
    zcu104-rpi-cam-fmc-2022-1:~$ init_cams.sh
+   -------------------------------------------------
+    Capture pipeline init: RPi cam -> Scaler -> DDR
+   -------------------------------------------------
+   Configuring all video capture pipelines to:
+    - RPi Camera output    : 1920 x 1080
+    - Scaler (VPSS) output : 1920 x 1080 YUY2
+    - Frame rate           :  fps
+   Video Mixer found here:
+    - a0100000.v_mix
    Detected and configured the following cameras on RPi Camera FMC:
     - CAM0: /dev/media0 = /dev/video0
     - CAM1: /dev/media1 = /dev/video1
@@ -142,8 +151,8 @@ losing data on one of your hard drives.
    ```
    The init script is located in `/usr/bin` and it serves as an example for setting the video pipe parameters
    using media-ctl. It configures all of the capture pipelines to a resolution, format and frame rate that
-   is specified by a set of variables at the top of the script. It also lists all of the connected RPi cameras
-   and the media and video devices to which they are associated. 
+   is specified by a set of variables at the top of the script. It also lists the video mixer bus_id, as well as 
+   all of the connected RPi cameras and the media and video devices to which they are associated. 
    The init script makes it easy to find all of the connected media and video devices, and to configure them
    so that they can be used with GStreamer or other applications.
 
@@ -151,6 +160,9 @@ losing data on one of your hard drives.
    ```
    modetest -M xlnx -D a0100000.v_mix -s 52@40:1920x1080@NV16
    ```
+   Note that the `-D` option must specify the correct `bus_id` of the video mixer. This can be found in the
+   output of the `init_cams.sh` script (see above), or you can find it with the following command: 
+   `find /sys/bus/platform/devices/ -name "*.v_mix"`.
    Here we are setting it up for 1080p resolution and NV16 pixel format, which is the expected format for
    this hardware.
 
@@ -161,6 +173,7 @@ losing data on one of your hard drives.
    kmssink bus-id=a0100000.v_mix plane-id=34 render-rectangle="<0,0,1920,1080>" \
    show-preroll-frame=false sync=false can-scale=false
    ```
+   Note that in this command, as in the previous step, you must use the correct `bus_id` for the video mixer.
    To test a different camera, change the targeted video device from `/dev/video0` to another, such as
    `/dev/video1`. To stop streaming the video, press *Ctrl-C*.
    
@@ -169,7 +182,41 @@ losing data on one of your hard drives.
    sudo displaycams.sh
    ```
    The display cams script is in the `/usr/bin` directory and it serves as an example for setting up the
-   video pipelines and configuring the display pipeline to show all video streams.
+   video pipelines and configuring the display pipeline to show all video streams. Here is the output of that
+   script:
+   ```
+   zcu104-rpi-cam-fmc-2022-1:~$ sudo ./displaycams.sh
+   -------------------------------------------------
+    Capture pipeline init: RPi cam -> Scaler -> DDR
+   -------------------------------------------------
+   Configuring all video capture pipelines to:
+    - RPi Camera output    : 1920 x 1080
+    - Scaler (VPSS) output : 960 x 540 YUY2
+    - Frame rate           : 30 fps
+   Video Mixer found here:
+    - a0100000.v_mix
+   Detected and configured the following cameras on RPi Camera FMC:
+    - CAM0: /dev/media0 = /dev/video0
+    - CAM1: /dev/media1 = /dev/video1
+    - CAM2: /dev/media2 = /dev/video2
+    - CAM3: /dev/media3 = /dev/video3
+   setting mode 1920x1080-60.00Hz on connectors 52, crtc 40
+   GStreamer command:
+   --------------------------
+   gst-launch-1.0 v4l2src device=/dev/video0 io-mode=mmap ! video/x-raw, width=960, height=540, format=YUY2, framerate=30/1 ! kmssink bus-id=a0100000.v_mix plane-id=34 render-rectangle="<0,0,960,540>" show-preroll-frame=false sync=false can-scale=false v4l2src device=/dev/video1 io-mode=mmap ! video/x-raw, width=960, height=540, format=YUY2, framerate=30/1 ! kmssink bus-id=a0100000.v_mix plane-id=35 render-rectangle="<960,0,960,540>" show-preroll-frame=false sync=false can-scale=false v4l2src device=/dev/video2 io-mode=mmap ! video/x-raw, width=960, height=540, format=YUY2, framerate=30/1 ! kmssink bus-id=a0100000.v_mix plane-id=36 render-rectangle="<0,540,960,540>" show-preroll-frame=false sync=false can-scale=false v4l2src device=/dev/video3 io-mode=mmap ! video/x-raw, width=960, height=540, format=YUY2, framerate=30/1 ! kmssink bus-id=a0100000.v_mix plane-id=37 render-rectangle="<960,540,960,540>" show-preroll-frame=false sync=false can-scale=false
+   --------------------------
+   Setting pipeline to PAUSED ...
+   Pipeline is live and does not need PREROLL ...
+   Pipeline is PREROLLED ...
+   Setting pipeline to PLAYING ...
+   New clock: GstSystemClock
+   ^Chandling interrupt.
+   Interrupt: Stopping pipeline ...
+   Execution ended after 0:00:02.340043242
+   Setting pipeline to NULL ...
+   Freeing pipeline ...
+   zcu104-rpi-cam-fmc-2022-1:~$
+   ```
 
 ## Debugging tips
 
@@ -358,6 +405,15 @@ An example output of the script is shown below:
 
 ```
 zcu104-rpi-cam-fmc-2022-1:~$ init_cams.sh
+-------------------------------------------------
+ Capture pipeline init: RPi cam -> Scaler -> DDR
+-------------------------------------------------
+Configuring all video capture pipelines to:
+ - RPi Camera output    : 1920 x 1080
+ - Scaler (VPSS) output : 1920 x 1080 YUY2
+ - Frame rate           :  fps
+Video Mixer found here:
+ - a0100000.v_mix
 Detected and configured the following cameras on RPi Camera FMC:
  - CAM1: /dev/media0 = /dev/video1
  - CAM2: /dev/media1 = /dev/video2

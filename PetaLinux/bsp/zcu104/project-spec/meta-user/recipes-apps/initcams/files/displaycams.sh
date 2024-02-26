@@ -18,6 +18,7 @@
 # The last part of the script launches gstreamer to display all four video
 # streams on a single display.
 
+# This dictionary associates GStreamer pixel formats with those used with media-ctl
 declare -A format_dict
 format_dict["NV12"]="VYYUYY8_1X24"
 format_dict["YUY2"]="UYVY8_1X16"
@@ -31,7 +32,7 @@ SRC_RES_H=1080
 # Resolution of RPi camera pipelines (after Video Processing Subsystem IP)
 OUT_RES_W=960
 OUT_RES_H=540
-# Output format of the RPi camera pipelines
+# Output format of the RPi camera pipelines (use a GStreamer pixel format from the dict above)
 OUT_FORMAT=YUY2
 # Resolution of the monitor
 DISP_RES_W=1920
@@ -41,6 +42,24 @@ FRM_RATE=30
 #--------------------------------------------------------------------------------
 # End of example settings
 #--------------------------------------------------------------------------------
+
+# Find the vmixer
+VMIX_PATH=$(find /sys/bus/platform/devices/ -name "*.v_mix" | head -n 1)
+VMIX=$(basename "$VMIX_PATH")
+
+echo "-------------------------------------------------"
+echo " Capture pipeline init: RPi cam -> Scaler -> DDR"
+echo "-------------------------------------------------"
+
+# Print the settings
+echo "Configuring all video capture pipelines to:"
+echo " - RPi Camera output    : $SRC_RES_W x $SRC_RES_H"
+echo " - Scaler (VPSS) output : $OUT_RES_W x $OUT_RES_H $OUT_FORMAT"
+echo " - Frame rate           : $FRM_RATE fps"
+
+# Print the bus_id of the video mixer
+echo "Video Mixer found here:"
+echo " - $VMIX"
 
 # Find all the media devices
 media_devices=($(ls /dev/media*))
@@ -93,7 +112,7 @@ for media in "${!media_to_video_mapping[@]}"; do
 done
 
 #-------------------------------------------------------------------------------
-# Display the media devices and their associated video devices
+# List the media devices and their associated video devices
 #-------------------------------------------------------------------------------
 echo "Detected and configured the following cameras on RPi Camera FMC:"
 for media in "${!media_to_video_mapping[@]}"; do
@@ -103,21 +122,39 @@ done
 #-------------------------------------------------------------------------------
 # Setup the display pipeline
 #-------------------------------------------------------------------------------
-echo | modetest -M xlnx -D a0100000.v_mix -s 52@40:${DISP_RES_W}x${DISP_RES_H}@NV16
+# Initialize the display pipeline
+echo | modetest -M xlnx -D ${VMIX} -s 52@40:${DISP_RES_W}x${DISP_RES_H}@NV16
 
+#------------------------------------------------------------------------------
+# Run GStreamer to combine all videos and display on the screen
 #-------------------------------------------------------------------------------
-# Run GStreamer to combine 4 videos and display on the screen
-#-------------------------------------------------------------------------------
-gst-launch-1.0 v4l2src device=/dev/video0 io-mode=mmap \
-! video/x-raw, width=${OUT_RES_W}, height=${OUT_RES_H}, format=YUY2, framerate=${FRM_RATE}/1 \
-! kmssink bus-id=a0100000.v_mix plane-id=34 render-rectangle="<0,0,${OUT_RES_W},${OUT_RES_H}>" show-preroll-frame=false sync=false can-scale=false \
-v4l2src device=/dev/video1 io-mode=mmap \
-! video/x-raw, width=${OUT_RES_W}, height=${OUT_RES_H}, format=YUY2, framerate=${FRM_RATE}/1 \
-! kmssink bus-id=a0100000.v_mix plane-id=35 render-rectangle="<${OUT_RES_W},0,${OUT_RES_W},${OUT_RES_H}>" show-preroll-frame=false sync=false can-scale=false \
-v4l2src device=/dev/video2 io-mode=mmap \
-! video/x-raw, width=${OUT_RES_W}, height=${OUT_RES_H}, format=YUY2, framerate=${FRM_RATE}/1 \
-! kmssink bus-id=a0100000.v_mix plane-id=36 render-rectangle="<0,${OUT_RES_H},${OUT_RES_W},${OUT_RES_H}>" show-preroll-frame=false sync=false can-scale=false \
-v4l2src device=/dev/video3 io-mode=mmap \
-! video/x-raw, width=${OUT_RES_W}, height=${OUT_RES_H}, format=YUY2, framerate=${FRM_RATE}/1 \
-! kmssink bus-id=a0100000.v_mix plane-id=37 render-rectangle="<${OUT_RES_W},${OUT_RES_H},${OUT_RES_W},${OUT_RES_H}>" show-preroll-frame=false sync=false can-scale=false
+full_command="gst-launch-1.0"
 
+# Screen quadrants: TOP-LEFT, TOP-RIGHT, BOTTOM-LEFT, BOTTOM-RIGHT
+quadrants=(
+        "plane-id=34 render-rectangle=\"<0,0,${OUT_RES_W},${OUT_RES_H}>\""
+        "plane-id=35 render-rectangle=\"<${OUT_RES_W},0,${OUT_RES_W},${OUT_RES_H}>\""
+        "plane-id=36 render-rectangle=\"<0,${OUT_RES_H},${OUT_RES_W},${OUT_RES_H}>\""
+        "plane-id=37 render-rectangle=\"<${OUT_RES_W},${OUT_RES_H},${OUT_RES_W},${OUT_RES_H}>\""
+)
+
+index=0
+
+# For each connected camera, add pipeline to gstreamer command
+for media in "${!media_to_video_mapping[@]}"; do
+        # Append the specific command for the current iteration to the full command
+        full_command+=" v4l2src device=${media_to_video_mapping[$media]} io-mode=mmap"
+        full_command+=" ! video/x-raw, width=${OUT_RES_W}, height=${OUT_RES_H}, format=YUY2, framerate=${FRM_RATE}/1"
+        full_command+=" ! kmssink bus-id=${VMIX} ${quadrants[$index]} show-preroll-frame=false sync=false can-scale=false"
+
+        ((index++))
+done
+
+# Display the command being run
+echo "GStreamer command:"
+echo "--------------------------"
+echo "${full_command}"
+echo "--------------------------"
+
+# Execute the command
+eval "${full_command}"

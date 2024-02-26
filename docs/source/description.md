@@ -50,6 +50,15 @@ format, to satisfy the DisplayPort live interface.
 
 ![Display pipeline with video mixer](images/rpi-camera-fmc-display-pipeline.png)
 
+### End-to-end pipeline
+
+The end-to-end pipeline shows an example of the flow of image frames through the entire system, from source to sink.
+In the diagram, the image resolutions and pixel formats are shown at each interface between the image processing
+blocks. The resolution and pixel format can be dynamically changed at the output of the RPi camera, the scaler 
+(Video Processing Subsystem IP) and the VVAS accelerator.
+
+![End-to-end pipeline](images/rpi-camera-fmc-end-to-end.png)
+
 ### VVAS accelerator
 
 To enable hardware accelerated image processing in this design, the [VVAS MultiScaler] kernel is included. The 
