@@ -98,7 +98,7 @@
       "publish": true,
       "label": "pynqzu",
       "board": "PYNQ-ZU",
-      "link": "https://www.tulembedded.com/FPGA/ProductsPYNQ-ZU.html",
+      "link": "https://www.amd.com/en/corporate/university-program/aup-boards/pynq-zu.html",
       "url": "tul.com.tw",
       "boardname": "pynqzu",
       "cams": [1,2],

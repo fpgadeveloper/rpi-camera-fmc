@@ -27,7 +27,7 @@ Important links:
 
 ## Requirements
 
-This project is designed for version 2022.1 of the Xilinx tools (Vivado/Vitis/PetaLinux). 
+This project is designed for version 2024.1 of the Xilinx tools (Vivado/Vitis/PetaLinux). 
 If you are using an older version of the Xilinx tools, then refer to the 
 [release tags](https://github.com/fpgadeveloper/rpi-camera-fmc/tags "releases")
 to find the version of this repository that matches your version of the tools.
@@ -61,7 +61,7 @@ In order to test this design on hardware, you will need the following:
 [ZCU104]: https://www.xilinx.com/zcu104
 [ZCU102]: https://www.xilinx.com/zcu102
 [ZCU106]: https://www.xilinx.com/zcu106
-[PYNQ-ZU]: https://www.tulembedded.com/FPGA/ProductsPYNQ-ZU.html
+[PYNQ-ZU]: https://www.amd.com/en/corporate/university-program/aup-boards/pynq-zu.html
 [UltraZed-EV Carrier]: https://www.xilinx.com/products/boards-and-kits/1-1s78dxb.html
 <!-- updater end -->
 

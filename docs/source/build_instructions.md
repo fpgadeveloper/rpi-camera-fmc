@@ -28,21 +28,31 @@ FMC connectors. The table below lists the target design name, the camera ports s
 the FMC connector on which to connect the RPi Camera FMC. The VCU column indicates which designs contain
 the Video Codec Unit and which do not.
 
-| Target board             | Target design | FMC slot | Cameras | VCU |
-|--------------------------|---------------|----------|---------|-----|
-| [ZCU104][4]              | `zcu104`      | LPC   | 4 | YES |
-| [ZCU102][9]              | `zcu102_hpc0` | HPC0  | 4 | NO |
-| [ZCU102][9]              | `zcu102_hpc1` | HPC1  | 2 (note 1) | NO |
-| [ZCU106][5]              | `zcu106_hpc0` | HPC0  | 4 | YES |
-| [PYNQ-ZU][6]             | `pynqzu`      | LPC   | 2 (note 2) | NO |
-| [Genesys-ZU][7]          | `genesyszu`   | LPC   | 2 (note 2) | YES |
-| [UltraZed EV carrier][8] | `uzev`        | HPC   | 4 | YES |
+{% for group in data.groups %}
+    {% set designs_in_group = [] %}
+    {% for design in data.designs %}
+        {% if design.group == group.label and design.publish %}
+            {% set _ = designs_in_group.append(design.label) %}
+        {% endif %}
+    {% endfor %}
+    {% if designs_in_group | length > 0 %}
+### {{ group.name }} designs
+
+| Target board        | Target design     | Cameras | FMC Slot    | VCU | Accelerator | Vivado<br> Edition |
+|---------------------|-------------------|---------|-------------|-----|-----|-----|
+{% for design in data.designs %}{% if design.group == group.label and design.publish %}| [{{ design.board }}]({{ design.link }}) | `{{ design.label }}` | {{ design.cams | length }} | {{ design.connector }} | {% if design.vcu %} ✅ {% else %} ❌ {% endif %} | {% if design.accel %} ✅ {% else %} ❌ {% endif %} | {{ "Enterprise" if design.license else "Standard 🆓" }} |
+{% endif %}{% endfor %}
+{% endif %}
+{% endfor %}
 
 Notes:
-1. The HPC1 connector of the ZCU102 board can only support 2 cameras due to it's pin assignment. This design uses
+1. The Vivado Edition column indicates which designs are supported by the Vivado *Standard* Edition, the
+   FREE edition which can be used without a license. Vivado *Enterprise* Edition requires
+   a license however a 30-day evaluation license is available from the AMD Xilinx Licensing site.
+2. The HPC1 connector of the ZCU102 board can only support 2 cameras due to it's pin assignment. This design uses
    `CAM0` and `CAM1` as labelled on the RPi Camera FMC.
-2. The `pynqzu` and `genesyszu` target designs have video pipelines for only 2 cameras: `CAM1` and `CAM2` as
-   labelled on the RPi Camera FMC. This is due to the resource limitations of the devices on these boards.
+3. The `pynqzu` target design has video pipelines for only 2 cameras: `CAM1` and `CAM2` as
+   labelled on the RPi Camera FMC. This is due to the resource limitations of the device on this board.
 
 ## Linux only
 
@@ -58,7 +68,7 @@ to build the Vivado and PetaLinux projects with a single command.
 
 1. Open a command terminal and launch the setup script for Vivado:
    ```
-   source <path-to-vivado-install>/2022.1/settings64.sh
+   source <path-to-vivado-install>/2024.1/settings64.sh
    ```
 2. Clone the Git repository and `cd` into the `Vivado` folder of the repo:
    ```
@@ -70,7 +80,8 @@ to build the Vivado and PetaLinux projects with a single command.
    ```
    make project TARGET=<target>
    ```
-   Valid targets are: `zcu104`, `zcu102_hpc0`, `zcu102_hpc1`, `zcu106_hpc0`, `pynqzu`, `genesyszu` and `uzev`.
+   Valid target labels are:
+   {% for design in data.designs if design.publish %} `{{ design.label }}`{{ ", " if not loop.last else "." }} {% endfor %}
    That will create the Vivado project and block design without generating a bitstream or exporting to XSA.
 4. Open the generated project in the Vivado GUI and click **Generate Bitstream**. Once the build is
    complete, select **File->Export->Export Hardware** and be sure to tick **Include bitstream** and use
@@ -90,11 +101,11 @@ design if it has not already been done.
 
 1. Launch the setup script for Vivado (only if you skipped the Vivado build steps above):
    ```
-   source <path-to-vivado-install>/2022.1/settings64.sh
+   source <path-to-vivado-install>/2024.1/settings64.sh
    ```
 2. Launch PetaLinux by sourcing the `settings.sh` bash script, eg:
    ```
-   source <path-to-petalinux-install>/2022.1/settings.sh
+   source <path-to-petalinux-install>/2024.1/settings.sh
    ```
 3. Build the PetaLinux project for your specific target platform by running the following
    command, replacing `<target>` with a valid value from below:
@@ -102,13 +113,8 @@ design if it has not already been done.
    cd PetaLinux
    make petalinux TARGET=<target>
    ```
-   Valid targets are: 
-   `zcu104`, 
-   `zcu102_hpc0`,
-   `zcu102_hpc1`,
-   `zcu106_hpc0`, 
-   `pynqzu`, 
-   `uzev`.
+   Valid target labels for PetaLinux projects are:
+   {% for design in data.designs if design.petalinux and design.publish %} `{{ design.label }}`{{ ", " if not loop.last else "." }} {% endfor %}
    Note that if you skipped the Vivado build steps above, the Makefile will first generate and
    build the Vivado project, and then build the PetaLinux project.
 
@@ -133,8 +139,8 @@ follow these instructions.
                              +---  downloads
                              +---  microblaze
    ```
-3. Create a text file called `offline.txt` that contains a single line of text. The single line of text
-   should be the path where you extracted the sstate-cache files. In this example, the contents of 
+3. Create a text file called `offline.txt` in the `PetaLinux` directory of the project repository. The file should contain
+   a single line of text specifying the path where you extracted the sstate-cache files. In this example, the contents of 
    the file would be:
    ```
    /home/user/petalinux-sstate
@@ -144,15 +150,5 @@ follow these instructions.
 
 Now when you use `make` to build the PetaLinux projects, they will be configured for offline build.
 
-[supported Linux distributions]: https://docs.xilinx.com/r/2022.1-English/ug1144-petalinux-tools-reference-guide/Setting-Up-Your-Environment
-[FPGA Drive FMC Gen4]: https://fpgadrive.com
-[1]: https://www.fpgadrive.com/docs/fpga-drive-fmc-gen4/overview/
-[2]: https://www.fpgadrive.com/docs/m2-mkey-stack-fmc/overview/
-[3]: https://camerafmc.com/docs/rpi-camera-fmc/overview/
-[4]: https://www.xilinx.com/zcu104
-[5]: https://www.xilinx.com/zcu106
-[6]: https://www.tulembedded.com/FPGA/ProductsPYNQ-ZU.html
-[7]: https://digilent.com/shop/genesys-zu-zynq-ultrascale-mpsoc-development-board/
-[8]: https://www.xilinx.com/products/boards-and-kits/1-y3n9v1.html
-[9]: https://www.xilinx.com/zcu102
+[supported Linux distributions]: https://docs.amd.com/r/en-US/ug1144-petalinux-tools-reference-guide/Setting-Up-Your-Environment
 

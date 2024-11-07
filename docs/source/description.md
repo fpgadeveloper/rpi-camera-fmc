@@ -5,6 +5,38 @@ attached. The video streams coming from each camera pass through a video pipe co
 [AMD Xilinx MIPI CSI Controller Subsystem IP] and other video processing IP. The cameras can be utilized
 through [GStreamer] in PetaLinux.
 
+## Hardware Platforms
+
+The hardware designs provided in this reference are based on Vivado and support a range of MPSoC evaluation
+boards. The repository contains all necessary scripts and code to build these designs for the supported platforms listed below:
+
+{% for group in data.groups %}
+    {% set designs_in_group = [] %}
+    {% for design in data.designs %}
+        {% if design.group == group.label and design.publish %}
+            {% set _ = designs_in_group.append(design.label) %}
+        {% endif %}
+    {% endfor %}
+    {% if designs_in_group | length > 0 %}
+### {{ group.name }} platforms
+
+| Target board        | FMC Slot Used | Cameras | VCU | Accelerator |
+|---------------------|---------------|---------|-----|-----|
+{% for design in data.designs %}{% if design.group == group.label and design.publish %}| [{{ design.board }}]({{ design.link }}) | {{ design.connector }} | {{ design.cams | length }}x | {% if design.vcu %} ✅ {% else %} ❌ {% endif %} | {% if design.accel %} ✅ {% else %} ❌ {% endif %} |
+{% endif %}{% endfor %}
+{% endif %}
+{% endfor %}
+
+## Software
+
+These reference designs can be driven within a PetaLinux environment. 
+The repository includes all necessary scripts and code to build the PetaLinux environment. The table 
+below outlines the corresponding applications available in each environment:
+
+| Environment      | Available Applications  |
+|------------------|-------------------------|
+| PetaLinux        | Built-in Linux commands<br>Additional tools: ethtool, phytool, iperf3 |
+
 ## Architecture
 
 The hardware design for these projects is built in Vivado and is composed of IP that implement the
@@ -70,10 +102,6 @@ through a set of [GStreamer plug-ins] from the VVAS packages that are built into
 For some of the target boards, the Zynq UltraScale+ device contains a hardened Video Codec Unit (VCU) that can be used to
 perform video encoding and decoding of multiple video standards. On those target designs, we have included the VCU to 
 enable these powerful features. Refer to the list of target designs to see which boards support this feature.
-
-## Software design
-
-This section has yet to be written.
 
 
 [AMD Xilinx MIPI CSI Controller Subsystem IP]: https://docs.xilinx.com/r/en-US/pg202-mipi-dphy
