@@ -12,12 +12,14 @@ TARGET ?= none
 JOBS ?= 8
 
 # valid targets (template name, flash size, flash interface, accelerator)
+# UPDATER START
 zcu104_target := zynqMP 0 0 accel
 zcu102_hpc0_target := zynqMP 0 0 accel
 zcu102_hpc1_target := zynqMP 0 0 accel
 zcu106_hpc0_target := zynqMP 0 0 accel
 pynqzu_target := zynqMP 0 0 accel
 uzev_target := zynqMP 0 0 accel
+# UPDATER END
 
 TARGET_LIST := $(sort $(patsubst %_target,%,$(filter %_target,$(.VARIABLES))))
 

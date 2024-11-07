@@ -17,6 +17,7 @@ TARGET ?= none
 JOBS ?= 8
 
 # valid targets
+# UPDATER START
 zcu104_target := 0 prj_config
 zcu102_hpc0_target := 0 prj_config
 zcu102_hpc1_target := 0 prj_config_1
@@ -24,6 +25,7 @@ zcu106_hpc0_target := 0 prj_config
 pynqzu_target := 0 prj_config
 genesyszu_target := 0 prj_config
 uzev_target := 0 prj_config
+# UPDATER END
 
 TARGET_LIST := $(sort $(patsubst %_target,%,$(filter %_target,$(.VARIABLES))))
 

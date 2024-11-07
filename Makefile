@@ -13,6 +13,7 @@ TARGET ?= none
 JOBS ?= 8
 
 # valid targets (template name)
+# UPDATER START
 zcu104_target := zynqMP
 zcu102_hpc0_target := zynqMP
 zcu102_hpc1_target := zynqMP
@@ -20,6 +21,7 @@ zcu106_hpc0_target := zynqMP
 pynqzu_target := zynqMP
 genesyszu_target := zynqMP
 uzev_target := zynqMP
+# UPDATER END
 
 TARGET_LIST := $(sort $(patsubst %_target,%,$(filter %_target,$(.VARIABLES))))
 
@@ -55,7 +57,7 @@ ACC_XCLBIN = $(ACC_ROOT)/$(TARGET)_container/dpu.xclbin
 # outputs
 BOOTIMAGE_DIR = $(ROOT_DIR)/bootimages
 TEMPBOOT_DIR = $(BOOTIMAGE_DIR)/$(BD_NAME)_$(TARGET)
-PETL_ZIP = $(BOOTIMAGE_DIR)/$(PRJ_NAME)_$(TARGET)_petalinux-2022-1.zip
+PETL_ZIP = $(BOOTIMAGE_DIR)/$(PRJ_NAME)_$(TARGET)_petalinux-2024-1.zip
 BOOTIMAGE_LOCK = $(ROOT_DIR)/.$(TARGET).lock
 
 # These macros return values from the valid target lists defined above

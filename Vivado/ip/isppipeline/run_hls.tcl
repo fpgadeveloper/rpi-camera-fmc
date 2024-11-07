@@ -9,8 +9,6 @@ source "build/${board_name}/settings.tcl"
 set curr_dir [pwd]
 set vision_dir "../../submodules/Vitis_Libraries/vision"
 set VITIS_LIBS [file normalize [file join $curr_dir $vision_dir]]
-set include_dir "isppipeline/include"
-set INCLUDE_PATH [file normalize [file join $curr_dir $include_dir]]
 
 set PROJ "isppipeline.prj"
 set SOLN "sol1"
@@ -24,7 +22,7 @@ cd build/$board_name
 
 open_project -reset $PROJ
 
-add_files "${VITIS_LIBS}/L1/examples/isppipeline/xf_isp_accel.cpp" -cflags "-I${VITIS_LIBS}/L1/include -I ${INCLUDE_PATH} -I ./ -D__SDSVHLS__ -std=c++0x" -csimflags "-I${VITIS_LIBS}/L1/include -I ${INCLUDE_PATH} -I ./ -D__SDSVHLS__ -std=c++0x"
+add_files "${VITIS_LIBS}/L1/examples/isppipeline/xf_isp_accel.cpp" -cflags " -I ${VITIS_LIBS}/L1/examples/isppipeline/config -I${VITIS_LIBS}/L1/include -I ./ -D__SDSVHLS__ -std=c++0x" -csimflags " -I ${VITIS_LIBS}/L1/examples/isppipeline/config -I${VITIS_LIBS}/L1/include -I ./ -D__SDSVHLS__ -std=c++0x"
 set_top ISPPipeline_accel
 
 open_solution -reset $SOLN

@@ -34,9 +34,9 @@ to find the version of this repository that matches your version of the tools.
 
 In order to test this design on hardware, you will need the following:
 
-* Vivado 2022.1
-* Vitis 2022.1
-* PetaLinux Tools 2022.1
+* Vivado 2024.1
+* Vitis 2024.1
+* PetaLinux Tools 2024.1
 * Linux PC for build
 * One or more [Raspberry Pi Camera Module 2](https://www.raspberrypi.com/products/camera-module-v2/) and/or 
   [Digilent Pcam 5C](https://digilent.com/shop/pcam-5c-5-mp-fixed-focus-color-camera-module/) cameras
@@ -46,21 +46,33 @@ In order to test this design on hardware, you will need the following:
 
 ## Target designs
 
-| Target board             | Target design | FMC slot used | Cameras | VCU |
-|--------------------------|---------------|----------|---------|-----|
-| [ZCU104][4]              | `zcu104`      | LPC   | 4 | YES |
-| [ZCU102][9]              | `zcu102_hpc0` | HPC0  | 4 | NO |
-| [ZCU102][9]              | `zcu102_hpc1` | HPC1  | 2 (note 1) | NO |
-| [ZCU106][5]              | `zcu106_hpc0` | HPC0  | 4 | YES |
-| [PYNQ-ZU][6]             | `pynqzu`      | LPC   | 2 (note 2) | NO |
-| [Genesys-ZU][7]          | `genesyszu`   | LPC   | 2 (note 2) | YES |
-| [UltraZed EV carrier][8] | `uzev`        | HPC   | 4 | YES |
+<!-- updater start -->
+### Zynq UltraScale+ designs
+
+| Target board          | Target design   | FMC Slot | Cameras | VCU   | Accelerator | Vivado<br> Edition |
+|-----------------------|-----------------|----------|---------|-------|-------------|-------|
+| [ZCU104]              | `zcu104`        | LPC      | 4     | :white_check_mark: | :white_check_mark: | Standard :free: |
+| [ZCU102]              | `zcu102_hpc0`   | HPC0     | 4     | :x:                | :white_check_mark: | Standard :free: |
+| [ZCU102]              | `zcu102_hpc1`   | HPC1     | 2     | :x:                | :white_check_mark: | Standard :free: |
+| [ZCU106]              | `zcu106_hpc0`   | HPC0     | 4     | :white_check_mark: | :white_check_mark: | Standard :free: |
+| [PYNQ-ZU]             | `pynqzu`        | LPC      | 2     | :x:                | :white_check_mark: | Standard :free: |
+| [UltraZed-EV Carrier] | `uzev`          | HPC      | 4     | :white_check_mark: | :white_check_mark: | Standard :free: |
+
+[ZCU104]: https://www.xilinx.com/zcu104
+[ZCU102]: https://www.xilinx.com/zcu102
+[ZCU106]: https://www.xilinx.com/zcu106
+[PYNQ-ZU]: https://www.tulembedded.com/FPGA/ProductsPYNQ-ZU.html
+[UltraZed-EV Carrier]: https://www.xilinx.com/products/boards-and-kits/1-1s78dxb.html
+<!-- updater end -->
 
 Notes:
-1. The HPC1 connector of the ZCU102 board can only support 2 cameras due to it's pin assignment. This design
+1. The Vivado Edition column indicates which designs are supported by the Vivado *Standard* Edition, the
+   FREE edition which can be used without a license. Vivado *Enterprise* Edition requires
+   a license however a 30-day evaluation license is available from the AMD Xilinx Licensing site.
+2. The HPC1 connector of the ZCU102 board can only support 2 cameras due to it's pin assignment. This design
    supports the `CAM0` and `CAM1` slots as labelled on the RPi Camera FMC.
-2. The `pynqzu` and `genesyszu` target designs have video pipelines for only 2 cameras: `CAM1` and `CAM2` as
-   labelled on the RPi Camera FMC. This is due to the resource limitations of the devices on these boards.
+3. The `pynqzu` target design has video pipelines for only 2 cameras: `CAM1` and `CAM2` as
+   labelled on the RPi Camera FMC. This is due to the resource limitations of the devices on this board.
 
 ## Build instructions
 
@@ -72,8 +84,8 @@ git clone --recursive https://github.com/fpgadeveloper/rpi-camera-fmc.git
 Source Vivado and PetaLinux tools:
 
 ```
-source <path-to-petalinux>/2022.1/settings.sh
-source <path-to-vivado>/2022.1/settings64.sh
+source <path-to-petalinux>/2024.1/settings.sh
+source <path-to-vivado>/2024.1/settings64.sh
 ```
 
 Build all (Vivado project, accelerator kernel and PetaLinux):
