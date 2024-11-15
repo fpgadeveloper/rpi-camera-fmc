@@ -7,7 +7,8 @@ CONFIG_gstreamer-vcu-examples
 CONFIG_packagegroup-petalinux-v4lutils
 CONFIG_packagegroup-petalinux-audio
 CONFIG_gstreamer-vcu-notebooks
-CONFIG_board-fpga-autoload
+#CONFIG_zcu106-1.0
+#CONFIG_zcu106-2.0
 
 # RPi Camera FMC additions
 
@@ -26,13 +27,3 @@ CONFIG_zocl
 CONFIG_opencl-clhpp-dev
 CONFIG_opencl-headers-dev
 CONFIG_htop
-CONFIG_unilog
-CONFIG_target-factory
-CONFIG_vart
-CONFIG_xir
-CONFIG_vitis-ai-library
-CONFIG_vvas-utils
-CONFIG_vvas-gst
-CONFIG_vvas-accel-libs
-CONFIG_xilinx-isppipeline
-

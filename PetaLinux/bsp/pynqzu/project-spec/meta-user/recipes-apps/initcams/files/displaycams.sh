@@ -123,7 +123,7 @@ done
 # Setup the display pipeline
 #-------------------------------------------------------------------------------
 # Initialize the display pipeline
-echo | modetest -M xlnx -D ${VMIX} -s 52@40:${DISP_RES_W}x${DISP_RES_H}@NV16
+echo | modetest -M xlnx -D ${VMIX} -s 60@46:${DISP_RES_W}x${DISP_RES_H}@NV16
 
 #------------------------------------------------------------------------------
 # Run GStreamer to combine all videos and display on the screen
@@ -133,9 +133,9 @@ full_command="gst-launch-1.0"
 # Screen quadrants: TOP-LEFT, TOP-RIGHT, BOTTOM-LEFT, BOTTOM-RIGHT
 quadrants=(
         "plane-id=34 render-rectangle=\"<0,0,${OUT_RES_W},${OUT_RES_H}>\""
-        "plane-id=35 render-rectangle=\"<${OUT_RES_W},0,${OUT_RES_W},${OUT_RES_H}>\""
-        "plane-id=36 render-rectangle=\"<0,${OUT_RES_H},${OUT_RES_W},${OUT_RES_H}>\""
-        "plane-id=37 render-rectangle=\"<${OUT_RES_W},${OUT_RES_H},${OUT_RES_W},${OUT_RES_H}>\""
+        "plane-id=36 render-rectangle=\"<${OUT_RES_W},0,${OUT_RES_W},${OUT_RES_H}>\""
+        "plane-id=38 render-rectangle=\"<0,${OUT_RES_H},${OUT_RES_W},${OUT_RES_H}>\""
+        "plane-id=40 render-rectangle=\"<${OUT_RES_W},${OUT_RES_H},${OUT_RES_W},${OUT_RES_H}>\""
 )
 
 index=0

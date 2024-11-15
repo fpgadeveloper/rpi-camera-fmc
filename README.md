@@ -51,12 +51,12 @@ In order to test this design on hardware, you will need the following:
 
 | Target board          | Target design   | FMC Slot | Cameras | VCU   | Accelerator | Vivado<br> Edition |
 |-----------------------|-----------------|----------|---------|-------|-------------|-------|
-| [ZCU104]              | `zcu104`        | LPC      | 4     | :white_check_mark: | :white_check_mark: | Standard :free: |
-| [ZCU102]              | `zcu102_hpc0`   | HPC0     | 4     | :x:                | :white_check_mark: | Standard :free: |
-| [ZCU102]              | `zcu102_hpc1`   | HPC1     | 2     | :x:                | :white_check_mark: | Standard :free: |
-| [ZCU106]              | `zcu106_hpc0`   | HPC0     | 4     | :white_check_mark: | :white_check_mark: | Standard :free: |
-| [PYNQ-ZU]             | `pynqzu`        | LPC      | 2     | :x:                | :white_check_mark: | Standard :free: |
-| [UltraZed-EV Carrier] | `uzev`          | HPC      | 4     | :white_check_mark: | :white_check_mark: | Standard :free: |
+| [ZCU104]              | `zcu104`        | LPC      | 4     | :white_check_mark: | :x:                | Standard :free: |
+| [ZCU102]              | `zcu102_hpc0`   | HPC0     | 4     | :x:                | :x:                | Standard :free: |
+| [ZCU102]              | `zcu102_hpc1`   | HPC1     | 2     | :x:                | :x:                | Standard :free: |
+| [ZCU106]              | `zcu106_hpc0`   | HPC0     | 4     | :white_check_mark: | :x:                | Standard :free: |
+| [PYNQ-ZU]             | `pynqzu`        | LPC      | 2     | :x:                | :x:                | Standard :free: |
+| [UltraZed-EV Carrier] | `uzev`          | HPC      | 4     | :white_check_mark: | :x:                | Standard :free: |
 
 [ZCU104]: https://www.xilinx.com/zcu104
 [ZCU102]: https://www.xilinx.com/zcu102

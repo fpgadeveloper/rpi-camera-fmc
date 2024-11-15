@@ -183,6 +183,10 @@ proc create_mipi_pipe { index loc_dict } {
   CONFIG.NUM_MI {3} \
   ] $axi_int_video
   
+  # Add the AXI4 Streaming Data FIFO
+  set axis_data_fifo [create_bd_cell -type ip -vlnv xilinx.com:ip:axis_data_fifo axis_data_fifo]
+  set_property CONFIG.FIFO_DEPTH {4096} $axis_data_fifo
+
   # Add the ISPPipeline
   set isppipeline [ create_bd_cell -type ip -vlnv xilinx.com:hls:ISPPipeline_accel:1.0 isppipeline ]
 
@@ -266,6 +270,7 @@ proc create_mipi_pipe { index loc_dict } {
   connect_bd_net [get_bd_pins video_aclk] [get_bd_pins v_frmbuf_wr/ap_clk]
   connect_bd_net [get_bd_pins video_aclk] [get_bd_pins v_proc/aclk_axis]
   connect_bd_net [get_bd_pins video_aclk] [get_bd_pins v_proc/aclk_ctrl]
+  connect_bd_net [get_bd_pins video_aclk] [get_bd_pins axis_data_fifo/s_axis_aclk]
   connect_bd_net [get_bd_pins video_aclk] [get_bd_pins isppipeline/ap_clk]
   connect_bd_net [get_bd_pins video_aclk] [get_bd_pins axi_int_video/ACLK]
   connect_bd_net [get_bd_pins video_aclk] [get_bd_pins axi_int_video/S00_ACLK]
@@ -288,6 +293,7 @@ proc create_mipi_pipe { index loc_dict } {
   connect_bd_net [get_bd_pins video_aresetn] [get_bd_pins axi_int_video/M01_ARESETN] -boundary_type upper
   connect_bd_net [get_bd_pins video_aresetn] [get_bd_pins axi_int_video/M02_ARESETN] -boundary_type upper
   connect_bd_net [get_bd_pins video_aresetn] [get_bd_pins mipi_csi2_rx_subsyst_0/video_aresetn]
+  connect_bd_net [get_bd_pins video_aresetn] [get_bd_pins axis_data_fifo/s_axis_aresetn]
   # Connect the AXI-Lite resets
   connect_bd_net [get_bd_pins aresetn] [get_bd_pins axi_int_ctrl/ARESETN] -boundary_type upper
   connect_bd_net [get_bd_pins aresetn] [get_bd_pins axi_int_ctrl/S00_ARESETN] -boundary_type upper
@@ -308,7 +314,8 @@ proc create_mipi_pipe { index loc_dict } {
   connect_bd_intf_net -boundary_type upper [get_bd_intf_pins axi_int_video/M01_AXI] [get_bd_intf_pins v_frmbuf_wr/s_axi_CTRL]
   connect_bd_intf_net -boundary_type upper [get_bd_intf_pins axi_int_video/M02_AXI] [get_bd_intf_pins v_proc/s_axi_ctrl]
   # Connect the AXI Streaming interfaces
-  connect_bd_intf_net [get_bd_intf_pins mipi_csi2_rx_subsyst_0/video_out] [get_bd_intf_pins isppipeline/s_axis_video]
+  connect_bd_intf_net [get_bd_intf_pins mipi_csi2_rx_subsyst_0/video_out] [get_bd_intf_pins axis_data_fifo/S_AXIS]
+  connect_bd_intf_net [get_bd_intf_pins axis_data_fifo/M_AXIS] [get_bd_intf_pins isppipeline/s_axis_video]
   connect_bd_intf_net [get_bd_intf_pins isppipeline/m_axis_video] [get_bd_intf_pins v_proc/s_axis]
   connect_bd_intf_net [get_bd_intf_pins v_proc/m_axis] [get_bd_intf_pins v_frmbuf_wr/s_axis_video]
   # Connect the MIPI D-PHY interface
@@ -325,6 +332,21 @@ proc create_mipi_pipe { index loc_dict } {
   connect_bd_net [get_bd_pins frmbufwr_irq] [get_bd_pins v_frmbuf_wr/interrupt]
   connect_bd_net [get_bd_pins iic2intc_irpt] [get_bd_pins axi_iic_0/iic2intc_irpt]
   
+  if {$index == 0} {
+    create_bd_cell -type ip -vlnv xilinx.com:ip:ila ila_0
+    set_property -dict [list \
+      CONFIG.C_MONITOR_TYPE {Native} \
+      CONFIG.C_NUM_OF_PROBES {3} \
+    ] [get_bd_cells ila_0]
+    connect_bd_net [get_bd_pins video_aclk] [get_bd_pins ila_0/clk]
+    connect_bd_net [get_bd_pins isppipeline/s_axis_video_TREADY] [get_bd_pins ila_0/probe0]
+    connect_bd_net [get_bd_pins isppipeline/s_axis_video_TREADY] [get_bd_pins axis_data_fifo/m_axis_tready]
+    connect_bd_net [get_bd_pins v_proc/s_axis_tready] [get_bd_pins ila_0/probe1]
+    connect_bd_net [get_bd_pins v_proc/s_axis_tready] [get_bd_pins isppipeline/m_axis_video_TREADY]
+    connect_bd_net [get_bd_pins v_frmbuf_wr/s_axis_video_TREADY] [get_bd_pins ila_0/probe2]
+    connect_bd_net [get_bd_pins v_frmbuf_wr/s_axis_video_TREADY] [get_bd_pins v_proc/m_axis_tready]
+  }
+
   current_bd_instance \
 }
 

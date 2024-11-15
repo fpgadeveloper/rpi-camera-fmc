@@ -48,7 +48,6 @@ echo "-------------------------------------------------"
 echo "Configuring all video capture pipelines to:"
 echo " - RPi Camera output    : $SRC_RES_W x $SRC_RES_H"
 echo " - Scaler (VPSS) output : $OUT_RES_W x $OUT_RES_H $OUT_FORMAT"
-echo " - Frame rate           : $FRM_RATE fps"
 
 # Print the bus_id of the video mixer
 echo "Video Mixer found here:"

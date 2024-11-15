@@ -41,8 +41,8 @@ def create_tables(data):
     for group in used_groups:
         tables.append('### {} designs'.format(group['name']))
         tables.append('')
-        tables.append('| Target board          | Target design   | FMC Slot | Cameras | VCU   | Accelerator | Vivado<br> Edition |')
-        tables.append('|-----------------------|-----------------|----------|---------|-------|-------------|-------|')
+        tables.append('| Target board          | Target design   | FMC Slot | Cameras | VCU   | Vivado<br> Edition |')
+        tables.append('|-----------------------|-----------------|----------|---------|-------|-------|')
         for design in data['designs']:
             if not design['publish']:
                 continue
@@ -53,7 +53,6 @@ def create_tables(data):
                 cols.append('{0}'.format(design['connector']).ljust(8))
                 cols.append('{0}'.format(len(design['cams'])).ljust(5))
                 cols.append('{0}'.format(to_emoji[design['vcu']]).ljust(18))
-                cols.append('{0}'.format(to_emoji[design['accel']]).ljust(18))
                 cols.append('{0}'.format(to_edition[design['license']]).ljust(5))
                 tables.append('| ' + ' | '.join(cols) + ' |')
                 links[design['board']] = design['link']
@@ -239,10 +238,10 @@ vivado_ip_makefile = '../../Vivado/ip/Makefile'
 vivado_ip_targets = get_vivado_ip_targets(data)
 update_file(vivado_ip_makefile,vivado_ip_targets)
 
-# Update the Vitis Accel makefile
-vitis_accel_makefile = '../../VitisAccel/Makefile'
-vitis_accel_targets = get_vitis_accel_targets(data)
-update_file(vitis_accel_makefile,vitis_accel_targets)
+## Update the Vitis Accel makefile
+#vitis_accel_makefile = '../../VitisAccel/Makefile'
+#vitis_accel_targets = get_vitis_accel_targets(data)
+#update_file(vitis_accel_makefile,vitis_accel_targets)
 
 ## Update the Vitis makefile
 #vitis_makefile = '../../Vitis/Makefile'

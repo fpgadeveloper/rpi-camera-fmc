@@ -21,13 +21,3 @@ CONFIG_zocl
 CONFIG_opencl-clhpp-dev
 CONFIG_opencl-headers-dev
 CONFIG_htop
-CONFIG_unilog
-CONFIG_target-factory
-CONFIG_vart
-CONFIG_xir
-CONFIG_vitis-ai-library
-CONFIG_vvas-utils
-CONFIG_vvas-gst
-CONFIG_vvas-accel-libs
-CONFIG_xilinx-isppipeline
-
