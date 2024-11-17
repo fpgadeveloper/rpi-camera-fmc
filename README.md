@@ -7,7 +7,6 @@ connect 4x Raspberry Pi cameras (or compatible cameras) to one of the target FPG
 designs contain:
 
 * 4x MIPI CSI capture pipelines
-* [VVAS MultiScaler] kernel for hardware accelerated image processing
 * Video Mixer IP based display pipeline to DisplayPort output
 * Video Codec Unit ([VCU])
 
@@ -49,14 +48,14 @@ In order to test this design on hardware, you will need the following:
 <!-- updater start -->
 ### Zynq UltraScale+ designs
 
-| Target board          | Target design   | FMC Slot | Cameras | VCU   | Accelerator | Vivado<br> Edition |
-|-----------------------|-----------------|----------|---------|-------|-------------|-------|
-| [ZCU104]              | `zcu104`        | LPC      | 4     | :white_check_mark: | :x:                | Standard :free: |
-| [ZCU102]              | `zcu102_hpc0`   | HPC0     | 4     | :x:                | :x:                | Standard :free: |
-| [ZCU102]              | `zcu102_hpc1`   | HPC1     | 2     | :x:                | :x:                | Standard :free: |
-| [ZCU106]              | `zcu106_hpc0`   | HPC0     | 4     | :white_check_mark: | :x:                | Standard :free: |
-| [PYNQ-ZU]             | `pynqzu`        | LPC      | 2     | :x:                | :x:                | Standard :free: |
-| [UltraZed-EV Carrier] | `uzev`          | HPC      | 4     | :white_check_mark: | :x:                | Standard :free: |
+| Target board          | Target design   | FMC Slot | Cameras | VCU   | Vivado<br> Edition |
+|-----------------------|-----------------|----------|---------|-------|-------|
+| [ZCU104]              | `zcu104`        | LPC      | 4     | :white_check_mark: | Standard :free: |
+| [ZCU102]              | `zcu102_hpc0`   | HPC0     | 4     | :x:                | Standard :free: |
+| [ZCU102]              | `zcu102_hpc1`   | HPC1     | 2     | :x:                | Standard :free: |
+| [ZCU106]              | `zcu106_hpc0`   | HPC0     | 4     | :white_check_mark: | Standard :free: |
+| [PYNQ-ZU]             | `pynqzu`        | LPC      | 2     | :x:                | Standard :free: |
+| [UltraZed-EV Carrier] | `uzev`          | HPC      | 4     | :white_check_mark: | Standard :free: |
 
 [ZCU104]: https://www.xilinx.com/zcu104
 [ZCU102]: https://www.xilinx.com/zcu102
@@ -73,6 +72,16 @@ Notes:
    supports the `CAM0` and `CAM1` slots as labelled on the RPi Camera FMC.
 3. The `pynqzu` target design has video pipelines for only 2 cameras: `CAM1` and `CAM2` as
    labelled on the RPi Camera FMC. This is due to the resource limitations of the devices on this board.
+
+## Software
+
+These reference designs can be driven within a PetaLinux environment. 
+The repository includes all necessary scripts and code to build the PetaLinux environment. The table 
+below outlines the corresponding applications available:
+
+| Environment      | Available Applications  |
+|------------------|-------------------------|
+| PetaLinux        | Built-in Linux commands<br>Additional tools: [GStreamer] |
 
 ## Build instructions
 
@@ -108,6 +117,9 @@ Thank you to everyone who supports us!
 ### The TODO list
 
 * Develop PYNQ support
+* Add a standalone application
+* Add support for some Versal boards
+* Add VCU example scripts
 * Get a Genesys-ZU board and test the design on hardware.
 * Software support for more cameras (this will be an ongoing task due to the number of cameras available).
 
@@ -118,20 +130,7 @@ design services to start-ups and tech companies. Follow our blog,
 [FPGA Developer](https://www.fpgadeveloper.com "FPGA Developer"), for news, tutorials and
 updates on the awesome projects we work on.
 
-[1]: https://www.fpgadrive.com/docs/fpga-drive-fmc-gen4/overview/
-[2]: https://www.fpgadrive.com/docs/m2-mkey-stack-fmc/overview/
-[3]: https://camerafmc.com/docs/rpi-camera-fmc/overview/
-[4]: https://www.xilinx.com/zcu104
-[5]: https://www.xilinx.com/zcu106
-[6]: https://www.tulembedded.com/FPGA/ProductsPYNQ-ZU.html
-[7]: https://digilent.com/shop/genesys-zu-zynq-ultrascale-mpsoc-development-board/
-[8]: https://www.xilinx.com/products/boards-and-kits/1-y3n9v1.html
-[Hailo-8 M.2 AI Acceleration Module]: https://hailo.ai/products/ai-accelerators/hailo-8-m2-ai-acceleration-module/
-[9]: https://www.xilinx.com/zcu102
-[AMD Xilinx MIPI CSI Controller Subsystem IP]: https://docs.xilinx.com/r/en-US/pg202-mipi-dphy
 [RPi Camera FMC]: https://camerafmc.com/docs/rpi-camera-fmc/overview/
 [GStreamer]: https://gstreamer.freedesktop.org/
-[VVAS MultiScaler]: https://xilinx.github.io/VVAS/2.0/build/html/docs/common/Acceleration-Hardware.html#multiscaler-kernel
 [VCU]: https://xilinx-wiki.atlassian.net/wiki/spaces/A/pages/18842546/Xilinx+Zynq+UltraScale+MPSoC+Video+Codec+Unit
-[G-Streamer plugins]: https://xilinx.github.io/VVAS/2.0/build/html/docs/common/common_plugins.html
 

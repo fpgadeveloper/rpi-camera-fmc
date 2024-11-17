@@ -50,10 +50,6 @@ VIT_ROOT = $(ROOT_DIR)/Vitis
 VIT_BOOT = $(VIT_ROOT)/boot
 VIT_BOOT_TARG = $(VIT_BOOT)/$(TARGET)
 
-# accelerator paths and files
-ACC_ROOT = $(ROOT_DIR)/VitisAccel
-ACC_XCLBIN = $(ACC_ROOT)/$(TARGET)_container/dpu.xclbin
-
 # outputs
 BOOTIMAGE_DIR = $(ROOT_DIR)/bootimages
 TEMPBOOT_DIR = $(BOOTIMAGE_DIR)/$(BD_NAME)_$(TARGET)
@@ -146,7 +142,6 @@ $(PETL_ZIP): $(PETL_BOOT_BIN) $(PETL_IMAGE_UB)
 	cp $(PETL_BOOT_BIN) $(TEMPBOOT_DIR)/boot/.
 	cp $(PETL_IMAGE_UB) $(TEMPBOOT_DIR)/boot/.
 	cp $(PETL_BOOT_SCR) $(TEMPBOOT_DIR)/boot/.
-	cp $(ACC_XCLBIN) $(TEMPBOOT_DIR)/boot/.
 	cp $(PETL_ROOTFS) $(TEMPBOOT_DIR)/root/.
 	@echo 'Copy these files to the boot (FAT32) partition of the SD card' > $(TEMPBOOT_DIR)/boot/readme.txt
 	@echo 'Extract contents of rootfs.tar.gz to the root partition of the SD card' > $(TEMPBOOT_DIR)/root/readme.txt
@@ -161,7 +156,6 @@ $(PETL_ZIP): $(PETL_BOOT_BIN) $(PETL_IMAGE_UB)
 	cp $(PETL_BOOT_BIN) $(TEMPBOOT_DIR)/boot/.
 	cp $(PETL_IMAGE_UB) $(TEMPBOOT_DIR)/boot/.
 	cp $(PETL_BOOT_SCR) $(TEMPBOOT_DIR)/boot/.
-	cp $(ACC_XCLBIN) $(TEMPBOOT_DIR)/boot/.
 	cp $(PETL_ROOTFS) $(TEMPBOOT_DIR)/root/.
 	@echo 'Copy these files to the boot (FAT32) partition of the SD card' > $(TEMPBOOT_DIR)/boot/readme.txt
 	@echo 'Extract contents of rootfs.tar.gz to the root partition of the SD card' > $(TEMPBOOT_DIR)/root/readme.txt
@@ -176,7 +170,6 @@ $(PETL_ZIP): $(PETL_BOOT_BIN) $(PETL_IMAGE_UB)
 	cp $(PETL_BOOT_BIN) $(TEMPBOOT_DIR)/boot/.
 	cp $(PETL_IMAGE_UB) $(TEMPBOOT_DIR)/boot/.
 	cp $(PETL_BOOT_SCR) $(TEMPBOOT_DIR)/boot/.
-	cp $(ACC_XCLBIN) $(TEMPBOOT_DIR)/boot/.
 	cp $(PETL_ROOTFS) $(TEMPBOOT_DIR)/root/.
 	@echo 'Copy these files to the boot (FAT32) partition of the SD card' > $(TEMPBOOT_DIR)/boot/readme.txt
 	@echo 'Extract contents of rootfs.tar.gz to the root partition of the SD card' > $(TEMPBOOT_DIR)/root/readme.txt
@@ -185,7 +178,7 @@ $(PETL_ZIP): $(PETL_BOOT_BIN) $(PETL_IMAGE_UB)
 endif
 
 PETL_BUILD_DEPS = $(PETL_BOOT_MCS) $(PETL_BOOT_PRM) $(PETL_IMAGE_ELF) $(PETL_SYSTEM_BIT) \
-                  $(PETL_BOOT_BIN) $(PETL_IMAGE_UB) $(ACC_XCLBIN)
+                  $(PETL_BOOT_BIN) $(PETL_IMAGE_UB)
 
 $(PETL_BUILD_DEPS):
 	$(MAKE) --no-print-directory -C $(PETL_ROOT) petalinux TARGET=$(TARGET) JOBS=$(JOBS)
