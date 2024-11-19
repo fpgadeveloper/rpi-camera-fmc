@@ -74,3 +74,6 @@ functional workaround that we have found for these two target boards.
 [compatibility list]: https://camerafmc.com/docs/rpi-camera-fmc/compatibility/
 [AMD Xilinx MIPI CSI Controller Subsystem IP]: https://docs.xilinx.com/r/en-US/pg202-mipi-dphy
 
+[ZCU102]: https://www.xilinx.com/zcu102
+[Genesys-ZU]: https://digilent.com/shop/genesys-zu-zynq-ultrascale-mpsoc-development-board
+[PYNQ-ZU]: https://www.amd.com/en/corporate/university-program/aup-boards/pynq-zu.html

@@ -536,14 +536,6 @@
 	remote-endpoint = <&dp_encoder>;
 };
 
-/* just in case */
-&crtc_mixer_portdisplay_pipeline_v_mix_0 {
-	endpoint@0 {
-		reg = <0x00>;
-		remote-endpoint = <&dp_encoder>;
-	};
-};
-
 &display_pipeline_v_mix_0 {
 	xlnx,disp-bridge = <&zynqmp_dpsub>;
 };

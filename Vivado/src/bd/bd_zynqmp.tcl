@@ -261,7 +261,7 @@ proc create_mipi_pipe { index loc_dict } {
   
   # Add and configure AXI GPIO
   set axi_gpio [create_bd_cell -type ip -vlnv xilinx.com:ip:axi_gpio axi_gpio_0]
-  set_property -dict [list CONFIG.C_GPIO_WIDTH {2} CONFIG.C_ALL_OUTPUTS {1}] $axi_gpio
+  set_property -dict [list CONFIG.C_GPIO_WIDTH {2} CONFIG.C_ALL_OUTPUTS {1} CONFIG.C_DOUT_DEFAULT {0x00000001} ] $axi_gpio
   
   # Connect the 200M D-PHY clock
   connect_bd_net [get_bd_pins dphy_clk_200M] [get_bd_pins mipi_csi2_rx_subsyst_0/dphy_clk_200M]
@@ -332,21 +332,6 @@ proc create_mipi_pipe { index loc_dict } {
   connect_bd_net [get_bd_pins frmbufwr_irq] [get_bd_pins v_frmbuf_wr/interrupt]
   connect_bd_net [get_bd_pins iic2intc_irpt] [get_bd_pins axi_iic_0/iic2intc_irpt]
   
-  if {$index == 0} {
-    create_bd_cell -type ip -vlnv xilinx.com:ip:ila ila_0
-    set_property -dict [list \
-      CONFIG.C_MONITOR_TYPE {Native} \
-      CONFIG.C_NUM_OF_PROBES {3} \
-    ] [get_bd_cells ila_0]
-    connect_bd_net [get_bd_pins video_aclk] [get_bd_pins ila_0/clk]
-    connect_bd_net [get_bd_pins isppipeline/s_axis_video_TREADY] [get_bd_pins ila_0/probe0]
-    connect_bd_net [get_bd_pins isppipeline/s_axis_video_TREADY] [get_bd_pins axis_data_fifo/m_axis_tready]
-    connect_bd_net [get_bd_pins v_proc/s_axis_tready] [get_bd_pins ila_0/probe1]
-    connect_bd_net [get_bd_pins v_proc/s_axis_tready] [get_bd_pins isppipeline/m_axis_video_TREADY]
-    connect_bd_net [get_bd_pins v_frmbuf_wr/s_axis_video_TREADY] [get_bd_pins ila_0/probe2]
-    connect_bd_net [get_bd_pins v_frmbuf_wr/s_axis_video_TREADY] [get_bd_pins v_proc/m_axis_tready]
-  }
-
   current_bd_instance \
 }
 
@@ -492,7 +477,7 @@ connect_bd_net [get_bd_ports clk_sel] [get_bd_pins clk_sel/dout]
 
 # Add and configure GPIO for the reserved GPIOs
 set rsvd_gpio [create_bd_cell -type ip -vlnv xilinx.com:ip:axi_gpio rsvd_gpio]
-set_property -dict [list CONFIG.C_GPIO_WIDTH {10} CONFIG.C_ALL_OUTPUTS {1}] $rsvd_gpio
+set_property -dict [list CONFIG.C_GPIO_WIDTH {10} CONFIG.C_ALL_OUTPUTS {1} CONFIG.C_DOUT_DEFAULT {0x00000030} ] $rsvd_gpio
 connect_bd_net [get_bd_pins clk_wiz_0/clk_100M] [get_bd_pins rsvd_gpio/s_axi_aclk]
 connect_bd_net [get_bd_pins rst_ps_axi_100M/peripheral_aresetn] [get_bd_pins rsvd_gpio/s_axi_aresetn]
 lappend hpm0_lpd_ports [list "rsvd_gpio/S_AXI" "clk_wiz_0/clk_100M" "rst_ps_axi_100M/peripheral_aresetn"]

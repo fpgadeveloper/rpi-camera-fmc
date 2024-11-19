@@ -38,9 +38,9 @@ the Video Codec Unit and which do not.
     {% if designs_in_group | length > 0 %}
 ### {{ group.name }} designs
 
-| Target board        | Target design     | Cameras | FMC Slot    | VCU | Accelerator | Vivado<br> Edition |
-|---------------------|-------------------|---------|-------------|-----|-----|-----|
-{% for design in data.designs %}{% if design.group == group.label and design.publish %}| [{{ design.board }}]({{ design.link }}) | `{{ design.label }}` | {{ design.cams | length }} | {{ design.connector }} | {% if design.vcu %} ✅ {% else %} ❌ {% endif %} | {% if design.accel %} ✅ {% else %} ❌ {% endif %} | {{ "Enterprise" if design.license else "Standard 🆓" }} |
+| Target board        | Target design     | Cameras | FMC Slot    | VCU | Vivado<br> Edition |
+|---------------------|-------------------|---------|-------------|-----|-----|
+{% for design in data.designs %}{% if design.group == group.label and design.publish %}| [{{ design.board }}]({{ design.link }}) | `{{ design.label }}` | {{ design.cams | length }} | {{ design.connector }} | {% if design.vcu %} ✅ {% else %} ❌ {% endif %} | {{ "Enterprise" if design.license else "Standard 🆓" }} |
 {% endif %}{% endfor %}
 {% endif %}
 {% endfor %}

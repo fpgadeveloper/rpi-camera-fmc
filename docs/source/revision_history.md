@@ -1,5 +1,11 @@
 # Revision History
 
+## 2024.1 Changes
+
+* Removed VVAS image processing accelerator from the design - no current support for VVAS in version
+  2024.1.
+* Added AXI4-Streaming Data FIFO to MIPI video pipes, between MIPI CSI2 RX and ISP Pipeline IPs
+
 ## 2022.1 Changes
 
 * Added Makefiles to improve the build experience for Linux users
