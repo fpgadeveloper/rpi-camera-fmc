@@ -2,7 +2,7 @@
 
 ## Description
 
-This project demonstrates the Opsero [RPi Camera FMC](https://camerafmc.com/docs/rpi-camera-fmc/overview/) used to
+This project demonstrates the Opsero [RPi Camera FMC] (OP068) used to
 connect 4x Raspberry Pi cameras (or compatible cameras) to one of the target FPGA/MPSoC boards listed below. The 
 designs contain:
 
@@ -39,7 +39,7 @@ In order to test this design on hardware, you will need the following:
 * Linux PC for build
 * One or more [Raspberry Pi Camera Module 2](https://www.raspberrypi.com/products/camera-module-v2/) and/or 
   [Digilent Pcam 5C](https://digilent.com/shop/pcam-5c-5-mp-fixed-focus-color-camera-module/) cameras
-* 1x [RPi Camera FMC](https://camerafmc.com/buy/ "RPi Camera FMC")
+* 1x [RPi Camera FMC]
 * 1x DisplayPort monitor that supports 1080p video
 * One of the supported target boards listed below
 
@@ -103,6 +103,17 @@ Build all (Vivado project, accelerator kernel and PetaLinux):
 cd rpi-camera-fmc/PetaLinux
 make petalinux TARGET=uzev
 ```
+
+## Launch instructions
+
+From the PetaLinux command line, run the following command to stream video from all *connected* cameras to the 4 quadrants of the 
+1080p DisplayPort monitor:
+
+```
+sudo displaycams.sh
+```
+
+If less than 4 cameras are physically connected, the unused quadrants of the monitor will be blue.
 
 ## Contribute
 
