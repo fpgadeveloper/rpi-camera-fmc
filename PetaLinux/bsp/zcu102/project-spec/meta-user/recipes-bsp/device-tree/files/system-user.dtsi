@@ -28,13 +28,6 @@
 		clock-frequency = <199998000>;
 		compatible = "fixed-clock";
 	};
-
-	/delete-node/ misc_clk_3;
-	misc_clk_3: misc_clk_3 {
-		#clock-cells = <0>;
-		clock-frequency = <49999500>;
-		compatible = "fixed-clock";
-	};
 };
 
 &zynqmp_dpsub {

@@ -7,13 +7,6 @@
 / {
 	model = "TUL PYNQ-ZU RevB";
 
-	axi {
-		audio0:audio-codec-ctrl@800e0000 {
-			compatible = "generic-uio";
-			reg = <0x0 0x800e0000 0x0 0x10000>;
-		};
-	};
-
 	reserved-memory {
 		#address-cells = <2>;
 		#size-cells = <2>;
@@ -122,20 +115,6 @@
 		clock-frequency = <199998000>;
 		compatible = "fixed-clock";
 	};
-
-	/delete-node/ misc_clk_3;
-	misc_clk_3: misc_clk_3 {
-		#clock-cells = <0>;
-		clock-frequency = <49999500>;
-		compatible = "fixed-clock";
-	};
-};
-
-&i2c1 {
-	status = "okay";
-	clock-frequency = <400000>;
-	#address-cells = <1>;
-	#size-cells = <0>;
 };
 
 &i2c0 {
@@ -309,7 +288,6 @@
 		compatible = "fixed-clock";
 	};
 
-
 	imx219_vana: fixedregulator@3 {
 		compatible = "regulator-fixed";
 		regulator-name = "imx219_vana";
@@ -330,14 +308,6 @@
 		regulator-name = "imx219_vddl";
 		regulator-min-microvolt = <1200000>;
 		regulator-max-microvolt = <1200000>;
-	};
-	
-	/* zocl */
-	zyxclmm_drm {
-		compatible = "xlnx,zocl";
-		status = "okay";
-		interrupt-parent = <&gic>;
-		interrupts = <0 110  4>, <0 111  4>;
 	};
 };
 

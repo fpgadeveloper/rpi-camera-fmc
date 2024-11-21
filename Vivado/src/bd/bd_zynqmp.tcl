@@ -379,6 +379,18 @@ set_property -dict [list \
   CONFIG.PSU__GPIO_EMIO__PERIPHERAL__IO {95} \
 ] [get_bd_cells zynq_ultra_ps_e_0]
 
+# PYNQ-ZU board files set PL0-3 clocks to use RPLL, however this results in incorrect frequency being transferred
+# to PetaLinux for reasons we don't yet understand.
+# Frequency can be verified with: sudo cat /sys/kernel/debug/clk/pl0_ref/clk_rate
+if {$target == "pynqzu"} {
+  set_property -dict [list \
+    CONFIG.PSU__CRL_APB__PL0_REF_CTRL__SRCSEL {IOPLL} \
+    CONFIG.PSU__CRL_APB__PL1_REF_CTRL__SRCSEL {IOPLL} \
+    CONFIG.PSU__CRL_APB__PL2_REF_CTRL__SRCSEL {IOPLL} \
+    CONFIG.PSU__CRL_APB__PL3_REF_CTRL__SRCSEL {IOPLL} \
+  ] [get_bd_cells zynq_ultra_ps_e_0]
+}
+
 # Add a processor system reset
 create_bd_cell -type ip -vlnv xilinx.com:ip:proc_sys_reset rst_ps_100M
 connect_bd_net [get_bd_pins zynq_ultra_ps_e_0/pl_clk0] [get_bd_pins rst_ps_100M/slowest_sync_clk]
