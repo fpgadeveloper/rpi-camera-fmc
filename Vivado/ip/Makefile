@@ -19,6 +19,7 @@ zcu106_hpc0_target := xilinx.com zcu106
 pynqzu_target := tul.com.tw pynqzu
 genesyszu_target := digilentinc.com gzu_5ev
 uzev_target := avnet.com ultrazed_7ev_cc
+auboard_target := avnet.com auboard_15p
 # UPDATER END
 
 TARGET_LIST := $(sort $(patsubst %_target,%,$(filter %_target,$(.VARIABLES))))

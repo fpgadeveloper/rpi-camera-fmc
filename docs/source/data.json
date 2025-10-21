@@ -150,6 +150,25 @@
       "license": false,
       "flashsize": "0",
       "flashintf": "0"
+    },
+    {
+      "publish": true,
+      "label": "auboard",
+      "board": "AUBoard 15P",
+      "link": "https://www.avnet.com/americas/products/avnet-boards/avnet-board-families/auboard-15p-fpga-development-kit/",
+      "url": "avnet.com",
+      "boardname": "auboard_15p",
+      "cams": [2],
+      "vcu": false,
+      "accel": false,
+      "cfg": "prj_config",
+      "connector": "HPC",
+      "group": "fpga",
+      "petalinux": false,
+      "baremetal": true,
+      "license": false,
+      "flashsize": "0",
+      "flashintf": "0"
     }
   ]
 }

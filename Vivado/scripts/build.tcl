@@ -42,6 +42,7 @@ dict set target_dict zcu106_hpc0 { xilinx.com zcu106 { 0 1 2 3 } zynqmp 1 }
 dict set target_dict pynqzu { tul.com.tw pynqzu { 1 2 } zynqmp 0 }
 dict set target_dict genesyszu { digilentinc.com gzu_5ev { 1 2 } zynqmp 1 }
 dict set target_dict uzev { avnet.com ultrazed_7ev_cc { 0 1 2 3 } zynqmp 1 }
+dict set target_dict auboard { avnet-tria auboard_15p { 2 } mb 0 }
 # UPDATER END
 
 # Function to display the options and get user input
@@ -113,6 +114,7 @@ set design_name ${target}
 set block_name rpi
 set board_url [lindex [dict get $target_dict $target] 0]
 set board_name [lindex [dict get $target_dict $target] 1]
+set_param board.repoPaths [list "/mnt/bigboy/2024.1/projects/bdf"]
 set proj_board [get_board_parts "$board_url:$board_name:*" -latest_file_version]
 # Check if the board files are installed, if not, install them
 if { $proj_board == "" } {
@@ -143,15 +145,17 @@ set proj_dir [get_property directory [current_project]]
 
 # Set project properties
 set_property board_part $proj_board [current_project]
-set_property platform.board_id $design_name [current_project]
-set_property platform.default_output_type "xclbin" [current_project]
-set_property platform.design_intent.datacenter false [current_project]
-set_property platform.design_intent.embedded true [current_project]
-set_property platform.design_intent.external_host false [current_project]
-set_property platform.design_intent.server_managed false [current_project]
-set_property platform.extensible true [current_project]
-set_property platform.name $design_name [current_project]
-set_property platform.version "1.0" [current_project]
+if { $target != "auboard" } {
+    set_property platform.board_id $design_name [current_project]
+    set_property platform.default_output_type "xclbin" [current_project]
+    set_property platform.design_intent.datacenter false [current_project]
+    set_property platform.design_intent.embedded true [current_project]
+    set_property platform.design_intent.external_host false [current_project]
+    set_property platform.design_intent.server_managed false [current_project]
+    set_property platform.extensible true [current_project]
+    set_property platform.name $design_name [current_project]
+    set_property platform.version "1.0" [current_project]
+}
 
 # Create 'sources_1' fileset (if not found)
 if {[string equal [get_filesets -quiet sources_1] ""]} {

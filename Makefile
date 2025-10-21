@@ -21,6 +21,7 @@ zcu106_hpc0_target := zynqMP
 pynqzu_target := zynqMP
 genesyszu_target := zynqMP
 uzev_target := zynqMP
+auboard_target := microblaze
 # UPDATER END
 
 TARGET_LIST := $(sort $(patsubst %_target,%,$(filter %_target,$(.VARIABLES))))

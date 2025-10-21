@@ -11,19 +11,25 @@ set_param board.repoPaths [get_property LOCAL_ROOT_DIR [xhub::get_xstores xilinx
 set board_url [lindex $argv 0]
 set board_name [lindex $argv 1]
 
-# Get the part name from the board URL and board name
-set proj_board [get_board_parts "$board_url:$board_name:*" -latest_file_version]
-# Check if the board files are installed, if not, install them
-if { $proj_board == "" } {
-    puts "Failed to find board files for $board_name. Installing board files..."
-    xhub::refresh_catalog [xhub::get_xstores xilinx_board_store]
-    xhub::install [xhub::get_xitems $board_url:xilinx_board_store:$board_name*]
-    set proj_board [get_board_parts "$board_url:$board_name:*" -latest_file_version]
+# Get the board device part number
+if { $board_name == "auboard_15p" } {
+    # AUBoard not yet in board store, so part name is hard coded here
+    set XPART "xcau15p-ffvb676-2-e"
 } else {
-    puts "Board files found for $board_name"
-}
+    # Get the part name from the board URL and board name
+    set proj_board [get_board_parts "$board_url:$board_name:*" -latest_file_version]
+    # Check if the board files are installed, if not, install them
+    if { $proj_board == "" } {
+        puts "Failed to find board files for $board_name. Installing board files..."
+        xhub::refresh_catalog [xhub::get_xstores xilinx_board_store]
+        xhub::install [xhub::get_xitems $board_url:xilinx_board_store:$board_name*]
+        set proj_board [get_board_parts "$board_url:$board_name:*" -latest_file_version]
+    } else {
+        puts "Board files found for $board_name"
+    }
 
-set XPART [get_property PART_NAME [get_board_parts $proj_board]]
+    set XPART [get_property PART_NAME [get_board_parts $proj_board]]
+}
 
 # Create the Tcl script that run_hls.tcl will call
 

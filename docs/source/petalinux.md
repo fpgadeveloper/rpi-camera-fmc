@@ -140,7 +140,6 @@ losing data on one of your hard drives.
    Configuring all video capture pipelines to:
     - RPi Camera output    : 1920 x 1080
     - Scaler (VPSS) output : 1920 x 1080 YUY2
-    - Frame rate           :  fps
    Video Mixer found here:
     - a0100000.v_mix
    Detected and configured the following cameras on RPi Camera FMC:
@@ -158,7 +157,7 @@ losing data on one of your hard drives.
 
 4. Before we can use the display pipeline, we need to set it up with the following command:
    ```
-   modetest -M xlnx -D a0100000.v_mix -s 52@40:1920x1080@NV16
+   modetest -M xlnx -D a0000000.v_mix -s 60@46:1920x1080@NV16
    ```
    Note that the `-D` option must specify the correct `bus_id` of the video mixer. This can be found in the
    output of the `init_cams.sh` script (see above), or you can find it with the following command: 
@@ -170,7 +169,7 @@ losing data on one of your hard drives.
    ```
    gst-launch-1.0 v4l2src device=/dev/video0 io-mode=mmap ! \
    video/x-raw, width=1920, height=1080, format=YUY2, framerate=30/1 ! \
-   kmssink bus-id=a0100000.v_mix plane-id=34 render-rectangle="<0,0,1920,1080>" \
+   kmssink bus-id=a0000000.v_mix plane-id=34 render-rectangle="<0,0,1920,1080>" \
    show-preroll-frame=false sync=false can-scale=false
    ```
    Note that in this command, as in the previous step, you must use the correct `bus_id` for the video mixer.
@@ -200,7 +199,7 @@ losing data on one of your hard drives.
     - CAM1: /dev/media1 = /dev/video1
     - CAM2: /dev/media2 = /dev/video2
     - CAM3: /dev/media3 = /dev/video3
-   setting mode 1920x1080-60.00Hz on connectors 52, crtc 40
+   setting mode 1920x1080-60.00Hz on connectors 60, crtc 46
    GStreamer command:
    --------------------------
    gst-launch-1.0 v4l2src device=/dev/video0 io-mode=mmap ! video/x-raw, width=960, height=540, format=YUY2, framerate=30/1 ! kmssink bus-id=a0100000.v_mix plane-id=34 render-rectangle="<0,0,960,540>" show-preroll-frame=false sync=false can-scale=false v4l2src device=/dev/video1 io-mode=mmap ! video/x-raw, width=960, height=540, format=YUY2, framerate=30/1 ! kmssink bus-id=a0100000.v_mix plane-id=35 render-rectangle="<960,0,960,540>" show-preroll-frame=false sync=false can-scale=false v4l2src device=/dev/video2 io-mode=mmap ! video/x-raw, width=960, height=540, format=YUY2, framerate=30/1 ! kmssink bus-id=a0100000.v_mix plane-id=36 render-rectangle="<0,540,960,540>" show-preroll-frame=false sync=false can-scale=false v4l2src device=/dev/video3 io-mode=mmap ! video/x-raw, width=960, height=540, format=YUY2, framerate=30/1 ! kmssink bus-id=a0100000.v_mix plane-id=37 render-rectangle="<960,540,960,540>" show-preroll-frame=false sync=false can-scale=false
@@ -411,9 +410,8 @@ zcu104-rpi-cam-fmc-2022-1:~$ init_cams.sh
 Configuring all video capture pipelines to:
  - RPi Camera output    : 1920 x 1080
  - Scaler (VPSS) output : 1920 x 1080 YUY2
- - Frame rate           :  fps
 Video Mixer found here:
- - a0100000.v_mix
+ - a0000000.v_mix
 Detected and configured the following cameras on RPi Camera FMC:
  - CAM1: /dev/media0 = /dev/video1
  - CAM2: /dev/media1 = /dev/video2
@@ -558,7 +556,7 @@ DisplayPort live interface of the ZynqMP. In order to use the display pipeline i
 need to enable it with the following command:
 
 ```
-modetest -M xlnx -D a0100000.v_mix -s 52@40:1920x1080@NV16
+modetest -M xlnx -D a0000000.v_mix -s 60@46:1920x1080@NV16
 ```
 
 After running that command, the monitor should show a blue screen. At this point you are ready to use GStreamer
@@ -573,25 +571,25 @@ to drive the Video Mixer. Note the following important points:
 ```
 sudo gst-launch-1.0 v4l2src device=/dev/video0 io-mode=mmap \
 ! video/x-raw, width=960, height=540, format=YUY2, framerate=30/1 \
-! kmssink bus-id=a0100000.v_mix plane-id=34 render-rectangle="<0,0,960,540>" show-preroll-frame=false sync=false can-scale=false \
+! kmssink bus-id=a0000000.v_mix plane-id=34 render-rectangle="<0,0,960,540>" show-preroll-frame=false sync=false can-scale=false \
 v4l2src device=/dev/video1 io-mode=mmap \
 ! video/x-raw, width=960, height=540, format=YUY2, framerate=30/1 \
-! kmssink bus-id=a0100000.v_mix plane-id=35 render-rectangle="<960,0,960,540>" show-preroll-frame=false sync=false can-scale=false \
+! kmssink bus-id=a0000000.v_mix plane-id=36 render-rectangle="<960,0,960,540>" show-preroll-frame=false sync=false can-scale=false \
 v4l2src device=/dev/video2 io-mode=mmap \
 ! video/x-raw, width=960, height=540, format=YUY2, framerate=30/1 \
-! kmssink bus-id=a0100000.v_mix plane-id=36 render-rectangle="<0,540,960,540>" show-preroll-frame=false sync=false can-scale=false \
+! kmssink bus-id=a0000000.v_mix plane-id=38 render-rectangle="<0,540,960,540>" show-preroll-frame=false sync=false can-scale=false \
 v4l2src device=/dev/video3 io-mode=mmap \
 ! video/x-raw, width=960, height=540, format=YUY2, framerate=30/1 \
-! kmssink bus-id=a0100000.v_mix plane-id=37 render-rectangle="<960,540,960,540>" show-preroll-frame=false sync=false can-scale=false
+! kmssink bus-id=a0000000.v_mix plane-id=40 render-rectangle="<960,540,960,540>" show-preroll-frame=false sync=false can-scale=false
 ```
 
 ## Known issues and limitations
 
-### PYNQ-ZU and Genesys-ZU limits
+### PYNQ-ZU limits
 
-The ZynqMP devices on the PYNQ-ZU and Genesys-ZU boards are relatively small devices in terms of FPGA resources.
-Fitting the necessary logic to handle four video streams simultaneously can be a challenge on these boards. 
-For this reason, in our Vivado designs for these boards we have included the video pipes for only two cameras:
+The ZynqMP device on the PYNQ-ZU board is a relatively small device in terms of FPGA resources.
+Fitting the necessary logic to handle four video streams simultaneously can be a challenge on this board. 
+For this reason, in our Vivado design for this board we have included the video pipes for only two cameras:
 CAM1 and CAM2.
 
 

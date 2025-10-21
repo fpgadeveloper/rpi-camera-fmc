@@ -243,15 +243,15 @@ update_file(vivado_ip_makefile,vivado_ip_targets)
 #vitis_accel_targets = get_vitis_accel_targets(data)
 #update_file(vitis_accel_makefile,vitis_accel_targets)
 
-## Update the Vitis makefile
-#vitis_makefile = '../../Vitis/Makefile'
-#vitis_targets = get_vitis_targets(data)
-#update_file(vitis_makefile,vitis_targets)
-#
-## Update the Vitis build.tcl
-#vitis_build_tcl = '../../Vitis/tcl/build-vitis.tcl'
-#vitis_build_targets = get_vitis_build_targets(data)
-#update_file(vitis_build_tcl,vitis_build_targets)
+# Update the Vitis makefile
+vitis_makefile = '../../Vitis/Makefile'
+vitis_targets = get_vitis_targets(data)
+update_file(vitis_makefile,vitis_targets)
+
+# Update the Vitis build.tcl
+vitis_build_tcl = '../../Vitis/tcl/build-vitis.tcl'
+vitis_build_targets = get_vitis_build_targets(data)
+update_file(vitis_build_tcl,vitis_build_targets)
 
 # Update the PetaLinux makefile
 petalinux_makefile = '../../PetaLinux/Makefile'

@@ -46,6 +46,12 @@ In order to test this design on hardware, you will need the following:
 ## Target designs
 
 <!-- updater start -->
+### FPGA designs
+
+| Target board          | Target design   | FMC Slot | Cameras | VCU   | Vivado<br> Edition |
+|-----------------------|-----------------|----------|---------|-------|-------|
+| [AUBoard 15P]         | `auboard`       | HPC      | 1     | :x:                | Standard :free: |
+
 ### Zynq UltraScale+ designs
 
 | Target board          | Target design   | FMC Slot | Cameras | VCU   | Vivado<br> Edition |
@@ -57,6 +63,7 @@ In order to test this design on hardware, you will need the following:
 | [PYNQ-ZU]             | `pynqzu`        | LPC      | 2     | :x:                | Standard :free: |
 | [UltraZed-EV Carrier] | `uzev`          | HPC      | 4     | :white_check_mark: | Standard :free: |
 
+[AUBoard 15P]: https://www.avnet.com/americas/products/avnet-boards/avnet-board-families/auboard-15p-fpga-development-kit/
 [ZCU104]: https://www.xilinx.com/zcu104
 [ZCU102]: https://www.xilinx.com/zcu102
 [ZCU106]: https://www.xilinx.com/zcu106
