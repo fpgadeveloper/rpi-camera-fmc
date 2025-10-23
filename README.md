@@ -50,7 +50,7 @@ In order to test this design on hardware, you will need the following:
 
 | Target board          | Target design   | FMC Slot | Cameras | VCU   | Baremetal<br> App | PetaLinux<br> Build | Vivado<br> Edition |
 |-----------------------|-----------------|----------|---------|-------|-------|-------|-------|
-| [AUBoard 15P]         | `auboard`       | HPC      | 1     | :x:                | :white_check_mark: | :x:                | Standard :free: |
+| [AUBoard 15P]         | `auboard`       | HPC      | 2     | :x:                | :white_check_mark: | :x:                | Standard :free: |
 
 ### Zynq UltraScale+ designs
 

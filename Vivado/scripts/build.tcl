@@ -42,7 +42,7 @@ dict set target_dict zcu106_hpc0 { xilinx.com zcu106 { 0 1 2 3 } zynqmp 1 }
 dict set target_dict pynqzu { tul.com.tw pynqzu { 1 2 } zynqmp 0 }
 dict set target_dict genesyszu { digilentinc.com gzu_5ev { 1 2 } zynqmp 1 }
 dict set target_dict uzev { avnet.com ultrazed_7ev_cc { 0 1 2 3 } zynqmp 1 }
-dict set target_dict auboard { avnet.com auboard_15p { 2 } mb 0 }
+dict set target_dict auboard { avnet-tria auboard_15p { 0 2 } mb 0 }
 # UPDATER END
 
 # Function to display the options and get user input
