@@ -1,0 +1,13 @@
+{
+	"bd_name": "rpi",
+	"app_name": "test_app",
+	"app_template": "None",
+	"src": {
+		"all": "common/src",
+		"mb": "",
+		"zynq": "",
+		"zynqmp": "",
+		"versal": ""
+	},
+	"combine_bit_elf": false
+}
