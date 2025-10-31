@@ -5,32 +5,23 @@
 ################################################################
 # AXI GPIOs are connected as follows:
 ################################################################
-# 0  - CAM0 Demosaic IP reset
-# 1  - CAM0 Vproc IP reset
-# 2  - CAM0 Gamma LUT IP reset
-# 3  - CAM0 Frame Buffer Read IP reset
-# 4  - CAM0 Frame Buffer Write IP reset
-# 5  - Test Pattern Generator reset
-# 6  - Video Mixer reset
-# 7  - Reserved
-# 8  - CAM1 Demosaic IP reset
-# 9  - CAM1 Vproc IP reset
-# 10 - CAM1 Gamma LUT IP reset
-# 11 - CAM1 Frame Buffer Read IP reset
-# 12 - CAM1 Frame Buffer Write IP reset
-# 13-15 - Reserved
-# 16 - CAM2 Demosaic IP reset
-# 17 - CAM2 Vproc IP reset
-# 18 - CAM2 Gamma LUT IP reset
-# 19 - CAM2 Frame Buffer Read IP reset
-# 20 - CAM2 Frame Buffer Write IP reset
-# 21-23 - Reserved
-# 24 - CAM3 Demosaic IP reset
-# 25 - CAM3 Vproc IP reset
-# 26 - CAM3 Gamma LUT IP reset
-# 27 - CAM3 Frame Buffer Read IP reset
-# 28 - CAM3 Frame Buffer Write IP reset
-# 29-31 - Reserved
+#
+# Main AXI GPIO
+#
+# 0    - Test Pattern Generator reset
+# 1    - Video Mixer reset
+# 2-31 - Reserved
+#
+# Video pipe AXI GPIO (one for each pipe)
+#
+# 0    - Camera GPIO0
+# 1    - Camera GPIO1
+# 2    - Demosaic IP reset
+# 3    - Vproc IP reset
+# 4    - Gamma LUT IP reset
+# 5    - Frame Buffer Read IP reset
+# 6    - Frame Buffer Write IP reset
+# 7-31 - Reserved
 
 # CHECKING IF PROJECT EXISTS
 if { [get_projects -quiet] eq "" } {
@@ -135,7 +126,7 @@ set_property -dict [list \
 ] $v_tpg
 
 # Slice for Test Pattern Generator reset signal
-set resetn_index 5
+set resetn_index 0
 set reset_v_tpg [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlslice reset_v_tpg ]
 set_property -dict [ list \
 CONFIG.DIN_WIDTH {32} \
@@ -185,7 +176,7 @@ set_property -dict [ list \
 ] $v_mix
 
 # Slice for Video Mixer reset signal
-set resetn_index 6
+set resetn_index 1
 set reset_v_mix [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlslice reset_v_mix ]
 set_property -dict [ list \
 CONFIG.DIN_WIDTH {32} \
@@ -449,7 +440,8 @@ proc create_mipi_pipe { index loc_dict } {
   create_bd_pin -dir O -type intr frmbufwr_irq
   create_bd_pin -dir O -type intr frmbufrd_irq
   create_bd_pin -dir O -type intr iic2intc_irpt
-  create_bd_pin -dir I PIPE_RESETN
+  create_bd_pin -dir O GPIO0
+  create_bd_pin -dir O GPIO1
   
   # Create the interfaces of the block
   create_bd_intf_pin -mode Slave -vlnv xilinx.com:interface:aximm_rtl:1.0 S_AXI_CTRL
@@ -458,7 +450,10 @@ proc create_mipi_pipe { index loc_dict } {
   create_bd_intf_pin -mode Master -vlnv xilinx.com:interface:axis_rtl:1.0 M_AXIS_VIDEO
   create_bd_intf_pin -mode Slave -vlnv xilinx.com:interface:mipi_phy_rtl:1.0 MIPI_PHY_IF
   create_bd_intf_pin -mode Master -vlnv xilinx.com:interface:iic_rtl:1.0 IIC
-  create_bd_intf_pin -mode Master -vlnv xilinx.com:interface:gpio_rtl:1.0 GPIO
+  
+  # Add and configure AXI GPIO
+  set axi_gpio [create_bd_cell -type ip -vlnv xilinx.com:ip:axi_gpio axi_gpio_0]
+  set_property -dict [list CONFIG.C_GPIO_WIDTH {32} CONFIG.C_ALL_OUTPUTS {1} CONFIG.C_DOUT_DEFAULT {0x00000001} ] $axi_gpio
   
   # Add and configure the MIPI Subsystem IP
   set clk_pin [dict get $loc_dict clk pin]
@@ -583,8 +578,34 @@ proc create_mipi_pipe { index loc_dict } {
   connect_bd_intf_net [get_bd_intf_pins v_frmbuf_rd/m_axi_mm_video] [get_bd_intf_pins axi_int_mem/S01_AXI]
   connect_bd_intf_net [get_bd_intf_pins axi_int_mem/M00_AXI] [get_bd_intf_pins M_AXI_MM]
   
+  # Slice for Camera GPIO0 signal
+  set resetn_index 0
+  set cam_gpio0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlslice cam_gpio0 ]
+  set_property -dict [ list \
+  CONFIG.DIN_WIDTH {32} \
+  CONFIG.DIN_TO $resetn_index \
+  CONFIG.DIN_FROM $resetn_index \
+  CONFIG.DOUT_WIDTH {1} \
+  ] $cam_gpio0
+
+  connect_bd_net [get_bd_pins cam_gpio0/Dout] [get_bd_pins GPIO0]
+  connect_bd_net [get_bd_pins axi_gpio_0/gpio_io_o] [get_bd_pins cam_gpio0/Din]
+
+  # Slice for Camera GPIO1 signal
+  set resetn_index 1
+  set cam_gpio1 [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlslice cam_gpio1 ]
+  set_property -dict [ list \
+  CONFIG.DIN_WIDTH {32} \
+  CONFIG.DIN_TO $resetn_index \
+  CONFIG.DIN_FROM $resetn_index \
+  CONFIG.DOUT_WIDTH {1} \
+  ] $cam_gpio1
+
+  connect_bd_net [get_bd_pins cam_gpio1/Dout] [get_bd_pins GPIO1]
+  connect_bd_net [get_bd_pins axi_gpio_0/gpio_io_o] [get_bd_pins cam_gpio1/Din]
+
   # Slice for Demosaic reset signal
-  set resetn_index [expr {8*$index+0}]
+  set resetn_index 2
   set reset_demosaic [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlslice reset_demosaic ]
   set_property -dict [ list \
   CONFIG.DIN_WIDTH {32} \
@@ -594,10 +615,10 @@ proc create_mipi_pipe { index loc_dict } {
   ] $reset_demosaic
 
   connect_bd_net -net reset_demosaic_Dout [get_bd_pins reset_demosaic/Dout] [get_bd_pins demosaic_0/ap_rst_n]
-  connect_bd_net [get_bd_pins PIPE_RESETN] [get_bd_pins reset_demosaic/Din]
+  connect_bd_net [get_bd_pins axi_gpio_0/gpio_io_o] [get_bd_pins reset_demosaic/Din]
 
   # Slice for Vproc reset signal
-  set resetn_index [expr {8*$index+1}]
+  set resetn_index 3
   set reset_v_proc [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlslice reset_v_proc ]
   set_property -dict [ list \
   CONFIG.DIN_WIDTH {32} \
@@ -607,10 +628,10 @@ proc create_mipi_pipe { index loc_dict } {
   ] $reset_v_proc
 
   connect_bd_net -net reset_v_proc_Dout [get_bd_pins reset_v_proc/Dout] [get_bd_pins v_proc/aresetn_ctrl]
-  connect_bd_net [get_bd_pins PIPE_RESETN] [get_bd_pins reset_v_proc/Din]
+  connect_bd_net [get_bd_pins axi_gpio_0/gpio_io_o] [get_bd_pins reset_v_proc/Din]
 
   # Slice for Gamma Lut reset signal
-  set resetn_index [expr {8*$index+2}]
+  set resetn_index 4
   set reset_gamma [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlslice reset_gamma ]
   set_property -dict [ list \
   CONFIG.DIN_WIDTH {32} \
@@ -620,10 +641,10 @@ proc create_mipi_pipe { index loc_dict } {
   ] $reset_gamma
 
   connect_bd_net -net reset_gamma_Dout [get_bd_pins reset_gamma/Dout] [get_bd_pins v_gamma_lut/ap_rst_n]
-  connect_bd_net [get_bd_pins PIPE_RESETN] [get_bd_pins reset_gamma/Din]
+  connect_bd_net [get_bd_pins axi_gpio_0/gpio_io_o] [get_bd_pins reset_gamma/Din]
 
   # Slice for Frmbuf RD reset signal
-  set resetn_index [expr {8*$index+3}]
+  set resetn_index 5
   set reset_frmbuf_rd [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlslice reset_frmbuf_rd ]
   set_property -dict [ list \
   CONFIG.DIN_WIDTH {32} \
@@ -633,10 +654,10 @@ proc create_mipi_pipe { index loc_dict } {
   ] $reset_frmbuf_rd
 
   connect_bd_net -net reset_frmbuf_rd_Dout [get_bd_pins reset_frmbuf_rd/Dout] [get_bd_pins v_frmbuf_rd/ap_rst_n]
-  connect_bd_net [get_bd_pins PIPE_RESETN] [get_bd_pins reset_frmbuf_rd/Din]
+  connect_bd_net [get_bd_pins axi_gpio_0/gpio_io_o] [get_bd_pins reset_frmbuf_rd/Din]
 
   # Slice for Frmbuf WR reset signal
-  set resetn_index [expr {8*$index+4}]
+  set resetn_index 6
   set reset_frmbuf_wr [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlslice reset_frmbuf_wr ]
   set_property -dict [ list \
   CONFIG.DIN_WIDTH {32} \
@@ -646,17 +667,13 @@ proc create_mipi_pipe { index loc_dict } {
   ] $reset_frmbuf_wr
 
   connect_bd_net -net reset_frmbuf_wr_Dout [get_bd_pins reset_frmbuf_wr/Dout] [get_bd_pins v_frmbuf_wr/ap_rst_n]
-  connect_bd_net [get_bd_pins PIPE_RESETN] [get_bd_pins reset_frmbuf_wr/Din]
+  connect_bd_net [get_bd_pins axi_gpio_0/gpio_io_o] [get_bd_pins reset_frmbuf_wr/Din]
 
   # Reg slice for AXIS video output
   set video_axis_reg_slice [ create_bd_cell -type ip -vlnv xilinx.com:ip:axis_register_slice video_axis_reg_slice ]
 
   # Add and configure AXI IIC
   set axi_iic [create_bd_cell -type ip -vlnv xilinx.com:ip:axi_iic axi_iic_0]
-  
-  # Add and configure AXI GPIO
-  set axi_gpio [create_bd_cell -type ip -vlnv xilinx.com:ip:axi_gpio axi_gpio_0]
-  set_property -dict [list CONFIG.C_GPIO_WIDTH {2} CONFIG.C_ALL_OUTPUTS {1} CONFIG.C_DOUT_DEFAULT {0x00000001} ] $axi_gpio
   
   # Connect the 200M D-PHY clock
   connect_bd_net [get_bd_pins dphy_clk_200M] [get_bd_pins mipi_csi2_rx_subsyst_0/dphy_clk_200M]
@@ -738,8 +755,6 @@ proc create_mipi_pipe { index loc_dict } {
   connect_bd_intf_net -boundary_type upper [get_bd_intf_pins MIPI_PHY_IF] [get_bd_intf_pins mipi_csi2_rx_subsyst_0/mipi_phy_if]
   # Connect the I2C interface
   connect_bd_intf_net [get_bd_intf_pins IIC] [get_bd_intf_pins axi_iic_0/IIC]
-  # Connect the GPIO interface
-  connect_bd_intf_net [get_bd_intf_pins GPIO] [get_bd_intf_pins axi_gpio_0/GPIO]
   # Connect interrupts
   connect_bd_net [get_bd_pins mipi_sub_irq] [get_bd_pins mipi_csi2_rx_subsyst_0/csirxss_csi_irq]
   connect_bd_net [get_bd_pins demosaic_irq] [get_bd_pins demosaic_0/interrupt]
@@ -772,13 +787,13 @@ create_bd_intf_port -mode Master -vlnv xilinx.com:interface:gpio_rtl:1.0 rsvd_gp
 connect_bd_intf_net [get_bd_intf_pins rsvd_gpio/GPIO] [get_bd_intf_ports rsvd_gpio]
 
 # Create AXI GPIO to drive the video port IP resets
-create_bd_cell -type ip -vlnv xilinx.com:ip:axi_gpio pipe_resetn_gpio
-set_property CONFIG.C_GPIO_WIDTH {32} [get_bd_cells pipe_resetn_gpio]
-connect_bd_net [get_bd_pins clk_wiz/clk_100M] [get_bd_pins pipe_resetn_gpio/s_axi_aclk]
-connect_bd_net [get_bd_pins rst_clk_wiz_100M/peripheral_aresetn] [get_bd_pins pipe_resetn_gpio/s_axi_aresetn]
-connect_bd_net [get_bd_pins pipe_resetn_gpio/gpio_io_o] [get_bd_pins reset_v_tpg/Din]
-connect_bd_net [get_bd_pins pipe_resetn_gpio/gpio_io_o] [get_bd_pins reset_v_mix/Din]
-lappend periph_ports [list "pipe_resetn_gpio/S_AXI" "clk_wiz/clk_100M" "rst_clk_wiz_100M/peripheral_aresetn"]
+create_bd_cell -type ip -vlnv xilinx.com:ip:axi_gpio main_resetn_gpio
+set_property CONFIG.C_GPIO_WIDTH {32} [get_bd_cells main_resetn_gpio]
+connect_bd_net [get_bd_pins clk_wiz/clk_100M] [get_bd_pins main_resetn_gpio/s_axi_aclk]
+connect_bd_net [get_bd_pins rst_clk_wiz_100M/peripheral_aresetn] [get_bd_pins main_resetn_gpio/s_axi_aresetn]
+connect_bd_net [get_bd_pins main_resetn_gpio/gpio_io_o] [get_bd_pins reset_v_tpg/Din]
+connect_bd_net [get_bd_pins main_resetn_gpio/gpio_io_o] [get_bd_pins reset_v_mix/Din]
+lappend periph_ports [list "main_resetn_gpio/S_AXI" "clk_wiz/clk_100M" "rst_clk_wiz_100M/peripheral_aresetn"]
 
 # Reconfigure the DDR AXI SmartConnect to accommodate the Frame Buffers
 set smartcon_ports [expr {$num_cams+2}]
@@ -808,8 +823,6 @@ foreach i $cams {
   # Connect resets
   connect_bd_net [get_bd_pins rst_clk_wiz_100M/peripheral_aresetn] [get_bd_pins mipi_$i/aresetn]
   connect_bd_net [get_bd_pins $cam_rst/peripheral_aresetn] [get_bd_pins mipi_$i/video_aresetn]
-  # Connect the resets
-  connect_bd_net [get_bd_pins pipe_resetn_gpio/gpio_io_o] [get_bd_pins mipi_$i/PIPE_RESETN]
   # Add interrupts to the interrupt list to be connected later
   lappend intr_list "mipi_$i/mipi_sub_irq"
   lappend intr_list "mipi_$i/demosaic_irq"
@@ -827,9 +840,11 @@ foreach i $cams {
   # Connect the I2C interface
   create_bd_intf_port -mode Master -vlnv xilinx.com:interface:iic_rtl:1.0 iic_$i
   connect_bd_intf_net [get_bd_intf_ports iic_$i] [get_bd_intf_pins mipi_$i/IIC]
-  # Connect the GPIO interface
-  create_bd_intf_port -mode Master -vlnv xilinx.com:interface:gpio_rtl:1.0 gpio_$i
-  connect_bd_intf_net [get_bd_intf_ports gpio_$i] [get_bd_intf_pins mipi_$i/GPIO]
+  # Connect GPIOs
+  create_bd_port -dir O mipi_${i}_gpio0
+  create_bd_port -dir O mipi_${i}_gpio1
+  connect_bd_net [get_bd_pins mipi_$i/GPIO0] [get_bd_ports mipi_${i}_gpio0]
+  connect_bd_net [get_bd_pins mipi_$i/GPIO1] [get_bd_ports mipi_${i}_gpio1]
   # Connect the AXI MM interfaces of the Frame Buffers
   connect_bd_intf_net -boundary_type upper [get_bd_intf_pins mipi_$i/M_AXI_MM] [get_bd_intf_pins axi_smc/S0${smartcon_index}_AXI]
   # Connect the video AXIS interface

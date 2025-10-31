@@ -25,7 +25,7 @@ int pipe_init(VideoPipe *pipe, VideoPipeBaseAddr *baseaddr)
 {
 	XVprocSs_Config *VprocSsConfigPtr;
 	int Status;
-
+    
 	/*
 	 * Initialize the GPIO driver
 	 */
@@ -36,8 +36,8 @@ int pipe_init(VideoPipe *pipe, VideoPipeBaseAddr *baseaddr)
 	}
 
 	// Set GPIO directions (1=input, 0=output)
-	XGpio_SetDataDirection(&(pipe->Gpio), 1, ~(GPIO_CAM_IO0_MASK|GPIO_CAM_IO1_MASK));
-	// Enable the camera
+	XGpio_SetDataDirection(&(pipe->Gpio), 1, 0);
+	// Enable the camera and hold all video pipe elements in reset
 	XGpio_DiscreteWrite(&(pipe->Gpio), 1, GPIO_CAM_IO0_MASK);
     usleep(10000);
 
@@ -69,11 +69,13 @@ int pipe_init(VideoPipe *pipe, VideoPipeBaseAddr *baseaddr)
 	/*
 	 * Frame Buffer Wr/Rd initialization and config
 	 */
+    pipe_reset_deassert(pipe,GPIO_CAM_FRMBUFWR_RST_N_MASK);
 	Status = FrmbufWrInit(&(pipe->Frmbuf),baseaddr->FrmbufWr,baseaddr->FrmbufBufrBaseAddr);
 	if (Status != XST_SUCCESS) {
 		xil_printf("Failed to initialize the Frame Buffer Write\n\r");
 		return XST_FAILURE;
 	}
+    pipe_reset_deassert(pipe,GPIO_CAM_FRMBUFRD_RST_N_MASK);
 	Status = FrmbufRdInit(&(pipe->Frmbuf),baseaddr->FrmbufRd,baseaddr->FrmbufBufrBaseAddr);
 	if (Status != XST_SUCCESS) {
 		xil_printf("Failed to initialize the Frame Buffer Read\n\r");
@@ -83,6 +85,7 @@ int pipe_init(VideoPipe *pipe, VideoPipeBaseAddr *baseaddr)
 	/*
 	 * Video Processor Subsystem initialization and config
 	 */
+    pipe_reset_deassert(pipe,GPIO_CAM_VPROC_RST_N_MASK);
 	VprocSsConfigPtr = XVprocSs_LookupConfig(baseaddr->Vproc);
 	if(VprocSsConfigPtr == NULL) {
 		xil_printf("ERROR: Video Processor Subsystem device not found\r\n");
@@ -135,6 +138,7 @@ int pipe_init(VideoPipe *pipe, VideoPipeBaseAddr *baseaddr)
 	/*
 	 * Demosaic initialization and config
 	 */
+    pipe_reset_deassert(pipe,GPIO_CAM_DEMOSAIC_RST_N_MASK);
 	Status = XV_demosaic_Initialize(&(pipe->Demosaic), baseaddr->Demosaic);
 	if (Status != XST_SUCCESS) {
 		xil_printf("ERROR: Failed to initialize the Demosaic\n\r");
@@ -149,6 +153,7 @@ int pipe_init(VideoPipe *pipe, VideoPipeBaseAddr *baseaddr)
 	/*
 	 * Gamma LUT initialization and config
 	 */
+    pipe_reset_deassert(pipe,GPIO_CAM_GAMMA_RST_N_MASK);
 	Status = XV_gamma_lut_Initialize(&(pipe->GammaLut), baseaddr->GammaLut);
 	if (Status != XST_SUCCESS) {
 		xil_printf("ERROR: Failed to initialize the Gamma LUT\n\r");

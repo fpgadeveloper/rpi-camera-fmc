@@ -239,14 +239,6 @@ void *FrmbufWrCallback(void *data)
     if (next_wr >= end) next_wr = frmbuf->FrmbufBufrBaseAddr;
     frmbuf->FrmbufWrBufrAddr = next_wr;
     
-    // swap rd addresses between ports
-    /*
-    if((frmbuf->FrmbufBufrBaseAddr & 0xF0000000) == 0xC0000000) {
-        frmbuf->FrmbufRdBufrAddr = (frmbuf->FrmbufRdBufrAddr & 0x0FFFFFFF) | 0xD0000000;
-    } else {
-        frmbuf->FrmbufRdBufrAddr = (frmbuf->FrmbufRdBufrAddr & 0x0FFFFFFF) | 0xC0000000;
-    }
-*/
 	// Set the buffer address to write the next frame
     Status = XVFrmbufWr_SetBufferAddr(frmbufwr, frmbuf->FrmbufWrBufrAddr);
     if(Status != XST_SUCCESS) {

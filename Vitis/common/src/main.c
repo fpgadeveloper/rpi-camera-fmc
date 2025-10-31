@@ -787,8 +787,6 @@ void Xil_AssertCallbackRoutine(u8 *File, s32 Line) {
  */
 static void try_init_pipe(int idx, VideoPipe* cam, const VideoPipeBaseAddr* addrs)
 {
-    reset_cam_deassert(idx);
-    usleep(2000);
     if (pipe_init(cam, addrs) == XST_SUCCESS && cam->IsConnected) {
         ActiveCams[NumActiveCams].Index = (uint8_t)idx;
         ActiveCams[NumActiveCams].VideoPipePtr = cam;
@@ -961,11 +959,11 @@ int main() {
 				(void *)&Vphy);
 
     /*
-     * Initialize the AXI GPIO for resets
+     * Initialize the main AXI GPIO for resets
      */
-    GpioVideoResets_ConfigPtr = XGpio_LookupConfig(XPAR_PIPE_RESETN_GPIO_BASEADDR);
+    GpioVideoResets_ConfigPtr = XGpio_LookupConfig(XPAR_MAIN_RESETN_GPIO_BASEADDR);
 	if(GpioVideoResets_ConfigPtr == NULL) {
-        xil_printf("GPIO for Video pipe resets not found\r\n");
+        xil_printf("GPIO for main resets not found\r\n");
 		GpioVideoResets.IsReady = 0;
 		return (XST_DEVICE_NOT_FOUND);
 	}
@@ -981,8 +979,7 @@ int main() {
 	// Set GPIO directions (1=input, 0=output) - ALL OUTPUTS
 	XGpio_SetDataDirection(&GpioVideoResets, 1, 0x00);
 
-	// Assert reset for video pipes for all cameras, Video Mixer and Test Pattern Generator
-	reset_all_cams_assert();
+	// Assert reset for Video Mixer and Test Pattern Generator
 	reset_assert(RESET_MASK_VMIX | RESET_MASK_VTPG);
     usleep(10000);
 

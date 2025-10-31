@@ -117,7 +117,7 @@ def _find_modules(xml_bytes):
             out.append((inst, vlnv))
     return out
 
-def detect_arch_and_cpu_from_xsa(xsa_path):
+def detect_arch_and_cpu_from_xsa(xsa_path,bd_name):
     """
     Returns:
       arch in {"microblaze","zynq","zynqmp","versal"}
@@ -279,7 +279,7 @@ def main():
     if not os.path.isdir(impl_dir):
         die(f"Vivado impl dir not found: {impl_dir}")
 
-    arch, core_hint = detect_arch_and_cpu_from_xsa(xsa_path)
+    arch, core_hint = detect_arch_and_cpu_from_xsa(xsa_path,bd_name)
     if not arch:
         die("Could not detect platform family from XSA (MicroBlaze/Zynq/ZynqMP/Versal).")
     note(f"Detected platform: {arch} (core hint: {core_hint})")

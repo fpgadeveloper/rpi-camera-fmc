@@ -38,24 +38,28 @@ set_property PACKAGE_PIN J13 [get_ports {clk_sel[1]}]; # LA25_P
 set_property IOSTANDARD LVCMOS12 [get_ports {clk_sel[1]}]
 
 # GPIOs for MIPI camera 0
-set_property PACKAGE_PIN K18 [get_ports {gpio_0_tri_o[0]}]; # LA12_N
-set_property PACKAGE_PIN L18 [get_ports {gpio_0_tri_o[1]}]; # LA12_P
-set_property IOSTANDARD LVCMOS12 [get_ports {gpio_0_tri_o[*]}]
+set_property PACKAGE_PIN K18 [get_ports {mipi_0_gpio0[0]}]; # LA12_N
+set_property PACKAGE_PIN L18 [get_ports {mipi_0_gpio1[0]}]; # LA12_P
+set_property IOSTANDARD LVCMOS12 [get_ports {mipi_0_gpio0[0]}]
+set_property IOSTANDARD LVCMOS12 [get_ports {mipi_0_gpio1[0]}]
 
 # GPIOs for MIPI camera 1
-#set_property PACKAGE_PIN H22 [get_ports {gpio_1_tri_o[0]}]; # LA09_N
-#set_property PACKAGE_PIN H21 [get_ports {gpio_1_tri_o[1]}]; # LA09_P
-#set_property IOSTANDARD LVCMOS12 [get_ports {gpio_1_tri_o[*]}]
+#set_property PACKAGE_PIN H22 [get_ports {mipi_1_gpio0[0]}]; # LA09_N
+#set_property PACKAGE_PIN H21 [get_ports {mipi_1_gpio1[0]}]; # LA09_P
+#set_property IOSTANDARD LVCMOS12 [get_ports {mipi_1_gpio0[0]}]
+#set_property IOSTANDARD LVCMOS12 [get_ports {mipi_1_gpio1[0]}]
 
 # GPIOs for MIPI camera 2
-set_property PACKAGE_PIN E23 [get_ports {gpio_2_tri_o[0]}]; # LA19_N
-set_property PACKAGE_PIN F23 [get_ports {gpio_2_tri_o[1]}]; # LA19_P
-set_property IOSTANDARD LVCMOS12 [get_ports {gpio_2_tri_o[*]}]
+set_property PACKAGE_PIN E23 [get_ports {mipi_2_gpio0[0]}]; # LA19_N
+set_property PACKAGE_PIN F23 [get_ports {mipi_2_gpio1[0]}]; # LA19_P
+set_property IOSTANDARD LVCMOS12 [get_ports {mipi_2_gpio0[0]}]
+set_property IOSTANDARD LVCMOS12 [get_ports {mipi_2_gpio1[0]}]
 
 # GPIOs for MIPI camera 3
-#set_property PACKAGE_PIN D25 [get_ports {gpio_3_tri_o[0]}]; # LA20_N
-#set_property PACKAGE_PIN D24 [get_ports {gpio_3_tri_o[1]}]; # LA20_P
-#set_property IOSTANDARD LVCMOS12 [get_ports {gpio_3_tri_o[*]}]
+#set_property PACKAGE_PIN D25 [get_ports {mipi_3_gpio0[0]}]; # LA20_N
+#set_property PACKAGE_PIN D24 [get_ports {mipi_3_gpio1[0]}]; # LA20_P
+#set_property IOSTANDARD LVCMOS12 [get_ports {mipi_3_gpio0[0]}]
+#set_property IOSTANDARD LVCMOS12 [get_ports {mipi_3_gpio1[0]}]
 
 # Reserved GPIOs
 set_property PACKAGE_PIN J19 [get_ports {rsvd_gpio_tri_o[0]}]; # LA04_P

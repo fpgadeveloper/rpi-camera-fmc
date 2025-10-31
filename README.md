@@ -79,10 +79,19 @@ Notes:
    supports the `CAM0` and `CAM1` slots as labelled on the RPi Camera FMC.
 3. The `pynqzu` target design has video pipelines for only 2 cameras: `CAM1` and `CAM2` as
    labelled on the RPi Camera FMC. This is due to the resource limitations of the devices on this board.
+4. The `auboard` target design has video pipelines for only 2 cameras: `CAM0` and `CAM2` as labelled
+   on the RPi Camera FMC. This is due to the resource limitations of the Artix UltraScale+ device on this board.
 
 ## Software
 
-These reference designs can be driven within a PetaLinux environment. 
+### Baremetal application
+
+Some of these designs can be driven by a baremetal application that will configure the connected cameras
+and combine their video outputs into a single 1080p stream.
+
+### PetaLinux
+
+Some of these reference designs can be driven within a PetaLinux environment. 
 The repository includes all necessary scripts and code to build the PetaLinux environment. The table 
 below outlines the corresponding applications available:
 
@@ -135,7 +144,7 @@ Thank you to everyone who supports us!
 ### The TODO list
 
 * Develop PYNQ support
-* Add a standalone application
+* Add a standalone application for the Zynq and ZynqMP designs
 * Add support for some Versal boards
 * Add VCU example scripts
 * Get a Genesys-ZU board and test the design on hardware.
