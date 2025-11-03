@@ -3,26 +3,45 @@
 ## Description
 
 This project demonstrates the Opsero [RPi Camera FMC] (OP068) used to
-connect 4x Raspberry Pi cameras (or compatible cameras) to one of the target FPGA/MPSoC boards listed below. The 
+connect up to 4x Raspberry Pi cameras (or compatible cameras) to one of the target FPGA/MPSoC boards listed below. The 
 designs contain:
 
-* 4x MIPI CSI capture pipelines
-* Video Mixer IP based display pipeline to DisplayPort output
+* 4x MIPI CSI-2 capture pipelines
+* Video Mixer IP based display pipeline to DisplayPort/HDMI output
 * Video Codec Unit ([VCU])
 
 ![RPi Camera FMC](https://www.fpgadeveloper.com/camera-fmc-connecting-mipi-cameras-to-fpgas/images/rpi-camera-fmc-pynq-zu-1.jpg "RPi Camera FMC")
-
-The high level block diagram below illustrates the design:
-![RPi Camera FMC example design](docs/source/images/rpi-camera-fmc-architecture.png "RPi Camera FMC example design")
-
-The video pipe sub-blocks are illustrated below:
-![RPi Camera FMC video pipe](docs/source/images/rpi-camera-fmc-mipi-pipeline.png "RPi Camera FMC video pipe")
 
 Important links:
 * The RPi Camera FMC [datasheet](https://camerafmc.com/docs/rpi-camera-fmc/overview/)
 * The [user guide](https://rpi.camerafmc.com) for these reference designs
 * To [report an issue](https://github.com/fpgadeveloper/rpi-camera-fmc/issues)
 * For technical support: [Contact Opsero](https://opsero.com/contact-us)
+
+## Architectures
+
+The designs in this repository fall into two main architectural categories:
+
+1. **Zynq UltraScale+ designs** – These designs integrate the ISP Pipeline IP, run within a PetaLinux environment, 
+   and output video to a DisplayPort monitor.
+2. **FPGA designs** – These designs implement a simpler video pipeline, are controlled by a bare-metal application, 
+   and output video to an HDMI monitor.
+
+### Zynq UltraScale+ designs
+
+The high level block diagram below illustrates the design:
+![RPi Camera FMC example design](docs/source/images/rpi-camera-fmc-architecture.png "RPi Camera FMC example design")
+
+The video pipe sub-blocks are illustrated below:
+![RPi Camera FMC video pipe](docs/source/images/rpi-camera-fmc-mipi-pipeline.png "RPi Camera FMC video pipeline")
+
+### FPGA designs
+
+Display pipeline of the FPGA designs:
+![RPi Camera FMC HDMI display pipeline](docs/source/images/rpi-camera-fmc-hdmi-display-pipe.png "RPi Camera FMC HDMI display pipeline")
+
+The video pipeline of the FPGA designs:
+![RPi Camera FMC simple video pipe](docs/source/images/rpi-camera-fmc-simple-pipeline.png "RPi Camera FMC simple video pipeline")
 
 ## Requirements
 
@@ -35,13 +54,21 @@ In order to test this design on hardware, you will need the following:
 
 * Vivado 2024.1
 * Vitis 2024.1
-* PetaLinux Tools 2024.1
-* Linux PC for build
 * One or more [Raspberry Pi Camera Module 2](https://www.raspberrypi.com/products/camera-module-v2/) and/or 
   [Digilent Pcam 5C](https://digilent.com/shop/pcam-5c-5-mp-fixed-focus-color-camera-module/) cameras
 * 1x [RPi Camera FMC]
-* 1x DisplayPort monitor that supports 1080p video
 * One of the supported target boards listed below
+
+### Design specific requirements
+
+* **Zynq UltraScale+ designs**:
+  * PetaLinux Tools 2024.1
+  * 1x DisplayPort monitor that supports 1080p video
+  * Linux build PC (or virtual machine)
+  
+* **FPGA designs**:
+  * 1x HDMI monitor that supports 1080p video
+  * [License for the HDMI IP](https://www.amd.com/en/products/adaptive-socs-and-fpgas/intellectual-property/hdmi.html) (evaluation license available)
 
 ## Target designs
 
@@ -91,7 +118,7 @@ and combine their video outputs into a single 1080p stream.
 
 ### PetaLinux
 
-Some of these reference designs can be driven within a PetaLinux environment. 
+The Zynq UltraScale+ based reference designs can be driven within a PetaLinux environment. 
 The repository includes all necessary scripts and code to build the PetaLinux environment. The table 
 below outlines the corresponding applications available:
 
@@ -100,6 +127,29 @@ below outlines the corresponding applications available:
 | PetaLinux        | Built-in Linux commands<br>Additional tools: [GStreamer] |
 
 ## Build instructions
+
+### FPGA designs
+
+The FPGA designs do not require the submodules in this repo. To clone this repo, simply run:
+```
+git clone https://github.com/fpgadeveloper/rpi-camera-fmc.git
+```
+
+Source Vivado and Vitis tools:
+
+```
+source <path-to-vivado>/2024.1/settings64.sh
+source <path-to-vitis>/2024.1/settings64.sh
+```
+
+Build all (Vivado project, Vitis workspace):
+
+```
+cd rpi-camera-fmc/Vitis
+make workspace TARGET=auboard
+```
+
+### Zynq UltraScale+ designs
 
 This repo contains submodules. To clone this repo, run:
 ```
@@ -121,6 +171,13 @@ make petalinux TARGET=uzev
 ```
 
 ## Launch instructions
+
+### FPGA designs
+
+Launch Vitis, open the workspace that was generated using the make command. Select the test application and run it on the target
+board.
+
+### Zynq UltraScale+ designs
 
 From the PetaLinux command line, run the following command to stream video from all *connected* cameras to the 4 quadrants of the 
 1080p DisplayPort monitor:
