@@ -45,15 +45,15 @@ The video pipeline of the FPGA designs:
 
 ## Requirements
 
-This project is designed for version 2024.1 of the Xilinx tools (Vivado/Vitis/PetaLinux). 
+This project is designed for version 2025.2 of the Xilinx tools (Vivado/Vitis/PetaLinux). 
 If you are using an older version of the Xilinx tools, then refer to the 
 [release tags](https://github.com/fpgadeveloper/rpi-camera-fmc/tags "releases")
 to find the version of this repository that matches your version of the tools.
 
 In order to test this design on hardware, you will need the following:
 
-* Vivado 2024.1
-* Vitis 2024.1
+* Vivado 2025.2
+* Vitis 2025.2
 * One or more [Raspberry Pi Camera Module 2](https://www.raspberrypi.com/products/camera-module-v2/) and/or 
   [Digilent Pcam 5C](https://digilent.com/shop/pcam-5c-5-mp-fixed-focus-color-camera-module/) cameras
 * 1x [RPi Camera FMC]
@@ -62,7 +62,7 @@ In order to test this design on hardware, you will need the following:
 ### Design specific requirements
 
 * **Zynq UltraScale+ designs**:
-  * PetaLinux Tools 2024.1
+  * PetaLinux Tools 2025.2
   * 1x DisplayPort monitor that supports 1080p video
   * Linux build PC (or virtual machine)
   
@@ -97,6 +97,18 @@ In order to test this design on hardware, you will need the following:
 [PYNQ-ZU]: https://www.amd.com/en/corporate/university-program/aup-boards/pynq-zu.html
 [UltraZed-EV Carrier]: https://www.xilinx.com/products/boards-and-kits/1-1s78dxb.html
 <!-- updater end -->
+
+### AUBoard board files
+
+The board definition files for the AUBoard are not currently included in the AMD Xilinx Board Store.
+To enable Vivado to recognize this board, the required board files have been included in this
+repository as a Git submodule (`submodules/avnet-bdf`), which is a fork of
+[Avnet's BDF repository](https://github.com/Avnet/bdf). When cloning this repo, use the `--recursive`
+flag to ensure the board files are downloaded:
+
+```
+git clone --recursive <repo-url>
+```
 
 Notes:
 1. The Vivado Edition column indicates which designs are supported by the Vivado *Standard* Edition, the
@@ -138,8 +150,8 @@ git clone https://github.com/fpgadeveloper/rpi-camera-fmc.git
 Source Vivado and Vitis tools:
 
 ```
-source <path-to-vivado>/2024.1/settings64.sh
-source <path-to-vitis>/2024.1/settings64.sh
+source <path-to-vivado>/2025.2/settings64.sh
+source <path-to-vitis>/2025.2/settings64.sh
 ```
 
 Build all (Vivado project, Vitis workspace):
@@ -159,8 +171,8 @@ git clone --recursive https://github.com/fpgadeveloper/rpi-camera-fmc.git
 Source Vivado and PetaLinux tools:
 
 ```
-source <path-to-petalinux>/2024.1/settings.sh
-source <path-to-vivado>/2024.1/settings64.sh
+source <path-to-petalinux>/2025.2/settings.sh
+source <path-to-vivado>/2025.2/settings64.sh
 ```
 
 Build all (Vivado project, accelerator kernel and PetaLinux):

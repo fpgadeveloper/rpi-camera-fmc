@@ -1,7 +1,7 @@
 # (C) Copyright 2020 - 2022 Xilinx, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-set board_name [lindex $argv 2]
+set board_name $::env(BOARD_NAME)
 
 source "build/${board_name}/settings.tcl"
 

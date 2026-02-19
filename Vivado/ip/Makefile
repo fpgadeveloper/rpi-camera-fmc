@@ -4,7 +4,7 @@
 
 RM = rm -rf
 VIVADO = $(XILINX_VIVADO)/bin/vivado
-HLS = vitis_hls
+HLS = vitis-run --mode hls --tcl
 
 GET_PART_SCRIPT = get_part.tcl
 GET_PART_LOG = vivado_$(TARGET).log
@@ -61,7 +61,7 @@ $(SETTINGS_TCL):
 	$(RM) $(GET_PART_LOG) $(GET_PART_JOU)
 
 ip: $(SETTINGS_TCL)
-	$(HLS) -f isppipeline/run_hls.tcl $(BOARD_NAME)
+	BOARD_NAME=$(BOARD_NAME) $(HLS) isppipeline/run_hls.tcl
 	touch $(DONE_FILE)
 
 .PHONY: clean

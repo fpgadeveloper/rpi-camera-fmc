@@ -1,3 +1,6 @@
 [submodule "submodules/Vitis_Libraries"]
 	path = submodules/Vitis_Libraries
 	url = https://github.com/Xilinx/Vitis_Libraries.git
+[submodule "submodules/avnet-bdf"]
+	path = submodules/avnet-bdf
+	url = git@github.com:fpgadeveloper/avnet-bdf.git

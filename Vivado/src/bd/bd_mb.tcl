@@ -861,22 +861,28 @@ foreach i $cams {
 # Add AXI Interconnect for the AXI Lite interfaces
 
 proc create_axi_ic {label ports} {
+  set axi_ip [get_bd_cells $label]
+  # Initial port index
+  set port_num [get_property CONFIG.NUM_MI $axi_ip]
+  # Initial clk index
+  set clk_num [get_property CONFIG.NUM_CLKS $axi_ip]
   # Set number of master ports
   set n_periph_ports [llength $ports]
-  set n_periph_ports [expr {$n_periph_ports+1}]
-  set axi_ip [get_bd_cells $label]
+  set n_periph_ports [expr {$n_periph_ports+$port_num}]
   set_property -dict [list CONFIG.NUM_MI $n_periph_ports] $axi_ip
+  # Set number of clock inputs
+  set n_clk_inputs [llength $ports]
+  set n_clk_inputs [expr {$n_clk_inputs+$clk_num}]
+  set_property -dict [list CONFIG.NUM_CLKS $n_clk_inputs] $axi_ip
   # Attach all of the ports, their clocks and resets
-  set port_num 1
   foreach port $ports {
     set port_name [format "M%02d" $port_num]
     set port_label [lindex $port 0]
     connect_bd_intf_net -boundary_type upper [get_bd_intf_pins $label/${port_name}_AXI] [get_bd_intf_pins $port_label]
     set port_clk [lindex $port 1]
-    connect_bd_net [get_bd_pins $port_clk] [get_bd_pins $label/${port_name}_ACLK]
-    set port_rst [lindex $port 2]
-    connect_bd_net [get_bd_pins $port_rst] [get_bd_pins $label/${port_name}_ARESETN]
+    connect_bd_net [get_bd_pins $port_clk] [get_bd_pins $label/aclk${clk_num}]
     set port_num [expr {$port_num+1}]
+    set clk_num [expr {$clk_num+1}]
   }
 }
 

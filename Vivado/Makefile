@@ -1,4 +1,4 @@
-# Opsero Electronic Design Inc. 2024
+# Opsero Electronic Design Inc. 2025
 #
 # This Makefile can be used to build the Vivado projects.
 
@@ -41,10 +41,11 @@ IP_DONE = $(IP_DIR)/build/$(BOARD_NAME)/ip_done.txt
 # output files
 VIV_XPR = $(VIV_DIR)/$(TARGET).xpr
 VIV_XSA = $(VIV_DIR)/$(BD_NAME)_wrapper.xsa
-VIV_XPR_LOG = $(TARGET)_xpr.log
-VIV_XPR_JOU = $(TARGET)_xpr.jou
-VIV_XSA_LOG = $(TARGET)_xsa.log
-VIV_XSA_JOU = $(TARGET)_xsa.jou
+VIV_LOG_DIR = logs
+VIV_XPR_LOG = $(VIV_LOG_DIR)/$(TARGET)_xpr.log
+VIV_XPR_JOU = $(VIV_LOG_DIR)/$(TARGET)_xpr.jou
+VIV_XSA_LOG = $(VIV_LOG_DIR)/$(TARGET)_xsa.log
+VIV_XSA_JOU = $(VIV_LOG_DIR)/$(TARGET)_xsa.jou
 VIV_BIT = $(VIV_DIR)/$(TARGET).runs/impl_1/$(BD_NAME)_wrapper.bit
 VIV_LOCK = $(ROOT_DIR)/.$(TARGET).lock
 
@@ -115,15 +116,14 @@ xsa:
 
 xsa_locked: $(VIV_XSA) check_warnings
 $(VIV_XSA): $(VIV_XPR)
+	$(MKDIR) $(VIV_LOG_DIR)
 	$(RM) $(VIV_XSA_LOG) $(VIV_XSA_JOU)
 	$(VIVADO) -mode batch -notrace -source $(VIV_SCRIPT_XSA) -log $(VIV_XSA_LOG) -journal $(VIV_XSA_JOU) -tclargs $(TARGET) $(JOBS) $(SYNTH_ONLY)
-	$(CP) $(VIV_XSA_LOG) $(VIV_XSA_JOU) $(TARGET)/.
-	$(RM) $(VIV_XSA_LOG) $(VIV_XSA_JOU)
 
 check_warnings:
-	@grep "CRITICAL WARNING:" $(TARGET)/$(VIV_XSA_LOG) && { \
+	@grep "CRITICAL WARNING:" $(VIV_XSA_LOG) && { \
 		echo "Critical warnings found. Exiting."; \
-		echo "For details see: $(TARGET)/$(VIV_XSA_LOG)"; \
+		echo "For details see: $(VIV_XSA_LOG)"; \
 		exit 1; \
 	} || true
 
@@ -146,10 +146,9 @@ project: check_target
 project_locked: $(VIV_XPR)
 $(VIV_XPR): $(IP_DONE)
 	@echo 'Create Vivado project $(TARGET)'
+	$(MKDIR) $(VIV_LOG_DIR)
 	$(RM) $(VIV_XPR_LOG) $(VIV_XPR_JOU)
 	$(VIVADO) -mode batch -notrace -source $(VIV_SCRIPT_BD) -log $(VIV_XPR_LOG) -journal $(VIV_XPR_JOU) -tclargs $(TARGET)
-	$(CP) $(VIV_XPR_LOG) $(VIV_XPR_JOU) $(TARGET)/.
-	$(RM) $(VIV_XPR_LOG) $(VIV_XPR_JOU)
 
 .PHONY: project_all
 project_all:
