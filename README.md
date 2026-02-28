@@ -150,8 +150,8 @@ git clone https://github.com/fpgadeveloper/rpi-camera-fmc.git
 Source Vivado and Vitis tools:
 
 ```
-source <path-to-vivado>/2025.2/settings64.sh
-source <path-to-vitis>/2025.2/settings64.sh
+source <path-to-xilinx-tools>/2025.2/Vivado/settings64.sh
+source <path-to-xilinx-tools>/2025.2/Vitis/settings64.sh
 ```
 
 Build all (Vivado project, Vitis workspace):
@@ -172,7 +172,7 @@ Source Vivado and PetaLinux tools:
 
 ```
 source <path-to-petalinux>/2025.2/settings.sh
-source <path-to-vivado>/2025.2/settings64.sh
+source <path-to-xilinx-tools>/2025.2/Vivado/settings64.sh
 ```
 
 Build all (Vivado project, accelerator kernel and PetaLinux):
