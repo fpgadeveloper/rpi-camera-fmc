@@ -6,7 +6,8 @@
 
 # make-boot.py — Create bootfile for a Vitis (Unified) workspace
 # Usage:
-#   vitis -source make-boot.py [<target>] <path/to/args.json> <path/to/data.json>
+#   vitis -source make-boot.py <target> <path/to/args.json> [<path/to/data.json>]
+#   python3 make-boot.py <target> <path/to/args.json> [<path/to/data.json>]
 #
 # Paths derived from <target>:
 #   workspace   = ./<target>_workspace
@@ -20,8 +21,8 @@
 #
 # Device handling:
 #   MicroBlaze:
-#       combine_bit_elf=true  → updatemem => <target>_boot.bit
-#       combine_bit_elf=false → copy bit  => <target>.bit
+#       combine_bit_elf=true  → updatemem => <bd_name>_boot.bit
+#       combine_bit_elf=false → copy bit  => <bd_name>.bit
 #   Zynq (ps7):
 #       BIF (we generate): [bootloader] fsbl.elf, then bit, then app.elf → bootgen -arch zynq → BOOT.BIN
 #   ZynqMP (a53):
@@ -58,20 +59,32 @@ def parse_cli(argv):
     args = argv[1:]
     if args and args[0] == "--":
         args = args[1:]
-    if len(args) not in (2,3):
-        die("Usage: vitis -source make-boot.py [<target>] <path/to/args.json> <path/to/data.json>")
+    if len(args) not in (2, 3):
+        die("Usage: make-boot.py <target> <path/to/args.json> [<path/to/data.json>]")
     if len(args) == 2:
-        target = None
-        args_json, data_json = args
+        # Could be: <args.json> <data.json> (interactive) OR <target> <args.json> (no data.json)
+        if os.path.isfile(args[0]) and args[0].endswith(".json"):
+            target = None
+            args_json, data_json = args
+        else:
+            target = args[0]
+            args_json = args[1]
+            data_json = None
     else:
         target, args_json, data_json = args
     args_json = os.path.normpath(args_json)
-    data_json = os.path.normpath(data_json)
     if not os.path.isfile(args_json): die(f"args.json not found: {args_json}")
-    if not os.path.isfile(data_json): die(f"data.json not found: {data_json}")
+    # data.json is optional — "none" means no data.json
+    if data_json and data_json.lower() != "none":
+        data_json = os.path.normpath(data_json)
+        if not os.path.isfile(data_json): die(f"data.json not found: {data_json}")
+    else:
+        data_json = None
     return target, args_json, data_json
 
 def pick_target_interactively(data_json_path):
+    if not data_json_path:
+        die("No target specified and no data.json available for interactive selection.")
     with open(data_json_path, "r", encoding="utf-8") as f:
         data = json.load(f)
     designs = [d for d in data.get("designs", []) if d.get("baremetal", False)]
@@ -98,10 +111,10 @@ def pick_target_interactively(data_json_path):
 
 # ---------------- detect arch/CPU from XSA (parse .hwh inside XSA zip) ----------------
 CPU_VLNV_HINTS = {
-    "microblaze":         "xilinx.com:ip:microblaze",
-    "processing_system7": "xilinx.com:ip:processing_system7", # Zynq-7000
-    "zynq_ultra_ps_e":    "xilinx.com:ip:zynq_ultra_ps_e",    # ZynqMP
-    "versal_cips":        "xilinx.com:ip:versal_cips",        # Versal
+    "microblaze":       "xilinx.com:ip:microblaze",
+    "ps7":              "xilinx.com:ip:processing_system7", # Zynq-7000
+    "zynq_ultra_ps_e":  "xilinx.com:ip:zynq_ultra_ps_e",   # ZynqMP
+    "versal_cips":      "xilinx.com:ip:versal_cips",       # Versal
 }
 
 def _find_modules(xml_bytes):
@@ -117,7 +130,7 @@ def _find_modules(xml_bytes):
             out.append((inst, vlnv))
     return out
 
-def detect_arch_and_cpu_from_xsa(xsa_path,bd_name):
+def detect_arch_and_cpu_from_xsa(xsa_path):
     """
     Returns:
       arch in {"microblaze","zynq","zynqmp","versal"}
@@ -128,7 +141,7 @@ def detect_arch_and_cpu_from_xsa(xsa_path,bd_name):
     modules = []
     with zipfile.ZipFile(xsa_path, "r") as z:
         for name in z.namelist():
-            if name.lower() == f"{bd_name}.hwh":
+            if name.lower().endswith(".hwh"):
                 try:
                     modules += _find_modules(z.read(name))
                 except KeyError:
@@ -139,12 +152,12 @@ def detect_arch_and_cpu_from_xsa(xsa_path,bd_name):
         mb_inst = next((n for n, v in modules if "microblaze" in v), "microblaze_0")
         return "microblaze", mb_inst
     if has["versal_cips"]:
-        core = "psv_cortexa72_0"
+        core = "a72-0" if any("a72" in v for _, v in modules) else ("r5-0" if any("r5" in v for _, v in modules) else "a72-0")
         return "versal", core
     if has["zynq_ultra_ps_e"]:
         core = "a53-0" if any("a53" in v for _, v in modules) else ("r5-0" if any("r5" in v for _, v in modules) else "a53-0")
         return "zynqmp", core
-    if has["processing_system7"]:
+    if has["ps7"]:
         return "zynq", "a9-0"
     return None, None
 
@@ -179,6 +192,45 @@ def make_mb_bit(impl_dir, bd_name, elf_path, mb_proc_name, out_bit, combine):
         note(f"Copied bit without embedding ELF: {out_bit}")
 
 # ---------------- PS BIF helpers / bootgen ----------------
+BIF_FILE_RE = re.compile(r"^\s*file\s*=\s*(.+)$", re.IGNORECASE)
+
+def normalize_bif_paths(text, base_dir):
+    out_lines = []
+    for line in text.splitlines():
+        m = BIF_FILE_RE.match(line.strip())
+        if m:
+            path = m.group(1).strip().strip('"').strip("'")
+            if not is_abs(path):
+                path = os.path.normpath(os.path.join(base_dir, path))
+            out_lines.append(f"  file = {path}")
+        else:
+            out_lines.append(line)
+    return "\n".join(out_lines) + "\n"
+
+def insert_after_outermost_brace_block(bif_text, insertion):
+    idx = bif_text.rfind("}")
+    if idx == -1:
+        return bif_text + "\n" + insertion + "\n"
+    return bif_text[:idx] + insertion + "\n" + bif_text[idx:]
+
+def append_ps_app_partition(bif_text, arch, core_or_cpu, app_elf):
+    if arch == "versal":
+        block = f"""
+ image
+ {{
+  name = user_app
+  id = 0x1c000000
+  partition
+  {{
+   core = {core_or_cpu}
+   file = {app_elf}
+  }}
+ }}"""
+        return insert_after_outermost_brace_block(bif_text, block)
+    else:
+        extra = f"  [destination_cpu={core_or_cpu}] {app_elf}\n"
+        return insert_after_outermost_brace_block(bif_text, extra)
+
 def bootgen_arch_token(arch):
     return {"zynq":"zynq", "zynqmp":"zynqmp", "versal":"versal"}[arch]
 
@@ -254,9 +306,11 @@ def main():
     if not bd_name:
         die('args.json must include "bd_name".')
 
+    vivado_postfix = cfg.get("vivado_postfix", "")
+
     cwd        = os.getcwd()
     workspace  = os.path.join(cwd, f"{target}_workspace")
-    viv_proj   = os.path.normpath(os.path.join(cwd, "..", "Vivado", target))
+    viv_proj   = os.path.normpath(os.path.join(cwd, "..", "Vivado", target + vivado_postfix))
     xsa_path   = os.path.normpath(os.path.join(viv_proj, f"{bd_name}_wrapper.xsa"))
     impl_dir   = os.path.join(viv_proj, f"{target}.runs", "impl_1")
     out_dir    = ensure_dir(os.path.join(cwd, "boot", target))
@@ -279,14 +333,14 @@ def main():
     if not os.path.isdir(impl_dir):
         die(f"Vivado impl dir not found: {impl_dir}")
 
-    arch, core_hint = detect_arch_and_cpu_from_xsa(xsa_path,bd_name)
+    arch, core_hint = detect_arch_and_cpu_from_xsa(xsa_path)
     if not arch:
         die("Could not detect platform family from XSA (MicroBlaze/Zynq/ZynqMP/Versal).")
     note(f"Detected platform: {arch} (core hint: {core_hint})")
 
     # -------- MicroBlaze
     if arch == "microblaze":
-        out_bit = os.path.join(out_dir, f"{target}_boot.bit" if combine else f"{target}.bit")
+        out_bit = os.path.join(out_dir, f"{bd_name}_boot.bit" if combine else f"{bd_name}.bit")
         make_mb_bit(impl_dir, bd_name, app_elf, core_hint or "microblaze_0", out_bit, combine)
         note("\nSUCCESS (MicroBlaze):")
         note(f"  Output bit : {out_bit}")
