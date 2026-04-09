@@ -9,5 +9,7 @@
 		"zynqmp": "",
 		"versal": ""
 	},
-	"combine_bit_elf": false
+	"combine_bit_elf": false,
+	"stack_size": "0x10000",
+	"heap_size": "0x10000"
 }

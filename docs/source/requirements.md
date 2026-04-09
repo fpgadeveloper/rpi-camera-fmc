@@ -2,9 +2,9 @@
 
 In order to test this design on hardware, you will need the following:
 
-* Vivado 2024.1
-* Vitis 2024.1
-* PetaLinux Tools 2024.1
+* Vivado 2025.2
+* Vitis 2025.2
+* PetaLinux Tools 2025.2
 * Linux PC or Virtual machine (for build)
 * One or more [Raspberry Pi Camera Module 2]
 * One [RPi Camera FMC]

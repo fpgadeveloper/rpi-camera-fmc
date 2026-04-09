@@ -1,4 +1,6 @@
 {
+  "bd_name": "rpi",
+  "prj_name": "rpi-camera-fmc",
   "groups": [
     {
       "label": "fpga",
@@ -16,7 +18,7 @@
       "label": "versal",
       "name": "Versal"
     }
-    ],
+  ],
   "designs": [
     {
       "publish": true,
@@ -25,7 +27,12 @@
       "link": "https://www.xilinx.com/zcu104",
       "url": "xilinx.com",
       "boardname": "zcu104",
-      "cams": [0,1,2,3],
+      "cams": [
+        0,
+        1,
+        2,
+        3
+      ],
       "vcu": true,
       "accel": false,
       "cfg": "prj_config",
@@ -44,7 +51,12 @@
       "link": "https://www.xilinx.com/zcu102",
       "url": "xilinx.com",
       "boardname": "zcu102",
-      "cams": [0,1,2,3],
+      "cams": [
+        0,
+        1,
+        2,
+        3
+      ],
       "vcu": false,
       "accel": false,
       "cfg": "prj_config",
@@ -63,7 +75,10 @@
       "link": "https://www.xilinx.com/zcu102",
       "url": "xilinx.com",
       "boardname": "zcu102",
-      "cams": [0,1],
+      "cams": [
+        0,
+        1
+      ],
       "vcu": false,
       "accel": false,
       "cfg": "prj_config_1",
@@ -82,7 +97,12 @@
       "link": "https://www.xilinx.com/zcu106",
       "url": "xilinx.com",
       "boardname": "zcu106",
-      "cams": [0,1,2,3],
+      "cams": [
+        0,
+        1,
+        2,
+        3
+      ],
       "vcu": true,
       "accel": false,
       "cfg": "prj_config",
@@ -101,7 +121,10 @@
       "link": "https://www.amd.com/en/corporate/university-program/aup-boards/pynq-zu.html",
       "url": "tul.com.tw",
       "boardname": "pynqzu",
-      "cams": [1,2],
+      "cams": [
+        1,
+        2
+      ],
       "vcu": false,
       "accel": false,
       "cfg": "prj_config",
@@ -120,7 +143,10 @@
       "link": "https://digilent.com/shop/genesys-zu-zynq-ultrascale-mpsoc-development-board/",
       "url": "digilentinc.com",
       "boardname": "gzu_5ev",
-      "cams": [1,2],
+      "cams": [
+        1,
+        2
+      ],
       "vcu": true,
       "accel": false,
       "cfg": "prj_config",
@@ -139,7 +165,12 @@
       "link": "https://www.xilinx.com/products/boards-and-kits/1-1s78dxb.html",
       "url": "avnet.com",
       "boardname": "ultrazed_7ev_cc",
-      "cams": [0,1,2,3],
+      "cams": [
+        0,
+        1,
+        2,
+        3
+      ],
       "vcu": true,
       "accel": false,
       "cfg": "prj_config",
@@ -158,7 +189,10 @@
       "link": "https://www.avnet.com/americas/products/avnet-boards/avnet-board-families/auboard-15p-fpga-development-kit/",
       "url": "avnet-tria",
       "boardname": "auboard_15p",
-      "cams": [0,2],
+      "cams": [
+        0,
+        2
+      ],
       "vcu": false,
       "accel": false,
       "cfg": "prj_config",

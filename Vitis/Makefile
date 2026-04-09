@@ -6,10 +6,8 @@ CP = cp -rf
 MKDIR = mkdir -p
 RM = rm -rf
 ROOT_DIR = $(shell pwd)
-XSCT = $(XILINX_VITIS)/bin/xsct
-BD_NAME = rpi
 ARGS_JSON = py/args.json
-DATA_JSON = ../docs/source/data.json
+DATA_JSON = ../config/data.json
 
 # defaults
 .DEFAULT_GOAL := workspace
@@ -18,6 +16,9 @@ JOBS ?= 8
 
 # valid targets
 # UPDATER START
+BD_NAME = rpi
+APP_NAME = test_app
+COMBINE_BIT_ELF = false
 auboard_target := microblaze
 # UPDATER END
 
@@ -30,6 +31,7 @@ VIT_TARGET_WS   = $(ROOT_DIR)/$(TARGET)_workspace
 VIT_LOCK        = $(ROOT_DIR)/.$(TARGET).lock
 VIT_BOOT        = $(ROOT_DIR)/boot
 VIT_BOOT_TARG   = $(VIT_BOOT)/$(TARGET)
+VIT_APP_ELF     = $(VIT_TARGET_WS)/$(APP_NAME)/build/$(APP_NAME).elf
 
 # Vivado paths
 VIV_DIR     = $(ROOT_DIR)/../Vivado
@@ -42,12 +44,12 @@ $(word 1,$($(1)_target))
 endef
 
 # The name of the boot image depends on the device family.
-# NOTE: For MicroBlaze, make-boot.py may produce either:
-#   - $(TARGET)_boot.bit (when combine_bit_elf=true), or
-#   - $(TARGET).bit      (when combine_bit_elf=false)
-# We don’t hard-depend on the exact filename here; see the bootfile target.
 ifeq ($(call get_template_name,$(TARGET)), microblaze)
-	VIT_BOOT_FILE = $(VIT_BOOT_TARG)/$(TARGET).bit
+  ifeq ($(COMBINE_BIT_ELF), true)
+	VIT_BOOT_FILE = $(VIT_BOOT_TARG)/$(BD_NAME)_boot.bit
+  else
+	VIT_BOOT_FILE = $(VIT_BOOT_TARG)/$(BD_NAME).bit
+  endif
 else ifeq ($(call get_template_name,$(TARGET)), zynq)
 	VIT_BOOT_FILE = $(VIT_BOOT_TARG)/BOOT.BIN
 else ifeq ($(call get_template_name,$(TARGET)), zynqMP)
@@ -64,7 +66,7 @@ help:
 	@echo '    Create the Vitis workspace and add applications for specified target.'
 	@echo ''
 	@echo '  make all JOBS=<val>'
-	@echo '    Create the Vitis workspace and add applications for all targets.'
+	@echo '    Create the Vitis workspace, build, and generate boot files for all targets.'
 	@echo ''
 	@echo '  make bootfile TARGET=<target>'
 	@echo '    Generate a boot image for the specified target (bit or BOOT.BIN).'
@@ -73,7 +75,7 @@ help:
 	@echo '    Delete the Vitis workspace and all applications for specified target.'
 	@echo ''
 	@echo '  make clean_all'
-	@echo '    Delete all Vitis workspaces and all applications.'
+	@echo '    Delete all Vitis workspaces, boot files, and build artifacts.'
 	@echo ''
 	@echo 'Parameters:'
 	@echo ''
@@ -91,7 +93,7 @@ help:
 all:
 	@{ \
 	for targ in $(TARGET_LIST); do \
-		$(MAKE) --no-print-directory workspace TARGET=$$targ; \
+		$(MAKE) --no-print-directory bootfile TARGET=$$targ; \
 	done; \
 	}
 
@@ -122,28 +124,35 @@ $(VIV_XSA):
 # --------------------------------------------------------------------
 .PHONY: bootfile
 bootfile: check_target
+	@if [ -f $(VIT_LOCK) ]; then \
+		echo "$(TARGET) is locked. Skipping..."; \
+	else \
+		touch $(VIT_LOCK); \
+		$(MAKE) --no-print-directory bootfile_locked TARGET=$(TARGET) JOBS=$(JOBS); \
+		rm -f $(VIT_LOCK); \
+	fi
+
+bootfile_locked:
 	@{ \
 	  if [ ! -d "$(VIT_TARGET_WS)" ]; then \
 	    echo "Workspace for $(TARGET) not found — creating it first..."; \
-	    $(MAKE) --no-print-directory workspace TARGET=$(TARGET) || exit $$?; \
+	    $(MAKE) --no-print-directory workspace_locked TARGET=$(TARGET) JOBS=$(JOBS) || exit $$?; \
+	  fi; \
+	  if [ -f "$(VIT_BOOT_FILE)" ] && [ -f "$(VIT_APP_ELF)" ] && [ "$(VIT_BOOT_FILE)" -nt "$(VIT_APP_ELF)" ]; then \
+	    echo "Bootfile for $(TARGET) is up to date. Skipping."; \
+	    exit 0; \
 	  fi; \
 	  echo "Generating bootfile for $(TARGET) ..."; \
 	  vitis -source $(VIT_SCRIPT_BOOT) $(TARGET) $(ARGS_JSON) $(DATA_JSON) || exit $$?; \
 	  echo ""; \
 	  echo "Boot outputs are in: $(VIT_BOOT_TARG)"; \
-	  if [ "$(call get_template_name,$(TARGET))" = "microblaze" ]; then \
-	    echo "  (MB) Possible files:"; \
-	    echo "    - $(VIT_BOOT_TARG)/$(BD_NAME)_boot.bit   (combine_bit_elf=true)"; \
-	    echo "    - $(VIT_BOOT_TARG)/$(BD_NAME).bit        (combine_bit_elf=false)"; \
-	  else \
-	    echo "  (PS) Expected file:"; \
-	    echo "    - $(VIT_BOOT_TARG)/BOOT.BIN"; \
-	  fi; \
+	  echo "  Boot file: $(VIT_BOOT_FILE)"; \
 	}
 
 .PHONY: clean
 clean: check_target
 	$(RM) $(TARGET)_workspace
+	$(RM) $(VIT_BOOT_TARG)
 
 .PHONY: clean_all
 clean_all:
@@ -158,5 +167,3 @@ check_target:
 ifndef $(TARGET)_target
 	$(error "Please specify a TARGET. Use 'make help' to see valid targets.")
 endif
-
-

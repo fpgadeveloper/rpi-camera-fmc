@@ -219,7 +219,7 @@ proc create_mipi_pipe { index loc_dict } {
   
   # Slice for ISPPipeline reset signal
   set emio_gpio_index [expr {8*($index+1)+0}]
-  set reset_isppipeline [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlslice reset_isppipeline ]
+  set reset_isppipeline [ create_bd_cell -type inline_hdl -vlnv xilinx.com:inline_hdl:ilslice:1.0 reset_isppipeline ]
   set_property -dict [ list \
   CONFIG.DIN_WIDTH {95} \
   CONFIG.DIN_TO $emio_gpio_index \
@@ -232,7 +232,7 @@ proc create_mipi_pipe { index loc_dict } {
 
   # Slice for Vproc reset signal
   set emio_gpio_index [expr {8*($index+1)+1}]
-  set reset_v_proc [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlslice reset_v_proc ]
+  set reset_v_proc [ create_bd_cell -type inline_hdl -vlnv xilinx.com:inline_hdl:ilslice:1.0 reset_v_proc ]
   set_property -dict [ list \
   CONFIG.DIN_WIDTH {95} \
   CONFIG.DIN_TO $emio_gpio_index \
@@ -245,7 +245,7 @@ proc create_mipi_pipe { index loc_dict } {
 
   # Slice for Frmbuf WR reset signal
   set emio_gpio_index [expr {8*($index+1)+2}]
-  set reset_frmbuf_wr [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlslice reset_frmbuf_wr ]
+  set reset_frmbuf_wr [ create_bd_cell -type inline_hdl -vlnv xilinx.com:inline_hdl:ilslice:1.0 reset_frmbuf_wr ]
   set_property -dict [ list \
   CONFIG.DIN_WIDTH {95} \
   CONFIG.DIN_TO $emio_gpio_index \
@@ -467,7 +467,7 @@ connect_bd_net [get_bd_pins clk_wiz_0/locked] [get_bd_pins rst_video_250M/dcm_lo
 # Add AXI Intc
 set axi_intc_0 [create_bd_cell -type ip -vlnv xilinx.com:ip:axi_intc axi_intc_0]
 set_property -dict [list CONFIG.C_IRQ_CONNECTION {1}] $axi_intc_0
-set concat_0 [create_bd_cell -type ip -vlnv xilinx.com:ip:xlconcat xlconcat_0]
+set concat_0 [create_bd_cell -type inline_hdl -vlnv xilinx.com:inline_hdl:ilconcat:1.0 xlconcat_0]
 connect_bd_net [get_bd_pins clk_wiz_0/clk_100M] [get_bd_pins axi_intc_0/s_axi_aclk]
 connect_bd_net [get_bd_pins xlconcat_0/dout] [get_bd_pins axi_intc_0/intr]
 connect_bd_net [get_bd_pins axi_intc_0/irq] [get_bd_pins zynq_ultra_ps_e_0/pl_ps_irq0]
@@ -475,7 +475,7 @@ connect_bd_net [get_bd_pins rst_ps_axi_100M/peripheral_aresetn] [get_bd_pins axi
 lappend hpm0_lpd_ports [list "axi_intc_0/s_axi" "clk_wiz_0/clk_100M" "rst_ps_axi_100M/peripheral_aresetn"]
 
 # Add constant for the CAM1 and CAM3 CLK_SEL pin (01b for UltraZed-EV Carrier and 00b for Genesys ZU, 10b for all other boards)
-set clk_sel [create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant clk_sel]
+set clk_sel [create_bd_cell -type inline_hdl -vlnv xilinx.com:inline_hdl:ilconstant:1.0 clk_sel]
 set_property -dict [list CONFIG.CONST_WIDTH {2}] $clk_sel
 if { $target == "uzev" } {
   set_property -dict [list CONFIG.CONST_VAL {0x01}] $clk_sel
@@ -551,7 +551,7 @@ foreach i $cams {
 # Connect DP Auxiliary channel on targets that route it via EMIO
 if {[dict get $dp_dict $board_name dpaux] == "EMIO"} {
   # Inverter for the dp_aux_data_oe_n signal
-  set invert_dp_aux_doe [ create_bd_cell -type ip -vlnv xilinx.com:ip:util_vector_logic invert_dp_aux_doe ]
+  set invert_dp_aux_doe [ create_bd_cell -type inline_hdl -vlnv xilinx.com:inline_hdl:ilvector_logic:1.0 invert_dp_aux_doe ]
   set_property -dict [ list \
     CONFIG.C_OPERATION {not} \
     CONFIG.C_SIZE {1} \
@@ -644,7 +644,7 @@ proc create_vcu_block { } {
  ] $vcu_0
 
   # Create instance: xlslice_0, and set properties
-  set xlslice_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlslice xlslice_0 ]
+  set xlslice_0 [ create_bd_cell -type inline_hdl -vlnv xilinx.com:inline_hdl:ilslice:1.0 xlslice_0 ]
   set_property -dict [ list \
    CONFIG.DIN_FROM {0} \
    CONFIG.DIN_TO {0} \
@@ -829,7 +829,7 @@ proc create_display_pipeline { } {
  ] $v_tc_0
 
   # Create instance: xlconcat_0, and set properties
-  set xlconcat_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlconcat xlconcat_0 ]
+  set xlconcat_0 [ create_bd_cell -type inline_hdl -vlnv xilinx.com:inline_hdl:ilconcat:1.0 xlconcat_0 ]
   set_property -dict [ list \
    CONFIG.IN0_WIDTH {16} \
    CONFIG.IN1_WIDTH {8} \
@@ -839,35 +839,35 @@ proc create_display_pipeline { } {
  ] $xlconcat_0
 
   # Create instance: const_low_24, and set properties
-  set const_low_24 [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant const_low_24 ]
+  set const_low_24 [ create_bd_cell -type inline_hdl -vlnv xilinx.com:inline_hdl:ilconstant:1.0 const_low_24 ]
   set_property -dict [ list \
    CONFIG.CONST_VAL {0} \
    CONFIG.CONST_WIDTH {24} \
  ] $const_low_24
 
   # Create instance: const_high, and set properties
-  set const_high [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant const_high ]
+  set const_high [ create_bd_cell -type inline_hdl -vlnv xilinx.com:inline_hdl:ilconstant:1.0 const_high ]
   set_property -dict [ list \
    CONFIG.CONST_VAL {1} \
    CONFIG.CONST_WIDTH {1} \
  ] $const_high
 
   # Create instance: const_low_16, and set properties
-  set const_low_16 [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant const_low_16 ]
+  set const_low_16 [ create_bd_cell -type inline_hdl -vlnv xilinx.com:inline_hdl:ilconstant:1.0 const_low_16 ]
   set_property -dict [ list \
    CONFIG.CONST_VAL {0} \
    CONFIG.CONST_WIDTH {16} \
  ] $const_low_16
 
   # Create instance: const_low_4, and set properties
-  set const_low_4 [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant const_low_4 ]
+  set const_low_4 [ create_bd_cell -type inline_hdl -vlnv xilinx.com:inline_hdl:ilconstant:1.0 const_low_4 ]
   set_property -dict [ list \
    CONFIG.CONST_VAL {0} \
    CONFIG.CONST_WIDTH {4} \
  ] $const_low_4
 
   # Create instance: reset_vmix, and set properties
-  set reset_vmix [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlslice reset_vmix ]
+  set reset_vmix [ create_bd_cell -type inline_hdl -vlnv xilinx.com:inline_hdl:ilslice:1.0 reset_vmix ]
   set_property -dict [ list \
    CONFIG.DIN_WIDTH {95} \
    CONFIG.DIN_TO {1} \
@@ -876,7 +876,7 @@ proc create_display_pipeline { } {
  ] $reset_vmix
 
   # Create instance: xlslice_15to8, and set properties
-  set xlslice_15to8 [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlslice xlslice_15to8 ]
+  set xlslice_15to8 [ create_bd_cell -type inline_hdl -vlnv xilinx.com:inline_hdl:ilslice:1.0 xlslice_15to8 ]
   set_property -dict [ list \
    CONFIG.DIN_FROM {15} \
    CONFIG.DIN_TO {8} \
@@ -885,7 +885,7 @@ proc create_display_pipeline { } {
  ] $xlslice_15to8
 
   # Create instance: xlslice_7to0, and set properties
-  set xlslice_7to0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlslice xlslice_7to0 ]
+  set xlslice_7to0 [ create_bd_cell -type inline_hdl -vlnv xilinx.com:inline_hdl:ilslice:1.0 xlslice_7to0 ]
   set_property -dict [ list \
    CONFIG.DIN_FROM {7} \
    CONFIG.DIN_TO {0} \
@@ -1049,7 +1049,7 @@ foreach intr $intr_list {
 }
 
 # Connect the "priority" interrupts (direct to PL-PS interrupt) to pl_ps_irq1
-set p_intr_concat [create_bd_cell -type ip -vlnv xilinx.com:ip:xlconcat p_intr_concat]
+set p_intr_concat [create_bd_cell -type inline_hdl -vlnv xilinx.com:inline_hdl:ilconcat:1.0 p_intr_concat]
 connect_bd_net [get_bd_pins p_intr_concat/dout] [get_bd_pins zynq_ultra_ps_e_0/pl_ps_irq1]
 set_property -dict [list CONFIG.NUM_PORTS 8] $p_intr_concat
 set n_interrupts [llength $priority_intr_list]

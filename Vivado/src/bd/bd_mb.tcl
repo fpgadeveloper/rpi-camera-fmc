@@ -127,7 +127,7 @@ set_property -dict [list \
 
 # Slice for Test Pattern Generator reset signal
 set resetn_index 0
-set reset_v_tpg [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlslice reset_v_tpg ]
+set reset_v_tpg [ create_bd_cell -type inline_hdl -vlnv xilinx.com:inline_hdl:ilslice:1.0 reset_v_tpg ]
 set_property -dict [ list \
 CONFIG.DIN_WIDTH {32} \
 CONFIG.DIN_TO $resetn_index \
@@ -177,7 +177,7 @@ set_property -dict [ list \
 
 # Slice for Video Mixer reset signal
 set resetn_index 1
-set reset_v_mix [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlslice reset_v_mix ]
+set reset_v_mix [ create_bd_cell -type inline_hdl -vlnv xilinx.com:inline_hdl:ilslice:1.0 reset_v_mix ]
 set_property -dict [ list \
 CONFIG.DIN_WIDTH {32} \
 CONFIG.DIN_TO $resetn_index \
@@ -212,11 +212,11 @@ set_property -dict [list \
 
 
 # Create instance: vcc_const, and set properties
-set vcc_const [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant vcc_const ]
+set vcc_const [ create_bd_cell -type inline_hdl -vlnv xilinx.com:inline_hdl:ilconstant:1.0 vcc_const ]
 set_property CONFIG.CONST_VAL {1} $vcc_const
 
 # Create instance: gnd_const, and set properties
-set gnd_const [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant gnd_const ]
+set gnd_const [ create_bd_cell -type inline_hdl -vlnv xilinx.com:inline_hdl:ilconstant:1.0 gnd_const ]
 set_property CONFIG.CONST_VAL {0} $gnd_const
 connect_bd_net [get_bd_pins gnd_const/dout] [get_bd_pins v_hdmi_tx_ss/fid]
 
@@ -312,7 +312,7 @@ connect_bd_net [get_bd_pins clk_wiz/clk_300M] [get_bd_pins v_mix/ap_clk]
 apply_bd_automation -rule xilinx.com:bd_rule:board -config { Board_Interface {system_resetn ( FPGA Reset ) } Manual_Source {New External Port (ACTIVE_LOW)}}  [get_bd_pins clk_wiz/resetn]
 
 # Reset for DDR
-create_bd_cell -type ip -vlnv xilinx.com:ip:util_vector_logic invert_rst
+create_bd_cell -type inline_hdl -vlnv xilinx.com:inline_hdl:ilvector_logic:1.0 invert_rst
 set_property -dict [list \
   CONFIG.C_OPERATION {not} \
   CONFIG.C_SIZE {1} \
@@ -580,7 +580,7 @@ proc create_mipi_pipe { index loc_dict } {
   
   # Slice for Camera GPIO0 signal
   set resetn_index 0
-  set cam_gpio0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlslice cam_gpio0 ]
+  set cam_gpio0 [ create_bd_cell -type inline_hdl -vlnv xilinx.com:inline_hdl:ilslice:1.0 cam_gpio0 ]
   set_property -dict [ list \
   CONFIG.DIN_WIDTH {32} \
   CONFIG.DIN_TO $resetn_index \
@@ -593,7 +593,7 @@ proc create_mipi_pipe { index loc_dict } {
 
   # Slice for Camera GPIO1 signal
   set resetn_index 1
-  set cam_gpio1 [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlslice cam_gpio1 ]
+  set cam_gpio1 [ create_bd_cell -type inline_hdl -vlnv xilinx.com:inline_hdl:ilslice:1.0 cam_gpio1 ]
   set_property -dict [ list \
   CONFIG.DIN_WIDTH {32} \
   CONFIG.DIN_TO $resetn_index \
@@ -606,7 +606,7 @@ proc create_mipi_pipe { index loc_dict } {
 
   # Slice for Demosaic reset signal
   set resetn_index 2
-  set reset_demosaic [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlslice reset_demosaic ]
+  set reset_demosaic [ create_bd_cell -type inline_hdl -vlnv xilinx.com:inline_hdl:ilslice:1.0 reset_demosaic ]
   set_property -dict [ list \
   CONFIG.DIN_WIDTH {32} \
   CONFIG.DIN_TO $resetn_index \
@@ -619,7 +619,7 @@ proc create_mipi_pipe { index loc_dict } {
 
   # Slice for Vproc reset signal
   set resetn_index 3
-  set reset_v_proc [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlslice reset_v_proc ]
+  set reset_v_proc [ create_bd_cell -type inline_hdl -vlnv xilinx.com:inline_hdl:ilslice:1.0 reset_v_proc ]
   set_property -dict [ list \
   CONFIG.DIN_WIDTH {32} \
   CONFIG.DIN_TO $resetn_index \
@@ -632,7 +632,7 @@ proc create_mipi_pipe { index loc_dict } {
 
   # Slice for Gamma Lut reset signal
   set resetn_index 4
-  set reset_gamma [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlslice reset_gamma ]
+  set reset_gamma [ create_bd_cell -type inline_hdl -vlnv xilinx.com:inline_hdl:ilslice:1.0 reset_gamma ]
   set_property -dict [ list \
   CONFIG.DIN_WIDTH {32} \
   CONFIG.DIN_TO $resetn_index \
@@ -645,7 +645,7 @@ proc create_mipi_pipe { index loc_dict } {
 
   # Slice for Frmbuf RD reset signal
   set resetn_index 5
-  set reset_frmbuf_rd [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlslice reset_frmbuf_rd ]
+  set reset_frmbuf_rd [ create_bd_cell -type inline_hdl -vlnv xilinx.com:inline_hdl:ilslice:1.0 reset_frmbuf_rd ]
   set_property -dict [ list \
   CONFIG.DIN_WIDTH {32} \
   CONFIG.DIN_TO $resetn_index \
@@ -658,7 +658,7 @@ proc create_mipi_pipe { index loc_dict } {
 
   # Slice for Frmbuf WR reset signal
   set resetn_index 6
-  set reset_frmbuf_wr [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlslice reset_frmbuf_wr ]
+  set reset_frmbuf_wr [ create_bd_cell -type inline_hdl -vlnv xilinx.com:inline_hdl:ilslice:1.0 reset_frmbuf_wr ]
   set_property -dict [ list \
   CONFIG.DIN_WIDTH {32} \
   CONFIG.DIN_TO $resetn_index \
@@ -767,7 +767,7 @@ proc create_mipi_pipe { index loc_dict } {
 }
 
 # Add constant for the CAM1 and CAM3 CLK_SEL pin (01b for UltraZed-EV Carrier + AUBoard and 00b for Genesys ZU, 10b for all other boards)
-set clk_sel [create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant clk_sel]
+set clk_sel [create_bd_cell -type inline_hdl -vlnv xilinx.com:inline_hdl:ilconstant:1.0 clk_sel]
 set_property -dict [list CONFIG.CONST_WIDTH {2}] $clk_sel
 if { $target == "auboard" } {
   set_property -dict [list CONFIG.CONST_VAL {0x01}] $clk_sel
