@@ -18,9 +18,9 @@ This is the documentation for the `RPi Camera FMC`_ reference designs.
    supported_carriers
    build_instructions
    petalinux
-   updating
+   advanced
    troubleshooting
    revision_history
 
 
-.. _RPi Camera FMC: https://camerafmc.com/docs/rpi-camera-fmc/overview/
+.. _RPi Camera FMC: https://docs.opsero.com/op068/datasheet/overview/

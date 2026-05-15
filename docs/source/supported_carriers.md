@@ -70,7 +70,7 @@ functional workaround that we have found for these two target boards.
 
 
 [contact Opsero]: https://opsero.com/contact-us
-[RPi Camera FMC]: https://camerafmc.com/docs/rpi-camera-fmc/overview/
+[RPi Camera FMC]: https://docs.opsero.com/op068/datasheet/overview/
 [compatibility list]: https://camerafmc.com/docs/rpi-camera-fmc/compatibility/
 [AMD Xilinx MIPI CSI Controller Subsystem IP]: https://docs.xilinx.com/r/en-US/pg202-mipi-dphy
 

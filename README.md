@@ -13,7 +13,7 @@ designs contain:
 ![RPi Camera FMC](https://www.fpgadeveloper.com/camera-fmc-connecting-mipi-cameras-to-fpgas/images/rpi-camera-fmc-pynq-zu-1.jpg "RPi Camera FMC")
 
 Important links:
-* The RPi Camera FMC [datasheet](https://camerafmc.com/docs/rpi-camera-fmc/overview/)
+* The RPi Camera FMC [datasheet](https://docs.opsero.com/op068/datasheet/overview/)
 * The [user guide](https://rpi.camerafmc.com) for these reference designs
 * To [report an issue](https://github.com/fpgadeveloper/rpi-camera-fmc/issues)
 * For technical support: [Contact Opsero](https://opsero.com/contact-us)
@@ -200,6 +200,32 @@ sudo displaycams.sh
 
 If less than 4 cameras are physically connected, the unused quadrants of the monitor will be blue.
 
+## Troubleshooting
+
+### PetaLinux build fails with `bitbake petalinux-image-minimal failed` and sstate fetch errors
+
+If a `make petalinux TARGET=<board>` run ends with errors like
+
+```
+ERROR: <package>-<ver>-r0 do_..._setscene: Fetcher failure: Unable to find file file://.../sstate:...
+[ERROR] Command bitbake petalinux-image-minimal failed
+```
+
+the actual build is not broken. These `_setscene` errors come from
+bitbake trying to pull prebuilt artifacts from the public Xilinx
+sstate-cache mirror, which occasionally returns 404 for individual
+packages. Bitbake falls back to building those packages locally and
+succeeds, but still exits non-zero because of the failed fetches —
+so the Makefile stops before the `petalinux-package` step that
+produces `BOOT.BIN`.
+
+**Fix: just re-run the same command.** The second attempt finds the
+missing packages in the local sstate cache (populated by the first
+run) and completes cleanly, producing `BOOT.BIN`. The reference
+design itself is fine; this is a transient issue with the public
+mirror.
+
+
 ## Contribute
 
 We strongly encourage community contribution to these projects. Please make a pull request if you
@@ -226,7 +252,7 @@ design services to start-ups and tech companies. Follow our blog,
 [FPGA Developer](https://www.fpgadeveloper.com "FPGA Developer"), for news, tutorials and
 updates on the awesome projects we work on.
 
-[RPi Camera FMC]: https://camerafmc.com/docs/rpi-camera-fmc/overview/
+[RPi Camera FMC]: https://docs.opsero.com/op068/datasheet/overview/
 [GStreamer]: https://gstreamer.freedesktop.org/
 [VCU]: https://xilinx-wiki.atlassian.net/wiki/spaces/A/pages/18842546/Xilinx+Zynq+UltraScale+MPSoC+Video+Codec+Unit
 

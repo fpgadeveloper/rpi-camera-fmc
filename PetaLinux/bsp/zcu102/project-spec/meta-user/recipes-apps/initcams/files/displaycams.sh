@@ -37,6 +37,10 @@ OUT_FORMAT=YUY2
 # Resolution of the monitor
 DISP_RES_W=1920
 DISP_RES_H=1080
+# Display refresh rate (Hz) — pinned because the PL pixel-clock wizard
+# only produces the standard 60 Hz rate; without pinning, modetest picks
+# the first mode (often 144 Hz) and the dpsub silently rejects it.
+DISP_RATE=60
 # Frame rate (fps)
 FRM_RATE=30
 #--------------------------------------------------------------------------------
@@ -122,8 +126,34 @@ done
 #-------------------------------------------------------------------------------
 # Setup the display pipeline
 #-------------------------------------------------------------------------------
-# Initialize the display pipeline
-echo | modetest -M xlnx -D ${VMIX} -s 60@46:${DISP_RES_W}x${DISP_RES_H}@NV16
+# Discover the DRM connector, CRTC and YUYV overlay plane IDs dynamically.
+# Required because IDs shift across kernel revisions (e.g. 2022.1 gave us
+# connector=60, crtc=46, overlay planes=34/36/38/40; 2025.2 gives 49/47/35-41).
+MT=$(modetest -M xlnx -D ${VMIX} 2>/dev/null)
+
+# First "connected" connector (column 3 == "connected").
+CONN_ID=$(awk '/^Connectors:/{f=1;next} /^CRTCs:/{f=0}
+               f && $3=="connected" {print $1; exit}' <<<"$MT")
+
+# First CRTC ID (the mixer registers one CRTC; that's the one we want).
+CRTC_ID=$(awk '/^CRTCs:/{f=1;next} /^Planes:/{f=0}
+               f && $1 ~ /^[0-9]+$/ {print $1; exit}' <<<"$MT")
+
+# All overlay plane IDs whose format list contains YUYV (one per camera).
+mapfile -t YUYV_PLANES < <(awk '
+        /^Planes:/{f=1;next} /^Frame buffers:/{f=0}
+        f && $1 ~ /^[0-9]+$/ {plane=$1}
+        f && /formats:.*YUYV/ {print plane}' <<<"$MT")
+
+if [[ -z "$CONN_ID" || -z "$CRTC_ID" || ${#YUYV_PLANES[@]} -lt 4 ]]; then
+        echo "ERROR: could not discover DRM ids (conn=$CONN_ID crtc=$CRTC_ID yuyv_planes=${YUYV_PLANES[*]})" >&2
+        exit 1
+fi
+
+# Initialize the display pipeline. The -${DISP_RATE} suffix pins the refresh
+# rate so modetest doesn't pick a too-fast mode (e.g. 144 Hz) that the PL
+# pixel-clock wizard can't drive.
+echo | modetest -M xlnx -D ${VMIX} -s ${CONN_ID}@${CRTC_ID}:${DISP_RES_W}x${DISP_RES_H}-${DISP_RATE}@NV16
 
 #------------------------------------------------------------------------------
 # Run GStreamer to combine all videos and display on the screen
@@ -132,10 +162,10 @@ full_command="gst-launch-1.0"
 
 # Screen quadrants: TOP-LEFT, TOP-RIGHT, BOTTOM-LEFT, BOTTOM-RIGHT
 quadrants=(
-        "plane-id=34 render-rectangle=\"<0,0,${OUT_RES_W},${OUT_RES_H}>\""
-        "plane-id=36 render-rectangle=\"<${OUT_RES_W},0,${OUT_RES_W},${OUT_RES_H}>\""
-        "plane-id=38 render-rectangle=\"<0,${OUT_RES_H},${OUT_RES_W},${OUT_RES_H}>\""
-        "plane-id=40 render-rectangle=\"<${OUT_RES_W},${OUT_RES_H},${OUT_RES_W},${OUT_RES_H}>\""
+        "plane-id=${YUYV_PLANES[0]} render-rectangle=\"< 0, 0, ${OUT_RES_W}, ${OUT_RES_H} >\""
+        "plane-id=${YUYV_PLANES[1]} render-rectangle=\"< ${OUT_RES_W}, 0, ${OUT_RES_W}, ${OUT_RES_H} >\""
+        "plane-id=${YUYV_PLANES[2]} render-rectangle=\"< 0, ${OUT_RES_H}, ${OUT_RES_W}, ${OUT_RES_H} >\""
+        "plane-id=${YUYV_PLANES[3]} render-rectangle=\"< ${OUT_RES_W}, ${OUT_RES_H}, ${OUT_RES_W}, ${OUT_RES_H} >\""
 )
 
 index=0
@@ -145,7 +175,7 @@ for media in "${!media_to_video_mapping[@]}"; do
         # Append the specific command for the current iteration to the full command
         full_command+=" v4l2src device=${media_to_video_mapping[$media]} io-mode=mmap"
         full_command+=" ! video/x-raw, width=${OUT_RES_W}, height=${OUT_RES_H}, format=YUY2, framerate=${FRM_RATE}/1"
-        full_command+=" ! kmssink bus-id=${VMIX} ${quadrants[$index]} show-preroll-frame=false sync=false can-scale=false"
+        full_command+=" ! kmssink bus-id=${VMIX} ${quadrants[$index]} show-preroll-frame=false sync=false can-scale=true"
 
         ((index++))
 done

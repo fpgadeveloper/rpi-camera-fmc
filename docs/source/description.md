@@ -99,7 +99,7 @@ enable these powerful features. Refer to the list of target designs to see which
 
 
 [AMD Xilinx MIPI CSI Controller Subsystem IP]: https://docs.xilinx.com/r/en-US/pg202-mipi-dphy
-[RPi Camera FMC]: https://camerafmc.com/docs/rpi-camera-fmc/overview/
+[RPi Camera FMC]: https://docs.opsero.com/op068/datasheet/overview/
 [GStreamer]: https://gstreamer.freedesktop.org/
 [VCU]: https://xilinx-wiki.atlassian.net/wiki/spaces/A/pages/18842546/Xilinx+Zynq+UltraScale+MPSoC+Video+Codec+Unit
 [G-Streamer plugins]: https://xilinx.github.io/VVAS/2.0/build/html/docs/common/common_plugins.html

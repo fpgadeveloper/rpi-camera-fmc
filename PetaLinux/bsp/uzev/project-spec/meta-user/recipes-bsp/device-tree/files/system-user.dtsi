@@ -276,11 +276,36 @@
     clocks = <&dp_aclk>,<&zynqmp_clk DP_AUDIO_REF>,<&zynqmp_clk DP_VIDEO_REF>,<&display_pipeline_clk_wiz_0 0>;
     clock-names = "dp_apb_clk", "dp_aud_clk","dp_vtc_pixel_clk_in","dp_live_video_in_clk";
     xlnx,bridge = <&display_pipeline_v_tc_0>;
+};
 
-    dp_port: port@0 {
-        reg = <0>;
-        dp_encoder: endpoint {
-            remote-endpoint = <&mixer_crtcdisplay_pipeline_v_mix_0>;
+/*
+ * 2025.2 zynqmp-dpsub requires endpoints inside the auto-generated
+ * &zynqmp_dpsub/ports/port@N children, not as stray port@0 nodes at the
+ * dpsub root. Wire live_video (port@0) <-> v_mix CRTC and out_dp (port@5)
+ * <-> dp-connector so the driver sees the live-video input and DP output
+ * as connected. Note: uzev already declares psgtr refclks above so we
+ * don't need to add a dp_phy_refclk fixed-clock here (unlike zcu106).
+ */
+&live_video {
+    dp_encoder: endpoint {
+        remote-endpoint = <&mixer_crtcdisplay_pipeline_v_mix_0>;
+    };
+};
+
+&out_dp {
+    dp_out: endpoint {
+        remote-endpoint = <&dp_connector_in>;
+    };
+};
+
+/ {
+    dp_connector: dp-connector {
+        compatible = "dp-connector";
+        type = "full-size";
+        port {
+            dp_connector_in: endpoint {
+                remote-endpoint = <&dp_out>;
+            };
         };
     };
 };
@@ -538,6 +563,12 @@
 
 &display_pipeline_v_mix_0 {
 	xlnx,disp-bridge = <&zynqmp_dpsub>;
+	/* 2025.2 xlnx-mixer driver requires xlnx,bridge (VTC timing bridge)
+	 * and xlnx,video-format (0=RGB, 1=YUV444, 2=YUV422) on the v_mix
+	 * node, otherwise probe fails. Primary layer is NV16, so output is
+	 * YUV422. */
+	xlnx,bridge = <&display_pipeline_v_tc_0>;
+	xlnx,video-format = <2>;
 };
 
 &display_pipeline_v_tc_0 {
@@ -593,3 +624,22 @@
 	xlnx,video-width = <8>;
 };
 
+
+/* 2025.2 gen-machineconf assigns port-number=0 to uart1 by default, making
+ * ttyPS0 map to uart1. Our test/logging setup is cabled to the UART_0 USB-
+ * serial interface, so force ttyPS0 back to uart0. */
+&uart0 {
+   port-number = <0>;
+};
+&uart1 {
+   port-number = <1>;
+};
+/ {
+   aliases {
+      serial0 = &uart0;
+      serial1 = &uart1;
+   };
+   chosen {
+      stdout-path = "serial0:115200n8";
+   };
+};
