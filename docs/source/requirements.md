@@ -1,15 +1,24 @@
 # Requirements
 
-In order to test this design on hardware, you will need the following:
+In order to test these designs on hardware, you will need the following:
 
 * Vivado 2025.2
 * Vitis 2025.2
-* PetaLinux Tools 2025.2
 * Linux PC or Virtual machine (for build)
 * One or more [Raspberry Pi Camera Module 2]
 * One [RPi Camera FMC]
-* One DisplayPort monitor supporting 1080p video
 * One of the supported [target boards](supported_carriers)
+
+Additional design-specific requirements:
+
+* **Zynq UltraScale+ designs** (PetaLinux flow):
+  * PetaLinux Tools 2025.2
+  * One DisplayPort monitor supporting 1080p video
+
+* **FPGA designs** (AUBoard 15P, baremetal flow):
+  * One HDMI monitor supporting 1080p video
+  * [License for the HDMI IP](https://www.amd.com/en/products/adaptive-socs-and-fpgas/intellectual-property/hdmi.html)
+    (a 30-day evaluation license is available)
 
 ## List of supported boards
 

@@ -56,12 +56,14 @@ Notes:
 
 ## Linux only
 
-These projects can be built using a machine (either physical or virtual) with one of the 
-[supported Linux distributions].
+These projects must be built on a machine (either physical or virtual) with one of the
+[supported Linux distributions]. The PetaLinux flow does not work on Windows; the Vitis
+baremetal flow can work on Windows.
 
 ```{tip} The build steps can be completed in the order shown below, or
 you can go directly to the [build PetaLinux](#build-petalinux-project) instructions below
-to build the Vivado and PetaLinux projects with a single command.
+to build the Vivado and PetaLinux projects with a single command. For the FPGA / AUBoard
+target, jump to [Build the Vitis workspace](#build-vitis-workspace) instead.
 ```
 
 ### Build Vivado project
@@ -92,6 +94,36 @@ to build the Vivado and PetaLinux projects with a single command.
    make xsa TARGET=<target>
    ```
    
+(build-vitis-workspace)=
+### Build the Vitis workspace (baremetal targets)
+
+The FPGA / baremetal targets (currently `auboard`) are built through the Vitis
+workspace rather than PetaLinux. The same Vivado project is used as input.
+
+1. Launch the setup script for Vivado and Vitis (only if you skipped the Vivado
+   build steps above):
+   ```
+   source <path-to-xilinx-tools>/2025.2/Vivado/settings64.sh
+   source <path-to-xilinx-tools>/2025.2/Vitis/settings64.sh
+   ```
+2. Build the Vitis workspace for the target:
+   ```
+   cd Vitis
+   make workspace TARGET=<target>
+   ```
+   Valid baremetal target labels are:
+   {% for design in data.designs if design.baremetal and design.publish %} `{{ design.label }}`{{ ", " if not loop.last else "." }} {% endfor %}
+   If the Vivado XSA does not yet exist, the Vitis Makefile will trigger the
+   Vivado build first.
+3. To produce a programmable boot file (e.g. `.bit` for MicroBlaze targets) run:
+   ```
+   make bootfile TARGET=<target>
+   ```
+   The packaged boot files end up under `Vitis/boot/<target>/`. Launch the
+   resulting application from the Vitis GUI or `xsct` and connect a UART
+   terminal at 115200 baud to observe the baremetal output (see the
+   [auboard launch instructions](#launch-baremetal-app)).
+
 (build-petalinux-project)=
 ### Build PetaLinux project
 
@@ -149,6 +181,51 @@ follow these instructions.
    FORWARD SLASH.
 
 Now when you use `make` to build the PetaLinux projects, they will be configured for offline build.
+
+(launch-baremetal-app)=
+## Launch the baremetal application (FPGA / AUBoard)
+
+The standalone application produced by `make workspace TARGET=auboard` is a
+camera-bring-up program that:
+
+* programs the on-FMC IDT 8T49N24x clock generator,
+* programs the DP159 HDMI re-driver,
+* initialises the connected RPi cameras (IMX219 or OV5640),
+* configures the MIPI / frame-buffer / mixer / HDMI pipeline,
+* and continuously composes the live video onto an HDMI monitor.
+
+To run it:
+
+1. Connect the [RPi Camera FMC] to the AUBoard FMC connector, attach one or
+   more [Raspberry Pi camera module v2] modules to the FMC, and connect an
+   HDMI monitor to the FMC's HDMI output.
+2. Connect the USB-UART and open a terminal at 115200 baud.
+3. Power the board and program the bitstream / ELF from the Vitis GUI
+   (Run As → Launch Hardware) or with `xsct` and the generated
+   `boot.tcl` under `Vitis/auboard_workspace/`.
+
+Expected UART output (with two cameras attached to CAM0 and CAM2 of the
+RPi Camera FMC):
+
+```
+################################################
+#    Raspberry Pi Camera to HDMI Example       #
+#    For the Opsero RPi Camera FMC (OP068)     #
+################################################
+
+Detected 2 connected cameras:
+  - CAM0: Raspberry Pi Camera v2   to Mixer layer 1
+  - CAM2: Raspberry Pi Camera v2   to Mixer layer 2
+
+Configuring cameras:
+  - CAM0: SUCCESS
+  - CAM2: SUCCESS
+
+TX stream is up
+```
+
+The repeated `VERBOSITY is disabled : 0` lines emitted by the underlying
+HDMI / video-processing driver code are benign and can be ignored.
 
 [supported Linux distributions]: https://docs.amd.com/r/en-US/ug1144-petalinux-tools-reference-guide/Setting-Up-Your-Environment
 

@@ -92,13 +92,20 @@ losing data on one of your hard drives.
 
 1. Plug the SD card into your target board.
 2. Ensure that the target board is configured to boot from SD card:
-   * **ZCU10x:** DIP switch SW6 must be set to 1000 (1=ON,2=OFF,3=OFF,4=OFF)
-   * **PYNQ-ZU:** Switch labelled "JTAG SD" must be flipped to the right (towards "SD")
-   * **UltraZed-EV:** DIP switch SW2 (on the SoM) is set to 1000 (1=ON,2=OFF,3=OFF,4=OFF)
+   * **ZCU102 / ZCU104 / ZCU106:** DIP switch SW6 must be set to 1000 (1=ON, 2=OFF, 3=OFF, 4=OFF).
+   * **PYNQ-ZU:** Switch labelled "JTAG SD" must be flipped to the right (towards "SD").
+   * **UltraZed-EV:** DIP switch SW2 (on the SoM) is set to 1000 (1=ON, 2=OFF, 3=OFF, 4=OFF).
+     The UltraZed-EV boots from SD1 (`/dev/mmcblk1p2`); SD0 is not used by this design.
 3. Connect the [RPi Camera FMC] to the FMC connector of the target board. Connect one or more
    [Raspberry Pi camera module v2] to the [RPi Camera FMC].
 4. Connect the USB-UART to your PC and then open a UART terminal set to 115200 baud and the 
    comport that corresponds to your target board.
+
+   ```{note}
+   The **ZCU102 / ZCU106** USB-UART bridge exposes *two* serial ports; the
+   PetaLinux console comes out on PSU UART0 (typically the lower-numbered
+   port). Open both if you're not sure which is which.
+   ```
 5. Connect and power your hardware.
 
 ## Test the cameras

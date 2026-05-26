@@ -59,6 +59,16 @@ Here are some other possibilities for supporting more than 4x cameras on a singl
 
 ## Board specific notes
 
+### AUBoard 15P
+
+The AUBoard 15P (Artix UltraScale+) is supported via the baremetal / HDMI flow only —
+there is no PetaLinux project for this board. The design supports two cameras:
+`CAM0` and `CAM2` as labelled on the [RPi Camera FMC]. This is due to the resource
+limitations of the Artix UltraScale+ device on this board. The application source
+lives in `Vitis/common/src/` and the workspace is built with
+`make workspace TARGET=auboard` (see the
+[build instructions](build_instructions.md#build-vitis-workspace)).
+
 ### PYNQ-ZU and UltraZed EV carrier
 
 Note that the PYNQ-ZU and UltraZed EV carrier boards have a fixed VADJ voltage that is set to 1.8VDC. The 

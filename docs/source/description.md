@@ -1,13 +1,24 @@
 # Description
 
-This reference design demonstrates the use of the [RPi Camera FMC] with 4x cameras and 1x DisplayPort monitor 
-attached. The video streams coming from each camera pass through a video pipe composed of the 
-[AMD Xilinx MIPI CSI Controller Subsystem IP] and other video processing IP. The cameras can be utilized
-through [GStreamer] in PetaLinux.
+This repository contains two flavours of reference design for the [RPi Camera FMC]:
+
+* **Zynq UltraScale+ designs** — integrate the ISP Pipeline IP, run under PetaLinux,
+  drive a DisplayPort monitor, and are controlled from userspace using
+  [GStreamer]. The video streams coming from each camera pass through a video pipe
+  composed of the [AMD Xilinx MIPI CSI Controller Subsystem IP] and other video
+  processing IP.
+* **FPGA designs** (Artix UltraScale+, AUBoard 15P) — implement a simpler MIPI
+  video pipeline, are driven by a baremetal application, and output to an HDMI
+  monitor.
+
+The remainder of this page describes the Zynq UltraScale+ video pipeline in detail;
+the FPGA/baremetal designs use a cut-down variant of the same MIPI capture front
+end but skip the ISP Pipeline IP and route video to an HDMI TX subsystem instead
+of the ZynqMP DisplayPort.
 
 ## Hardware Platforms
 
-The hardware designs provided in this reference are based on Vivado and support a range of MPSoC evaluation
+The hardware designs provided in this reference are based on Vivado and support a range of FPGA / MPSoC evaluation
 boards. The repository contains all necessary scripts and code to build these designs for the supported platforms listed below:
 
 {% for group in data.groups %}
