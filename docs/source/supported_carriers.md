@@ -66,7 +66,7 @@ there is no PetaLinux project for this board. The design supports two cameras:
 `CAM0` and `CAM2` as labelled on the [RPi Camera FMC]. This is due to the resource
 limitations of the Artix UltraScale+ device on this board. The application source
 lives in `Vitis/common/src/` and the workspace is built with
-`make workspace TARGET=auboard` (see the
+`./build.sh standalone --target auboard` (see the
 [build instructions](build_instructions.md#build-vitis-workspace)).
 
 ### PYNQ-ZU and UltraZed EV carrier

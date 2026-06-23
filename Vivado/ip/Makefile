@@ -1,81 +1,42 @@
-# Opsero Electronic Design Inc. 2024
-# 
-# TODO: This Makefile would ideally be able to build through a list of multiple IPs for the target design.
+# Opsero Electronic Design Inc. 2025
+#
+# Thin wrapper around build.py, which generates the HLS IP on both Windows
+# and Linux and reads the target list from config/data.json at runtime
+# (see ../../build.sh ip). This make interface is kept for compatibility
+# and will be REMOVED at the next version update -- please switch to
+# ../../build.sh.
+#
+# Note: on Windows use ../../build.sh directly from git bash; GNU make is
+# not usable there (no sh-capable make is available).
 
-RM = rm -rf
-VIVADO = $(XILINX_VIVADO)/bin/vivado
-HLS = vitis-run --mode hls --tcl
+TARGET ?= none
+BUILD = ./build.sh
 
-GET_PART_SCRIPT = get_part.tcl
-GET_PART_LOG = vivado_$(TARGET).log
-GET_PART_JOU = vivado_$(TARGET).jou
-
-# valid targets
-# UPDATER START
-zcu104_target := xilinx.com zcu104
-zcu102_hpc0_target := xilinx.com zcu102
-zcu102_hpc1_target := xilinx.com zcu102
-zcu106_hpc0_target := xilinx.com zcu106
-pynqzu_target := tul.com.tw pynqzu
-genesyszu_target := digilentinc.com gzu_5ev
-uzev_target := avnet.com ultrazed_7ev_cc
-auboard_target := avnet-tria auboard_15p
-# UPDATER END
-
-TARGET_LIST := $(sort $(patsubst %_target,%,$(filter %_target,$(.VARIABLES))))
-
-BOARD_URL = $(word 1,$($(TARGET)_target))
-BOARD_NAME = $(word 2,$($(TARGET)_target))
-
-IP_BUILD_DIR = build/$(BOARD_NAME)
-SETTINGS_TCL = $(IP_BUILD_DIR)/settings.tcl
-DONE_FILE = $(IP_BUILD_DIR)/ip_done.txt
-
-.PHONY: help
+.PHONY: help ip all clean clean_all
 help:
 	@echo 'Usage:'
 	@echo ''
 	@echo '  make ip TARGET=<val>'
-	@echo '    Generate all IP for target project.'
+	@echo '    Generate the IP for the target design (wraps: ../../build.sh ip --target <val>).'
 	@echo ''
-	@echo '  make clean TARGET=<val>'
-	@echo '    Clean IP for target project.'
+	@echo '  make all'
+	@echo '    Generate the IP for all targets.'
 	@echo ''
-	@echo '  make clean_all'
-	@echo '    Same as make clean but for all targets.'
+	@echo '  make clean TARGET=<val>  |  make clean_all'
+	@echo '    Delete generated IP for one target / all targets.'
 	@echo ''
-	@echo 'Parameters:'
+	@echo "  Valid targets: run '../../build.sh labels'"
 	@echo ''
-	@echo '  TARGET: Name of the target design, must be one of the following:'
-	@$(foreach targ,$(TARGET_LIST),echo "    - $(targ)";)
-	@echo ''
-	@echo 'Example usage:'
-	@echo '  make ip TARGET=$(word 1,$(TARGET_LIST))'
-	@echo ''
+	@echo 'DEPRECATED: drive builds with ../../build.sh instead (works on Windows too).'
 
-.PHONY: all
-all: ip
+ip:
+	cd ../.. && $(BUILD) ip --target $(TARGET)
 
-$(SETTINGS_TCL):
-	$(VIVADO) -mode batch -notrace -source $(GET_PART_SCRIPT) -log $(GET_PART_LOG) -journal $(GET_PART_JOU) -tclargs $(BOARD_URL) $(BOARD_NAME)
-	$(RM) $(GET_PART_LOG) $(GET_PART_JOU)
+all:
+	cd ../.. && $(BUILD) ip --target all
 
-ip: $(SETTINGS_TCL)
-	BOARD_NAME=$(BOARD_NAME) $(HLS) isppipeline/run_hls.tcl
-	touch $(DONE_FILE)
+clean:
+	cd ../.. && $(BUILD) clean --stage ip --target $(TARGET)
 
-.PHONY: clean
-clean: check_target
-	@echo 'Cleaning IP for $(TARGET)'
-	$(RM) $(IP_BUILD_DIR) *.log
-
-.PHONY: clean_all
 clean_all:
-	@echo 'Cleaning all IP'
-	$(RM) build *.log
-
-check_target:
-ifndef $(TARGET)_target
-	$(error "Please specify a TARGET. Use 'make help' to see valid targets.")
-endif
-
+	cd ../.. && $(BUILD) clean --stage ip --target all

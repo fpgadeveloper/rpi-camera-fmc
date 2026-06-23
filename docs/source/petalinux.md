@@ -1,42 +1,37 @@
 # PetaLinux
 
-PetaLinux can be built for these reference designs by using the Makefile in the `PetaLinux` directory
-of the repository.
+PetaLinux can be built for these reference designs with the cross-platform `build.py`
+runner at the root of the repository.
 
 ## Requirements
 
 To build the PetaLinux projects, you will need a physical or virtual machine running one of the 
 [supported Linux distributions] as well as the Vitis Core Development Kit installed.
 
-```{attention} You cannot build the PetaLinux projects in the Windows operating system. Windows
+```{attention}
+You cannot build the PetaLinux projects in the Windows operating system. Windows
 users are advised to use a Linux virtual machine to build the PetaLinux projects.
 ```
 
 ## How to build
 
-1. From a command terminal, clone the Git repository and `cd` into it.
+The build runner locates and sources the PetaLinux and Vivado settings itself, so there
+is no need to source them by hand. See the [build instructions](build_instructions) for
+the full description of the runner.
+
+1. From a command terminal, clone the Git repository (with its submodules) and `cd` into it:
    ```
-   git clone --recursive https://github.com/fpgadeveloper/rpi-camera-fmc.git
+   git clone --recurse-submodules https://github.com/fpgadeveloper/rpi-camera-fmc.git
    cd rpi-camera-fmc
    ```
-2. Launch PetaLinux by sourcing the `settings.sh` bash script, eg:
+2. Build the PetaLinux image for your target by running the following command and replacing
+   `<target>` with one of the target design labels found in the build instructions:
    ```
-   source <path-to-petalinux-install>/2025.2/settings.sh
+   ./build.sh petalinux --target <target>
    ```
-3. Launch Vivado by sourcing the `settings64.sh` bash script, eg:
-   ```
-   source <path-to-xilinx-tools>/2025.2/Vivado/settings64.sh
-   ```
-4. Build the Vivado and PetaLinux project for your specific target platform by running the following
-   commands and replacing `<target>` with one of the following:
-   {% for design in data.designs if design.petalinux and design.publish %} `{{ design.label }}`{{ ", " if not loop.last else "." }} {% endfor %}
-   ```
-   cd PetaLinux
-   make petalinux TARGET=<target>
-   ```
-   
-The last command will launch the build process for the corresponding Vivado project if that project
-has not already been built and it's hardware exported.
+
+This will also launch the build process for the corresponding Vivado project if that project
+has not already been built and its hardware exported.
 
 Note that there currently is no PetaLinux project for the Genesys-ZU board, because there is currently
 no PetaLinux BSP available for that board.
@@ -53,7 +48,8 @@ Once the build process is complete, you must prepare the SD card for booting Pet
      like `/dev/sdX`, where `X` is a letter such as a,b,c,d, etc. Note that you should replace
      the `X` in the following instructions.
      
-```{warning} Do not continue these steps until you are certain that you have found the correct
+```{warning}
+Do not continue these steps until you are certain that you have found the correct
 device name for the SD card. If you use the wrong device name in the following steps, you risk
 losing data on one of your hard drives.
 ```

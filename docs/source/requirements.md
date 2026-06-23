@@ -60,7 +60,8 @@ The [RPi Camera FMC] is designed to support all cameras with the standard
 [15-pin Raspberry Pi camera interface](https://camerafmc.com/docs/rpi-camera-fmc/detailed-description/#camera-connectors),
 however these example designs currently only have the software support for the [Raspberry Pi Camera Module 2].
 
-```{tip} We're working on developing software support for more cameras. If you'd like to help with
+```{tip}
+We're working on developing software support for more cameras. If you'd like to help with
 this effort, your pull requests are more than welcome.
 ```
 

@@ -14,7 +14,7 @@ Check the following if the project fails to build or generate a bitstream:
 
 ## PetaLinux build fails with `bitbake petalinux-image-minimal failed` and sstate fetch errors
 
-If a `make petalinux TARGET=<board>` run ends with errors like
+If a `./build.sh petalinux --target <board>` run ends with errors like
 
 ```
 ERROR: <package>-<ver>-r0 do_..._setscene: Fetcher failure: Unable to find file file://.../sstate:...
@@ -25,7 +25,7 @@ the actual build is not broken. These `_setscene` errors come from bitbake tryin
 pull prebuilt artefacts from the public Xilinx sstate-cache mirror, which occasionally
 returns 404 for individual packages. Bitbake falls back to building those packages
 locally and succeeds, but still exits non-zero because of the failed fetches — so the
-Makefile stops before the `petalinux-package` step that produces `BOOT.BIN`.
+build runner stops before the `petalinux-package` step that produces `BOOT.BIN`.
 
 **Fix: just re-run the same command.** The second attempt finds the missing packages
 in the local sstate cache (populated by the first run) and completes cleanly,

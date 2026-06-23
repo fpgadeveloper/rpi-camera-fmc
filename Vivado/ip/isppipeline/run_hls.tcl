@@ -1,9 +1,9 @@
 # (C) Copyright 2020 - 2022 Xilinx, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-set board_name $::env(BOARD_NAME)
+set target $::env(IP_TARGET)
 
-source "build/${board_name}/settings.tcl"
+source "build/${target}/settings.tcl"
 
 # Work out absolute paths for IP sources and include files
 set curr_dir [pwd]
@@ -19,8 +19,8 @@ if {![info exists CLKP]} {
   set CLKP 3.3
 }
 
-# Change directory to create the IP project inside the build folder for this board
-cd build/$board_name
+# Change directory to create the IP project inside the per-target build folder
+cd build/$target
 
 open_project -reset $PROJ
 
