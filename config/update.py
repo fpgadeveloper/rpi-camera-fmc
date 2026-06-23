@@ -43,8 +43,8 @@ def create_tables(data):
     for group in used_groups:
         tables.append('### {} designs'.format(group['name']))
         tables.append('')
-        tables.append('| Target board          | Target design   | FMC Slot | Cameras | VCU   | Baremetal<br> App | PetaLinux<br> Build | Vivado<br> Edition | IP<br>License |')
-        tables.append('|-----------------------|-----------------|----------|---------|-------|-------|-------|-------|-------|')
+        tables.append('| Target board          | Target design   | FMC Slot | Cameras | VCU   | Baremetal<br> App | PetaLinux<br> Build | Yocto<br> Build | Vivado<br> Edition | IP<br>License |')
+        tables.append('|-----------------------|-----------------|----------|---------|-------|-------|-------|-------|-------|-------|')
         for design in data['designs']:
             if not design['publish']:
                 continue
@@ -57,6 +57,7 @@ def create_tables(data):
                 cols.append('{0}'.format(to_emoji[design['vcu']]).ljust(18))
                 cols.append('{0}'.format(to_emoji[design['baremetal']]).ljust(18))
                 cols.append('{0}'.format(to_emoji[design['petalinux']]).ljust(18))
+                cols.append('{0}'.format(to_emoji[design.get('yocto', False)]).ljust(18))
                 cols.append('{0}'.format(to_edition[design['license']]).ljust(5))
                 cols.append('{0}'.format(to_ip[design.get('ip_license', False)]).ljust(5))
                 tables.append('| ' + ' | '.join(cols) + ' |')
