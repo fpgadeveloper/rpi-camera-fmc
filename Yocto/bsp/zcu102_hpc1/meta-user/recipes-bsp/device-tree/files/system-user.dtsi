@@ -2,7 +2,7 @@
 // Copyright (C) 2025-2026, Opsero Electronic Design Inc.  All rights reserved.
 
 /*
- * SoC-side board fixups for zcu106 (ZynqMP), layered on top of the
+ * SoC-side board fixups for zcu102_hpc1 (ZynqMP, 2 MIPI ports), layered on top of the
  * gen-machineconf / lopper-generated Linux device tree (which already carries
  * the PS config and the design's PL hardware from the XSA). Scoped to the Linux
  * domain by device-tree.bbappend. Ported from the RPi Camera FMC PetaLinux BSP.
@@ -41,13 +41,6 @@
 	misc_clk_2: misc_clk_2 {
 		#clock-cells = <0>;
 		clock-frequency = <199998000>;
-		compatible = "fixed-clock";
-	};
-
-	/delete-node/ misc_clk_3;
-	misc_clk_3: misc_clk_3 {
-		#clock-cells = <0>;
-		clock-frequency = <49999500>;
 		compatible = "fixed-clock";
 	};
 };
@@ -95,7 +88,7 @@
      * clocks on the psgtr node, so xpsgtr_xlate rejects refclk 3 with
      * "Invalid reference clock number 3" and DP probe fails with -EINVAL.
      * Declare a fixed-clock at 27 MHz (the DP refclk rate FSBL programs
-     * the Si5341 to output on ZCU106) so the SSC lookup matches.
+     * the on-board Si5341 to output) so the SSC lookup matches.
      */
     dp_phy_refclk: dp_phy_refclk {
         compatible = "fixed-clock";
@@ -139,6 +132,13 @@
 		regulator-max-microvolt = <1200000>;
 	};
 	
+	/* zocl */
+	zyxclmm_drm {
+		compatible = "xlnx,zocl";
+		status = "okay";
+		interrupt-parent = <&gic>;
+		interrupts = <0 110  4>, <0 111  4>;
+	};
 };
 
 &mipi_0_axi_iic_0 {
@@ -179,57 +179,11 @@
 	};
 };
 
-&mipi_2_axi_iic_0 {
-	imx219_cam2: sensor@10 {
-		compatible = "sony,imx219";
-		reg = <0x10>;
-		clocks = <&imx219_clk>;
-		VANA-supply = <&imx219_vana>;   /* 2.8v */
-		VDIG-supply = <&imx219_vdig>;   /* 1.8v */
-		VDDL-supply = <&imx219_vddl>;   /* 1.2v */
-
-		port {
-		     imx219_cam2_0: endpoint {
-			remote-endpoint = <&mipi_csi_inmipi_2_mipi_csi2_rx_subsyst_0>;
-			data-lanes = <1 2>;
-			link-frequencies = /bits/ 64 <456000000>;
-			};
-		};
-	};
-};
-
-&mipi_3_axi_iic_0 {
-	imx219_cam3: sensor@10 {
-		compatible = "sony,imx219";
-		reg = <0x10>;
-		clocks = <&imx219_clk>;
-		VANA-supply = <&imx219_vana>;   /* 2.8v */
-		VDIG-supply = <&imx219_vdig>;   /* 1.8v */
-		VDDL-supply = <&imx219_vddl>;   /* 1.2v */
-
-		port {
-		     imx219_cam3_0: endpoint {
-			remote-endpoint = <&mipi_csi_inmipi_3_mipi_csi2_rx_subsyst_0>;
-			data-lanes = <1 2>;
-			link-frequencies = /bits/ 64 <456000000>;
-			};
-		};
-	};
-};
-
 &mipi_0_mipi_csi2_rx_subsyst_0 {
 	xlnx,en-active-lanes;
 };
 
 &mipi_1_mipi_csi2_rx_subsyst_0 {
-	xlnx,en-active-lanes;
-};
-
-&mipi_2_mipi_csi2_rx_subsyst_0 {
-	xlnx,en-active-lanes;
-};
-
-&mipi_3_mipi_csi2_rx_subsyst_0 {
 	xlnx,en-active-lanes;
 };
 
@@ -239,14 +193,6 @@
 
 &mipi_csi_inmipi_1_mipi_csi2_rx_subsyst_0 {
 	remote-endpoint = <&imx219_cam1_0>;
-};
-
-&mipi_csi_inmipi_2_mipi_csi2_rx_subsyst_0 {
-	remote-endpoint = <&imx219_cam2_0>;
-};
-
-&mipi_csi_inmipi_3_mipi_csi2_rx_subsyst_0 {
-	remote-endpoint = <&imx219_cam3_0>;
 };
 
 &mipi_0_isppipeline {
@@ -289,59 +235,11 @@
 	xlnx,cfa-pattern = "rggb";
 };
 
-&mipi_2_isppipeline {
-	reset-gpios = <&gpio 102 1>;
-	xlnx,max-height = /bits/ 16 <1232>;
-	xlnx,max-width = /bits/ 16 <1920>;
-	xlnx,rgain = /bits/ 16 <128>;
-	xlnx,bgain = /bits/ 16 <210>;
-	xlnx,pawb = /bits/ 16 <350>;
-	xlnx,mode-reg = <1>;
-};
-
-&isppipeline_port0mipi_2_isppipeline {
-	xlnx,video-width = <10>;
-	xlnx,cfa-pattern = "rggb";
-};
-
-&isppipeline_port1mipi_2_isppipeline {
-	xlnx,video-width = <8>;
-	xlnx,cfa-pattern = "rggb";
-};
-
-&mipi_3_isppipeline {
-	reset-gpios = <&gpio 110 1>;
-	xlnx,max-height = /bits/ 16 <1232>;
-	xlnx,max-width = /bits/ 16 <1920>;
-	xlnx,rgain = /bits/ 16 <128>;
-	xlnx,bgain = /bits/ 16 <210>;
-	xlnx,pawb = /bits/ 16 <350>;
-	xlnx,mode-reg = <1>;
-};
-
-&isppipeline_port0mipi_3_isppipeline {
-	xlnx,video-width = <10>;
-	xlnx,cfa-pattern = "rggb";
-};
-
-&isppipeline_port1mipi_3_isppipeline {
-	xlnx,video-width = <8>;
-	xlnx,cfa-pattern = "rggb";
-};
-
 &mipi_0_v_proc {
 	compatible = "xlnx,v-vpss-scaler-2.2";
 };
 
 &mipi_1_v_proc {
-	compatible = "xlnx,v-vpss-scaler-2.2";
-};
-
-&mipi_2_v_proc {
-	compatible = "xlnx,v-vpss-scaler-2.2";
-};
-
-&mipi_3_v_proc {
 	compatible = "xlnx,v-vpss-scaler-2.2";
 };
 
@@ -392,34 +290,10 @@
 	xlnx,video-width = <8>;
 };
 
-&mipi_csi_port1mipi_2_mipi_csi2_rx_subsyst_0 {
-	xlnx,cfa-pattern = "rggb";
-	xlnx,video-format = <12>;
-	xlnx,video-width = <8>;
-};
 
-&mipi_csi_port0mipi_2_mipi_csi2_rx_subsyst_0 {
-	xlnx,cfa-pattern = "rggb";
-	xlnx,video-format = <12>;
-	xlnx,video-width = <8>;
-};
-
-&mipi_csi_port1mipi_3_mipi_csi2_rx_subsyst_0 {
-	xlnx,cfa-pattern = "rggb";
-	xlnx,video-format = <12>;
-	xlnx,video-width = <8>;
-};
-
-&mipi_csi_port0mipi_3_mipi_csi2_rx_subsyst_0 {
-	xlnx,cfa-pattern = "rggb";
-	xlnx,video-format = <12>;
-	xlnx,video-width = <8>;
-};
-
-
-/* 2025.2 gen-machineconf assigns port-number=0 to uart1, making ttyPS0 map
- * to uart1. Vitis bsp.yaml confirms this board uses psu_uart_0, so force
- * ttyPS0 back to uart0. */
+/* 2025.2 gen-machineconf assigns port-number=0 to uart1 by default, making
+ * ttyPS0 map to uart1. Our test/logging setup is cabled to the UART_0 USB-
+ * serial interface, so force ttyPS0 back to uart0. */
 &uart0 {
    port-number = <0>;
 };
