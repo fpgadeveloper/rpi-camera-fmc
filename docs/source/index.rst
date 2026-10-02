@@ -18,6 +18,8 @@ This is the documentation for the `RPi Camera FMC`_ reference designs.
    supported_carriers
    build_instructions
    petalinux
+   yocto
+   testing
    advanced
    troubleshooting
    revision_history

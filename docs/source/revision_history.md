@@ -1,5 +1,46 @@
 # Revision History
 
+## 2025.2 Yocto flow and fixes
+
+* Added the Yocto / AMD EDF build flow for all of the Zynq UltraScale+ targets
+  (`./build.sh yocto --target <target>`). It produces a complete SD card image
+  (`rootfs.wic.xz` + `rootfs.wic.bmap`) and a `BOOT.BIN` for the first partition, and
+  `./build.sh package` gathers them into `bootimages/rpi-camera-fmc_<target>_yocto-2025-2.zip`.
+  `zcu102_hpc1` has its own Yocto BSP. See [Yocto](yocto).
+* ISP Pipeline driver fixes (PetaLinux and Yocto BSPs, kernel patches 0004 and 0005):
+  - Every camera picture had a magenta cast. The driver wrote the gamma tables to the wrong
+    colour planes (`red_gamma` acted on blue, `green_gamma` on red, `blue_gamma` on green) and
+    used a different default for green (1.5) than for red and blue (2.0). Each table now goes to
+    its own plane and all three gammas default to 2.0.
+  - The white balance gains and AWB threshold given in the device tree (`xlnx,rgain` = 128,
+    `xlnx,bgain` = 210, `xlnx,pawb` = 350) were overwritten by fixed defaults at probe. They are
+    now the defaults of the `red_gain`, `blue_gain` and `threshold` controls.
+* Yocto images: the first display mode set crashed the kernel (`SError` in
+  `xlnx_vtc_set_timing`). The device-tree fixed-clock overrides of the PL clocks `misc_clk_0`
+  and `misc_clk_1` had their rates swapped for the Yocto flow, so the display Clocking Wizard was
+  told its input was 100 MHz instead of 250 MHz and could not lock at the mode set. The rates
+  now follow the numbering of the Yocto device-tree generator.
+* Yocto images: the design's kernel command line arguments (`cma=1536M`, or `cma=1000M` on the
+  UltraZed-EV, and `xlnx_mixer.connect_drm_bridge=1`) were not applied, because the EDF boot
+  flow ignores `APPEND`. They are now added to the U-Boot boot script. The hostname is now
+  `<board>-rpi-2025-2` (it was the EDF default, `amd-edf`).
+* Yocto images: the three DRM / Video Mixer kernel patches of the PetaLinux BSPs are now also
+  applied (they fix a kernel oops when the mixer probes and errors at shutdown and reboot), and
+  the image includes `modetest` and the GStreamer plugins that `displaycams.sh` needs.
+* Yocto images on the ZCU102, ZCU104 and ZCU106: the board Ethernet port linked at 1 Gb/s but
+  passed no packets, because the generated device tree did not describe the TI DP83867 PHY and
+  its RGMII delays. The PHY is now described, and the port has a fixed MAC address.
+* Yocto image on the PYNQ-ZU: support for the on-board WILC3000 Wi-Fi (the board has no Ethernet
+  port), with the `wifi-sta-setup` command to set the network credentials on the board. A fix
+  in the driver makes the first bring-up of `wlan0` reliable. The login console now runs on
+  `ttyPS0` only.
+* `./build.sh package` now rewrites a boot image zip when the build artifacts are newer than the
+  zip (it used to keep an existing zip, so a rebuilt image was not packaged).
+* Documentation: new [Using and testing the design](testing) page for both Linux flows
+  (camera enumeration, capture, display, ISP controls), the Yocto page rewritten, new
+  troubleshooting entries, and the block diagrams redrawn from the block-design scripts by
+  `docs/source/images/gen_block_diagram.py`.
+
 ## 2025.2 Changes
 
 * Ported all designs to Vivado / Vitis / PetaLinux 2025.2 (Yocto scarthgap,

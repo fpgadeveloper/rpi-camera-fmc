@@ -30,6 +30,10 @@ extensions = [
   'myst_parser',
 ]
 
+# Generate anchors for headings down to level 4, so that links such as
+# [Boot](petalinux.md#boot-from-sd-card) resolve across pages.
+myst_heading_anchors = 4
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 

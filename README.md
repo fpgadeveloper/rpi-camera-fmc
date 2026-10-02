@@ -22,8 +22,8 @@ Important links:
 
 The designs in this repository fall into two main architectural categories:
 
-1. **Zynq UltraScale+ designs** – These designs integrate the ISP Pipeline IP, run within a PetaLinux environment, 
-   and output video to a DisplayPort monitor.
+1. **Zynq UltraScale+ designs** – These designs integrate the ISP Pipeline IP, run embedded Linux built
+   with PetaLinux or Yocto (AMD EDF), and output video to a DisplayPort monitor.
 2. **FPGA designs** – These designs implement a simpler video pipeline, are controlled by a bare-metal application, 
    and output video to an HDMI monitor.
 
@@ -45,7 +45,7 @@ The video pipeline of the FPGA designs:
 
 ## Requirements
 
-This project is designed for version 2025.2 of the Xilinx tools (Vivado/Vitis/PetaLinux). 
+This project is designed for version 2025.2 of the Xilinx tools (Vivado/Vitis/PetaLinux/Yocto EDF). 
 If you are using an older version of the Xilinx tools, then refer to the 
 [release tags](https://github.com/fpgadeveloper/rpi-camera-fmc/tags "releases")
 to find the version of this repository that matches your version of the tools.
@@ -62,8 +62,8 @@ In order to test this design on hardware, you will need the following:
 ### Design specific requirements
 
 * **Zynq UltraScale+ designs**:
-  * PetaLinux Tools 2025.2
-  * 1x DisplayPort monitor that supports 1080p video
+  * PetaLinux Tools 2025.2 (PetaLinux flow), or Google's `repo` tool and the Yocto host packages (Yocto flow)
+  * 1x DisplayPort monitor that supports 1920x1080 at 60 Hz
   * Linux build PC (or virtual machine)
   
 * **FPGA designs**:
@@ -75,20 +75,20 @@ In order to test this design on hardware, you will need the following:
 <!-- updater start -->
 ### FPGA designs
 
-| Target board          | Target design   | FMC Slot | Cameras | VCU   | Baremetal<br> App | PetaLinux<br> Build | Vivado<br> Edition | IP<br>License |
-|-----------------------|-----------------|----------|---------|-------|-------|-------|-------|-------|
-| [AUBoard 15P]         | `auboard`       | HPC      | 2     | :x:                | :white_check_mark: | :x:                | Standard :free: | -     |
+| Target board          | Target design   | FMC Slot | Cameras | VCU   | Baremetal<br> App | PetaLinux<br> Build | Yocto<br> Build | Vivado<br> Edition | IP<br>License |
+|-----------------------|-----------------|----------|---------|-------|-------|-------|-------|-------|-------|
+| [AUBoard 15P]         | `auboard`       | HPC      | 2     | :x:                | :white_check_mark: | :x:                | :x:                | Standard :free: | -     |
 
 ### Zynq UltraScale+ designs
 
-| Target board          | Target design   | FMC Slot | Cameras | VCU   | Baremetal<br> App | PetaLinux<br> Build | Vivado<br> Edition | IP<br>License |
-|-----------------------|-----------------|----------|---------|-------|-------|-------|-------|-------|
-| [ZCU104]              | `zcu104`        | LPC      | 4     | :white_check_mark: | :x:                | :white_check_mark: | Standard :free: | -     |
-| [ZCU102]              | `zcu102_hpc0`   | HPC0     | 4     | :x:                | :x:                | :white_check_mark: | Standard :free: | -     |
-| [ZCU102]              | `zcu102_hpc1`   | HPC1     | 2     | :x:                | :x:                | :white_check_mark: | Standard :free: | -     |
-| [ZCU106]              | `zcu106_hpc0`   | HPC0     | 4     | :white_check_mark: | :x:                | :white_check_mark: | Standard :free: | -     |
-| [PYNQ-ZU]             | `pynqzu`        | LPC      | 2     | :x:                | :x:                | :white_check_mark: | Standard :free: | -     |
-| [UltraZed-EV Carrier] | `uzev`          | HPC      | 4     | :white_check_mark: | :x:                | :white_check_mark: | Standard :free: | -     |
+| Target board          | Target design   | FMC Slot | Cameras | VCU   | Baremetal<br> App | PetaLinux<br> Build | Yocto<br> Build | Vivado<br> Edition | IP<br>License |
+|-----------------------|-----------------|----------|---------|-------|-------|-------|-------|-------|-------|
+| [ZCU104]              | `zcu104`        | LPC      | 4     | :white_check_mark: | :x:                | :white_check_mark: | :white_check_mark: | Standard :free: | -     |
+| [ZCU102]              | `zcu102_hpc0`   | HPC0     | 4     | :x:                | :x:                | :white_check_mark: | :white_check_mark: | Enterprise | -     |
+| [ZCU102]              | `zcu102_hpc1`   | HPC1     | 2     | :x:                | :x:                | :white_check_mark: | :white_check_mark: | Enterprise | -     |
+| [ZCU106]              | `zcu106_hpc0`   | HPC0     | 4     | :white_check_mark: | :x:                | :white_check_mark: | :white_check_mark: | Standard :free: | -     |
+| [PYNQ-ZU]             | `pynqzu`        | LPC      | 2     | :x:                | :x:                | :white_check_mark: | :white_check_mark: | Standard :free: | -     |
+| [UltraZed-EV Carrier] | `uzev`          | HPC      | 4     | :white_check_mark: | :x:                | :white_check_mark: | :white_check_mark: | Standard :free: | -     |
 
 [AUBoard 15P]: https://www.avnet.com/americas/products/avnet-boards/avnet-board-families/auboard-15p-fpga-development-kit/
 [ZCU104]: https://www.xilinx.com/zcu104
@@ -116,15 +116,18 @@ Notes:
 Some of these designs can be driven by a baremetal application that will configure the connected cameras
 and combine their video outputs into a single 1080p stream.
 
-### PetaLinux
+### Embedded Linux (PetaLinux and Yocto)
 
-The Zynq UltraScale+ based reference designs can be driven within a PetaLinux environment. 
-The repository includes all necessary scripts and code to build the PetaLinux environment. The table 
-below outlines the corresponding applications available:
+The Zynq UltraScale+ based reference designs can be driven within an embedded Linux environment,
+built either with PetaLinux or with Yocto (AMD Embedded Development Framework). The repository
+includes all necessary scripts and code to build both. The two images contain the same camera and
+display drivers and the same example scripts. The table below outlines the corresponding applications
+available:
 
 | Environment      | Available Applications  |
 |------------------|-------------------------|
-| PetaLinux        | Built-in Linux commands<br>Additional tools: [GStreamer] |
+| PetaLinux        | Built-in Linux commands, `init_cams.sh`, `displaycams.sh`<br>Additional tools: v4l-utils, `modetest`, [GStreamer] |
+| Yocto (AMD EDF)  | Built-in Linux commands, `init_cams.sh`, `displaycams.sh`<br>Additional tools: v4l-utils, `modetest`, [GStreamer], SSH server |
 
 ## Build instructions
 
@@ -173,6 +176,15 @@ bit file, depending on the device family):
 ./build.sh petalinux --target <target>
 ```
 
+#### Build Yocto (Linux only)
+
+Builds the Yocto / AMD EDF image, a complete SD card image (`rootfs.wic.xz`) plus the
+`BOOT.BIN` that goes on the card's first partition:
+
+```
+./build.sh yocto --target <target>
+```
+
 #### Build everything
 
 Builds all of the above that the target supports, then gathers the boot
@@ -199,14 +211,17 @@ board.
 
 ### Zynq UltraScale+ designs
 
-From the PetaLinux command line, run the following command to stream video from all *connected* cameras to the 4 quadrants of the 
-1080p DisplayPort monitor:
+Log in on the console (PetaLinux: user `petalinux`; Yocto: user `amd-edf`; both ask you to set a
+password at the first login), then run the following command to stream video from all *connected*
+cameras to the 4 quadrants of the 1080p DisplayPort monitor:
 
 ```
 sudo displaycams.sh
 ```
 
 If less than 4 cameras are physically connected, the unused quadrants of the monitor will be blue.
+The [user guide](https://rpi.camerafmc.com) describes how to configure the cameras with `init_cams.sh`,
+capture frames with `v4l2-ctl`, and adjust the ISP settings.
 
 ## Contribute
 

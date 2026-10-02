@@ -11,9 +11,15 @@ In order to test these designs on hardware, you will need the following:
 
 Additional design-specific requirements:
 
-* **Zynq UltraScale+ designs** (PetaLinux flow):
-  * PetaLinux Tools 2025.2
-  * One DisplayPort monitor supporting 1080p video
+* **Zynq UltraScale+ designs** (embedded Linux):
+  * PetaLinux Tools 2025.2 for the [PetaLinux](petalinux) flow, or
+    [Google's repo tool](https://gerrit.googlesource.com/git-repo/) and the Yocto host packages
+    for the [Yocto](yocto) flow (Vivado and Vitis 2025.2 are needed by both)
+  * A native Linux build machine (or virtual machine)
+  * One DisplayPort monitor supporting 1920x1080 at 60 Hz (an HDMI monitor with a DisplayPort to
+    HDMI adapter also works)
+  * An SD card and a card reader for your PC
+  * Optional: an Ethernet network for SSH access (Wi-Fi on the PYNQ-ZU)
 
 * **FPGA designs** (AUBoard 15P, baremetal flow):
   * One HDMI monitor supporting 1080p video

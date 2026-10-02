@@ -4,7 +4,7 @@ This section is intended for users who want to modify the reference
 designs — adding IP to the block design, changing constraints, modifying
 the standalone application, or adding packages or drivers to the
 PetaLinux project. It describes how the repository is laid out, how the
-build flow works, how the Vitis and PetaLinux sides are
+build flow works, how the Vitis, PetaLinux and Yocto sides are
 organised, and what modifications have been added on top of the stock
 AMD BSPs.
 
@@ -24,11 +24,19 @@ it.
 │   ├── data.json
 │   └── update.py
 ├── docs/                      <- This documentation (Sphinx + Read the Docs)
+│   └── source/images/
+│       └── gen_block_diagram.py <- Generates the block diagrams of these docs
 ├── PetaLinux/
 │   └── bsp/                   <- Per-board (and optional per-target) BSP fragments
 │       └── pynqzu/, uzev/, zcu102/, zcu102_hpc1/, zcu104/, zcu106/
-├── submodules/                <- Vendor board definition files (BDFs)
+├── Yocto/
+│   ├── bsp/                   <- Per-board (and per-target) Yocto BSP layers
+│   │   └── pynqzu/, uzev/, zcu102/, zcu102_hpc1/, zcu104/, zcu106/
+│   ├── scripts/               <- Engine of the Yocto flow (workspace, configure, build, package)
+│   └── README.md
+├── submodules/                <- Vendor board definition files (BDFs), Vitis Libraries
 ├── Vivado/
+│   ├── ip/isppipeline/        <- HLS build of the ISP Pipeline IP (stage 'ip')
 │   ├── scripts/
 │   │   ├── build.tcl          <- Project creation + block design assembly
 │   │   └── xsa.tcl            <- Synthesis, implementation, XSA export
@@ -50,14 +58,14 @@ it.
 ```
 
 Per-target build outputs are written to `Vivado/<target>/`,
-`Vitis/<target>_workspace/`, and `PetaLinux/<target>/`; packaged
+`Vitis/<target>_workspace/`, `PetaLinux/<target>/` and `Yocto/<target>/`; packaged
 boot-image zips are written to `bootimages/`. None of these are
 committed.
 
 There is no port-config overlay in this repository — there is at most
 one Raspberry Pi camera array per design, and per-target customisation
 is done via per-target BSP overlays where needed (see
-[PetaLinux side](#petalinux-side) below).
+[PetaLinux side](#petalinux-side) and [Yocto side](#yocto-side) below).
 
 ## Target naming
 
@@ -72,7 +80,7 @@ boards with multiple FMC connectors, the connector:
 Examples: `uzev`, `zcu102_hpc0`, `zcu102_hpc1`, `zcu104`, `pynqzu`,
 `auboard`, `genesyszu`. The first underscore-delimited token is taken
 as the *target board* and is what the build runner uses to select
-the BSP under `PetaLinux/bsp/<board>/`.
+the BSP under `PetaLinux/bsp/<board>/` and `Yocto/bsp/<board>/`.
 
 The complete list of valid targets comes from `config/data.json`; run
 `./build.sh list` (or `./build.sh labels` for one per line) to print it.
@@ -109,12 +117,15 @@ The build is organised into stages, each available as a sub-command:
 
 | Command      | Stage                                                                                  |
 |--------------|----------------------------------------------------------------------------------------|
+| `ip`         | Build the HLS IP of the design (the ISP Pipeline) with Vitis HLS.                       |
 | `project`    | Create the Vivado project (`.xpr`) and block design.                                   |
 | `xsa`        | Synthesise, implement and export the hardware (`.xsa`).                                 |
 | `standalone` | Create the Vitis workspace, build the baremetal app, package `BOOT.BIN` / `.mcs`.      |
 | `petalinux`  | Create the PetaLinux project from the XSA, apply the BSP overlays, build and package.   |
+| `yocto`      | Create the Yocto / AMD EDF workspace, generate a machine from the XSA, apply the BSP, build the SD card image. |
 | `package`    | Gather the built boot artifacts into `bootimages/*.zip`.                               |
 | `all`        | Build every stage the target supports, then `package`.                                 |
+| `clean`      | Delete a target's generated outputs (`--stage <s>` for one stage, `--keep-boot` to keep the deliverables). |
 
 Run `./build.sh list` to see the targets and their attributes, `./build.sh
 status --target <t>` for per-stage artifact state, and `./build.sh --help`
@@ -122,7 +133,7 @@ for the full command list.
 
 Each target is flagged in `config/data.json` for the stages it supports —
 the MicroBlaze target (`auboard`) is baremetal-only (no PetaLinux), while
-the ZynqMP targets support the PetaLinux flow as well. Because each stage
+the ZynqMP targets support the PetaLinux and Yocto flows. Because each stage
 builds its prerequisites first, a single `./build.sh all --target <t>`
 cascades the whole pipeline:
 
@@ -133,6 +144,8 @@ cascades the whole pipeline:
   -> petalinux   : petalinux-create -> -config --get-hw-description <XSA>
                    -> copy bsp/<board>/project-spec/* (and bsp/<target>/project-spec/* if present)
                    -> petalinux-build -> petalinux-package
+  -> yocto       : repo init/sync (rel-v2025.2 EDF manifest) -> sdtgen + gen-machineconf parse-sdt
+                   -> bsp/<target>/ (or bsp/<board>/) -> bitbake edf-linux-disk-image
   -> package     : zip the boot files into bootimages/
 ```
 
@@ -284,7 +297,8 @@ directory:
    scripts (`recipes-apps/initcams/`), and any board-specific patches.
 2. An **optional per-target BSP overlay** at `PetaLinux/bsp/<target>/`
    — applied only if the directory exists (the `cp` is prefixed with
-   `-` in the Makefile so a missing directory is not an error).
+   `-` in `PetaLinux/Makefile`, which the build runner calls for this
+   stage, so a missing directory is not an error).
    Currently `zcu102_hpc1/` is the only such overlay, used to
    override the base `zcu102/` BSP for the `zcu102_hpc1` target.
 
@@ -379,9 +393,110 @@ adds U-Boot Kconfig options; `platform-top.h` overrides the U-Boot
 platform header; patches are listed in `SRC_URI:append` in
 `u-boot-xlnx_%.bbappend`.
 
+## Yocto side
+
+The Yocto flow (AMD Embedded Development Framework, release 2025.2)
+generates its own machine configuration from the Vivado XSA: `sdtgen`
+turns the XSA into a System Device Tree, and `gen-machineconf parse-sdt`
+creates the machine `rpi-<target>` and the Linux device tree from it.
+The PL hardware (capture pipelines, Video Mixer, VTC, Clocking Wizard)
+therefore comes from the design itself. The bitstream is embedded in
+`BOOT.BIN` and the FSBL programs the PL at boot. The engine is in
+`Yocto/scripts/` (`init-workspace.sh`, `configure-build.sh`,
+`build-image.sh`, `package-output.sh`); `Yocto/README.md` describes
+it in more detail.
+
+### BSP composition
+
+The runner uses `Yocto/bsp/<target>/` when that directory exists, and
+`Yocto/bsp/<board>/` otherwise. `zcu102_hpc1/` is a complete BSP for
+that target (the HPC1 design has only two capture pipelines); the
+other targets use their board's BSP.
+
+```
+Yocto/bsp/<board>/
+├── conf/
+│   └── local.conf.append      <- hostname, kernel command line arguments (BSP_EXTRA_BOOTARGS)
+└── meta-user/
+    ├── conf/layer.conf
+    ├── recipes-apps/initcams/ <- init_cams.sh, displaycams.sh (same as PetaLinux)
+    ├── recipes-bsp/
+    │   ├── device-tree/files/system-user.dtsi   <- camera / display bindings, board fixups
+    │   ├── u-boot/u-boot-edf-scr_%.bbappend     <- adds BSP_EXTRA_BOOTARGS to boot.scr
+    │   ├── embeddedsw/                          <- (zcu104 only) FSBL VADJ patch
+    │   ├── wilc3000-firmware/                   <- (pynqzu only) Wi-Fi firmware
+    │   └── ...
+    ├── recipes-connectivity/wifi-sta-config/    <- (pynqzu only) wlan0 + wifi-sta-setup
+    ├── recipes-core/images/edf-linux-disk-image.bbappend  <- image packages
+    └── recipes-kernel/linux/
+        ├── linux-xlnx_%.bbappend               <- kernel config fragment + patches
+        └── linux-xlnx/                         <- bsp.cfg and the kernel patches
+```
+
+### What the Yocto BSPs add
+
+* **Kernel command line.** In the EDF boot flow the kernel command
+  line is built by the U-Boot boot script (`boot.scr`) from the device
+  tree's `/chosen/bootargs` and the root device; `APPEND` in
+  `local.conf` is not used. `u-boot-edf-scr_%.bbappend` appends
+  `BSP_EXTRA_BOOTARGS` from `local.conf.append` to the script:
+  `cma=1536M xlnx_mixer.connect_drm_bridge=1` (`cma=1000M` on the
+  UltraZed-EV).
+* **Hostname** `<board>-rpi-2025-2`, set with
+  `hostname:pn-base-files:forcevariable` (a plain
+  `hostname:pn-base-files` is overridden by the EDF distribution's
+  default, `amd-edf`).
+* **Device tree (`system-user.dtsi`)**: the IMX219 sensors on the
+  camera I2C buses and the bindings of the CSI-2 RX, ISP, VPSS and
+  capture pipelines; the Video Mixer, VTC and DisplayPort wiring (as
+  for PetaLinux, see [DisplayPort and Video Mixer pipeline
+  fixes](#displayport-and-video-mixer-pipeline-fixes)); the 27 MHz
+  DP reference clock of the PS-GTR on the ZCU102, ZCU104, ZCU106 and
+  UltraZed-EV;
+  a deterministic `ttyPS0` console; SD card fixes on the ZCU104.
+* **PL clock rates.** Like the PetaLinux BSPs, the Yocto BSPs override
+  the PL clocks `misc_clk_N` of the generated device tree with fixed clocks. The
+  device-tree generator of the Yocto flow numbers the 250 MHz video
+  clock `misc_clk_0` and the 100 MHz AXI-Lite clock `misc_clk_1`, the
+  reverse of the PetaLinux flow, so the Yocto BSPs set
+  `misc_clk_0` = 250 MHz and `misc_clk_1` = 100 MHz. The display
+  Clocking Wizard's input is `misc_clk_0`, and the `clk-wizard` driver
+  computes its settings from that rate (see
+  [Troubleshooting](troubleshooting.md#kernel-panic-at-the-display-mode-set)).
+* **Board Ethernet (ZCU102, ZCU104, ZCU106).** The generated device
+  tree does not describe the board's TI DP83867 Ethernet PHY, so Linux
+  used the generic PHY driver and never programmed the RGMII clock
+  delays: the link came up at 1 Gb/s but passed no packets. The BSPs
+  add the PHY node with its delay settings (both possible PHY
+  addresses on the ZCU102, which depend on the board revision) and a
+  fixed MAC address.
+* **Kernel patches**: the three DRM patches and the two ISP Pipeline
+  driver patches described below, the same as in the PetaLinux BSPs.
+* **Kernel configuration (`bsp.cfg`)**: the IMX219 and OV5640 sensor
+  drivers, and on the PYNQ-ZU the Wi-Fi driver.
+* **Image packages**: `v4l-utils`, `media-ctl`, `libcamera`, the
+  `initcams` scripts, `modetest` (`libdrm-tests`) and GStreamer with
+  `v4l2src`, `kmssink`, compositor, videoconvertscale and
+  videotestsrc; `gstreamer-vcu-examples` on targets with a VCU.
+* **PYNQ-ZU Wi-Fi.** The on-board Microchip WILC3000 is supported by
+  the in-tree `wilc1000` driver with a backport of the mainline
+  WILC3000 support (`0010-wifi-wilc1000-backport-WILC3000-support.patch`),
+  the WILC3000 firmware, and a power-up sequence in the device tree
+  that uses only standard kernel drivers (chip enable as the SD
+  interface's supply regulator, reset through `mmc-pwrseq-simple`).
+  A second patch
+  (`0011-wifi-wilc1000-refuse-config-requests-before-the-first-open.patch`)
+  fixes the first bring-up of `wlan0`: a configuration request sent
+  before the firmware was loaded broke the first firmware start.
+  The `wifi-sta-config` recipe ships `wifi-sta-setup`, a DHCP
+  configuration for `wlan0`, and starts `wpa_supplicant` for `wlan0`
+  once credentials exist. The console getty runs on `ttyPS0` only
+  (the default second getty on `ttyPS1` kept failing, as that UART does
+  not reach the USB-UART on this board).
+
 ## Modifications layered on the stock BSPs
 
-The board BSPs in this repository started as the corresponding stock
+The PetaLinux board BSPs in this repository started as the corresponding stock
 AMD reference BSPs and have been modified in the following ways. This
 list is the answer to *"what would I lose if I overwrote the BSP with
 the stock one?"* — it is what to re-apply if you ever do that.
@@ -409,13 +524,13 @@ the stock one?"* — it is what to re-apply if you ever do that.
 * **U-Boot patch `0001-ubifs-distroboot-support.patch`**.
 
 (advanced-dp-bridge-fixes)=
-#### 2025.2 DP / Video Mixer pipeline fixes
+#### DisplayPort and Video Mixer pipeline fixes
 
 In Vitis/PetaLinux 2025.2, the kernel DRM stack and the SDT BSP
 generator both got stricter in ways that break the v_mix → dpsub
 "live video" pipeline used by `displaycams.sh`. The following
-modifications are layered on every ZynqMP BSP in this repo to keep
-DP working. They are all gated to the v_mix DRM-bridge code path,
+modifications are layered on every ZynqMP BSP in this repo (PetaLinux
+and Yocto) to keep DP working. They are all gated to the v_mix DRM-bridge code path,
 so they are no-ops on any board that doesn't use it.
 
 * **Device-tree additions to `system-user.dtsi`**:
@@ -468,6 +583,31 @@ so they are no-ops on any board that doesn't use it.
   but the 2025.2 dpsub no longer registers as an `xlnx_bridge` —
   so that lookup fails, the mixer's encoder/connector never get
   set up, and `modetest` reports zero connectors).
+
+#### ISP Pipeline driver fixes
+
+Two kernel patches to the ISP Pipeline driver
+(`drivers/media/platform/xilinx/xilinx-isppipeline.c`) are in
+`recipes-kernel/linux/linux-xlnx/` of every ZynqMP BSP (PetaLinux and
+Yocto) and registered in `linux-xlnx_%.bbappend`:
+
+* `0004-media-xilinx-isppipeline-fix-gamma-LUT-plane-order.patch` —
+  the core holds one 256-entry gamma table per colour plane, in the
+  B, G, R plane order of its internal pixel (blue at offset `0x800`,
+  green at `0x900`, red at `0xA00`). The driver wrote the red table to
+  the blue plane, the blue table to the green plane and the green
+  table to the red plane, so `red_gamma` acted on blue, `green_gamma`
+  on red and `blue_gamma` on green. Combined with a default green
+  gamma of 1.5 (red and blue 2.0), this gave every camera picture a
+  magenta cast. The patch writes each table to its own plane and sets
+  the green default to 2.0, so the default output is colour neutral.
+* `0005-media-xilinx-isppipeline-use-the-DT-gain-and-threshold.patch` —
+  the driver reads the `xlnx,rgain`, `xlnx,bgain` and `xlnx,pawb`
+  device-tree properties, but then created the `red_gain`, `blue_gain`
+  and `threshold` controls with fixed defaults (100, 350 and 512),
+  which overwrote the device-tree values at probe. The patch uses the
+  device-tree values as the control defaults (128, 210 and 350 in the
+  BSPs of this design).
 
 ### ZCU104 BSP
 
@@ -524,10 +664,12 @@ so they are no-ops on any board that doesn't use it.
 
 ### PYNQ-ZU BSP
 
-* **WILC WiFi driver overlay** under
+* **WILC Wi-Fi driver recipe** under
   `recipes-modules/wilc/` with patch
-  `0001-wilc-pynqzu.patch`, adding support for the WILC1000 module
-  fitted on the PYNQ-ZU carrier.
+  `0001-wilc-pynqzu.patch`, which builds Microchip's out-of-tree
+  `wilc1000` driver for the PYNQ-ZU. It is not part of the default
+  root filesystem; the Yocto BSP supports the on-board Wi-Fi instead
+  (see [Yocto side](#yocto-side)).
 * Like uzev, pynqzu already declares its DP refclk (`dp_clk` at
   "ref1") in its own `&psgtr { … }` block, so it does **not** need
   the `dp_phy_refclk` fixed-clock workaround.
@@ -538,8 +680,9 @@ so they are no-ops on any board that doesn't use it.
   `bsp/zcu102/`) that overrides device-tree nodes to wire the camera
   pipeline through the HPC1 connector instead of HPC0. All other
   modifications (kernel patches, cmdline, dpsub/v_mix dtsi fixes)
-  come from `bsp/zcu102/` unchanged via the Makefile's two-stage
-  `cp -R bsp/$(TARGET_BOARD)/project-spec` + `cp -R bsp/$(TARGET)/project-spec`.
+  come from `bsp/zcu102/` unchanged via the two-stage copy in
+  `PetaLinux/Makefile`: `cp -R bsp/$(TARGET_BOARD)/project-spec` +
+  `cp -R bsp/$(TARGET)/project-spec`.
 
 ## Where build outputs land
 
@@ -553,6 +696,8 @@ so they are no-ops on any board that doesn't use it.
 | `PetaLinux/<target>/`               | PetaLinux project. All Yocto build state lives here.                            |
 | `PetaLinux/<target>/images/linux/`  | `BOOT.BIN`, `image.ub`, `boot.scr`, `rootfs.tar.gz`, etc.                       |
 | `PetaLinux/<target>/build/build.log`| PetaLinux build log.                                                            |
+| `Yocto/<target>/`                   | Yocto workspace (sources, `build/`, generated machine and System Device Tree).  |
+| `Yocto/<target>/images/linux/`      | `BOOT.BIN`, `boot.scr`, `Image`, `system.dtb`, `rootfs.wic.xz`, `rootfs.wic.bmap`, `rootfs.tar.gz`. |
 | `bootimages/`                       | Per-target zipped boot files.                                                   |
 
 None of these directories are committed to the repository.

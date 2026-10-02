@@ -62,6 +62,8 @@ Notes:
    `CAM0` and `CAM1` as labelled on the RPi Camera FMC.
 3. The `pynqzu` target design has video pipelines for only 2 cameras: `CAM1` and `CAM2` as
    labelled on the RPi Camera FMC. This is due to the resource limitations of the device on this board.
+4. The `auboard` target design has video pipelines for only 2 cameras: `CAM0` and `CAM2` as labelled
+   on the RPi Camera FMC. This is due to the resource limitations of the Artix UltraScale+ device on this board.
 
 ## Cross-platform build runner
 
@@ -90,7 +92,7 @@ To see the available targets and the state of a build:
 ```
 
 ```{note}
-The embedded Linux images (PetaLinux) can only be built on a
+The embedded Linux images (PetaLinux and Yocto) can only be built on a
 native Linux machine; everything else builds on Windows too. On Windows, the
 runner refuses the Linux-only stages up front and prints the exact command
 to run on the Linux machine.
@@ -145,7 +147,8 @@ are gathered in `Vitis/boot/<target>/`.
 The PetaLinux build requires a native Linux machine (one of the [supported
 Linux distributions]) with PetaLinux Tools 2025.2 installed. The runner
 locates and sources the PetaLinux `settings.sh` itself, and builds the
-Vivado XSA first if it does not already exist:
+Vivado XSA first if it does not already exist (see [PetaLinux](petalinux) for
+the SD card and boot instructions):
 
 ```
 ./build.sh petalinux --target <target>
@@ -189,11 +192,29 @@ connection), you can follow these instructions.
 
 The PetaLinux builds will then be configured for offline build.
 
+### Build Yocto
+
+The Yocto (AMD EDF) build requires a native Linux machine with Vivado and Vitis
+2025.2 and [Google's repo tool](https://gerrit.googlesource.com/git-repo/) installed.
+The runner sources the tools itself and builds the Vivado XSA first if it does not
+already exist (see [Yocto](yocto) for the host packages, the SD card and boot
+instructions):
+
+```
+./build.sh yocto --target <target>
+```
+
+Valid targets for Yocto are:
+{% for design in data.designs if design.yocto and design.publish %} `{{ design.label }}`{{ ", " if not loop.last else "." }} {% endfor %}
+
+The output products are written to `Yocto/<target>/images/linux/`; the SD card
+image is `rootfs.wic.xz`.
+
 ### Build everything
 
 This builds everything that the target supports — the Vivado project and XSA,
-the standalone application and the PetaLinux image — and gathers the boot
-images into `bootimages/*.zip`:
+the standalone application, the PetaLinux image and the Yocto image — and
+gathers the boot images into `bootimages/*.zip`:
 
 ```
 ./build.sh all --target <target>
@@ -220,7 +241,7 @@ To run it:
 
 1. Connect the [RPi Camera FMC] to the AUBoard FMC connector, attach one or
    more [Raspberry Pi camera module v2] modules to the FMC, and connect an
-   HDMI monitor to the FMC's HDMI output.
+   HDMI monitor to the HDMI output of the AUBoard.
 2. Connect the USB-UART and open a terminal at 115200 baud.
 3. Power the board and program the bitstream / ELF from the Vitis GUI
    (Run As → Launch Hardware) or with `xsct` and the generated
