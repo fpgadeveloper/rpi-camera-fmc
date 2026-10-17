@@ -19,12 +19,12 @@ and place them under `submodules/avnet-bdf/`.
 
 ## License requirements
 
-The designs for all of the [target boards](supported_carriers) except the ZCU102 can be built with the Vivado ML Standard 
-Edition **without a license**.
+The designs for all of the [target boards](supported_carriers) except the ZCU102, VCK190 and VEK280
+can be built with the Vivado ML Standard Edition **without a license**.
 
-The ZCU102 board is not supported by the Vivado ML Standard Edition (aka. the Webpack or free version)
-so to build the designs for the ZCU102 board, you will need to either buy a license or download
-a 30-day evaluation license for Vivado ML Enterprise Edition.
+The ZCU102, VCK190 and VEK280 boards are not supported by the Vivado ML Standard Edition (aka. the
+Webpack or free version) so to build the designs for these boards, you will need to either buy a
+license or download a 30-day evaluation license for Vivado ML Enterprise Edition.
 
 (target-designs)=
 
@@ -64,6 +64,10 @@ Notes:
    labelled on the RPi Camera FMC. This is due to the resource limitations of the device on this board.
 4. The `auboard` target design has video pipelines for only 2 cameras: `CAM0` and `CAM2` as labelled
    on the RPi Camera FMC. This is due to the resource limitations of the Artix UltraScale+ device on this board.
+5. The Versal designs support 2 or 3 cameras: `CAM0` and `CAM2` on `vck190_fmcp1`; `CAM1`, `CAM2`
+   and `CAM3` on `vck190_fmcp2`; `CAM0`, `CAM1` and `CAM3` on `vek280`. This is due to the clocking
+   rules of the MIPI D-PHY in the Versal XPIO banks; see [Versal designs](versal.md#camera-ports).
+   The Versal designs are built with the Yocto flow only.
 
 ## Cross-platform build runner
 
@@ -227,6 +231,10 @@ Linux-only stages as `BLOCKED` rather than failing.
 [supported Linux distributions]: https://docs.amd.com/r/en-US/ug1144-petalinux-tools-reference-guide/Setting-Up-Your-Environment
 
 ## Launch the baremetal application (FPGA / AUBoard)
+
+This section is about the AUBoard. For the baremetal application of the Versal targets
+(`vck190_fmcp1`, `vck190_fmcp2`, `vek280`), see
+[Versal designs: Baremetal application](versal.md#baremetal-application).
 
 The standalone application produced by `./build.sh standalone --target auboard` is a
 camera-bring-up program that:

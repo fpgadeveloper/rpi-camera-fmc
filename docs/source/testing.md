@@ -5,6 +5,13 @@ to both the [PetaLinux](petalinux) and the [Yocto](yocto) images: they contain t
 and display drivers, the same kernel patches and the same `init_cams.sh` / `displaycams.sh`
 scripts. The few differences are listed below.
 
+```{note}
+The camera and capture steps also apply to the **Versal designs** (VCK190, VEK280). Their display
+goes to a DVI output on the HDMI TX connector instead of the DisplayPort: the DRM connector is
+`DPI-1` instead of `DP-1`, and the primary plane of the Video Mixer takes an RGB format (`BG24`)
+instead of `NV16`. See [Versal designs](versal.md#test-the-cameras-and-the-display).
+```
+
 |                       | PetaLinux image                     | Yocto (AMD EDF) image                       |
 |-----------------------|-------------------------------------|---------------------------------------------|
 | Login user            | `petalinux`                         | `amd-edf`                                   |
@@ -22,7 +29,8 @@ and DRM master access to the display.
 ## Before you start
 
 * Connect the cameras to the camera ports that your target supports: CAM0 to CAM3 on most targets,
-  **CAM0 and CAM1** on `zcu102_hpc1`, **CAM1 and CAM2** on `pynqzu`. Cameras on other ports are
+  **CAM0 and CAM1** on `zcu102_hpc1`, **CAM1 and CAM2** on `pynqzu`, and the ports listed in
+  [Versal designs](versal.md#camera-ports) on the Versal targets. Cameras on other ports are
   not seen by the design.
 * Connect a DisplayPort monitor (or a DisplayPort to HDMI adapter and an HDMI monitor) that
   supports 1920x1080 at 60 Hz. The display pipeline supports this mode only.

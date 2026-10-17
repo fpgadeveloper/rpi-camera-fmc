@@ -19,6 +19,7 @@ This is the documentation for the `RPi Camera FMC`_ reference designs.
    build_instructions
    petalinux
    yocto
+   versal
    testing
    advanced
    troubleshooting

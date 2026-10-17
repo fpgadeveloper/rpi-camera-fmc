@@ -1,0 +1,12 @@
+[Unit]
+Description=DVI (HDMI) output: configure retimer/redriver and report link
+After=systemd-modules-load.service systemd-udev-settle.service
+Wants=systemd-udev-settle.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/dvi-init
+
+[Install]
+WantedBy=multi-user.target

@@ -65,7 +65,7 @@ The AUBoard 15P (Artix UltraScale+) is supported via the baremetal / HDMI flow o
 there is no PetaLinux project for this board. The design supports two cameras:
 `CAM0` and `CAM2` as labelled on the [RPi Camera FMC]. This is due to the resource
 limitations of the Artix UltraScale+ device on this board. The application source
-lives in `Vitis/common/src/` and the workspace is built with
+lives in `Vitis/microblaze/src/` (with the camera drivers in `Vitis/common/src/`) and the workspace is built with
 `./build.sh standalone --target auboard` (see the
 [build instructions](build_instructions.md#build-vitis-workspace)).
 
@@ -77,6 +77,27 @@ Vivado tools prevent using the IP with IO standards that are not compatible with
 all of the designs in this repository use 1.2VDC compatible IO standards, even though the I/O banks on the 
 PYNQ-ZU and UltraZed EV carrier boards are powered at 1.8VDC. At the moment this is the only practical and
 functional workaround that we have found for these two target boards.
+
+### Versal boards (VCK190, VEK280)
+
+The Versal designs support 2 or 3 cameras per FMC connector, because of the clocking rules of the
+MIPI D-PHY in the Versal XPIO banks:
+
+| Target design  | Cameras (labelled on the RPi Camera FMC) |
+|----------------|------------------------------------------|
+| `vck190_fmcp1` | `CAM0`, `CAM2`                           |
+| `vck190_fmcp2` | `CAM1`, `CAM2`, `CAM3`                   |
+| `vek280`       | `CAM0`, `CAM1`, `CAM3`                   |
+
+* **VCK190:** the FMC VADJ rail is set to 1.2V by U-Boot before Linux boots.
+* **VEK280:** the FMC VADJ rail is fixed at 1.5V by the board and cannot be changed. As on the
+  PYNQ-ZU and UltraZed EV carrier (see above), the design uses the 1.2V standards `MIPI_DPHY` and
+  `LVCMOS12` on banks powered at a higher voltage, as AMD's own VEK280 board file does. This is
+  outside AMD's specified 1.2V VCCO for `MIPI_DPHY`. The [RPi Camera FMC] tolerates a VADJ of up
+  to 1.8V.
+* **Video output:** DVI (1080p60) on the board's HDMI TX connector, built from free IP.
+
+See [Versal designs](versal) for the details, the build and the boot instructions.
 
 
 [contact Opsero]: https://opsero.com/contact-us

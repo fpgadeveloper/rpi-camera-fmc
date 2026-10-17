@@ -41,6 +41,9 @@ does not occur.
   Flashing `rootfs.wic.xz` alone is not enough; see [Prepare the SD card](yocto.md#prepare-the-sd-card).
 * **PetaLinux image:** the first partition must be FAT32 and hold `BOOT.BIN`, `boot.scr` and
   `image.ub`; the root filesystem goes on the second (ext4) partition.
+* **Versal (VCK190, VEK280):** the first partition must also hold `EFI/BOOT/BOOTAA64.EFI`, or the
+  boot stops at the U-Boot prompt; use a card of 16 GB or more. See
+  [Versal designs](versal.md#troubleshooting).
 
 ## Harmless boot messages
 
@@ -116,6 +119,9 @@ underlying cause and the patches / device-tree edits that make this work.
 
 If `displaycams.sh` stops with `ERROR: could not discover DRM ids`, no connected monitor was found
 (check the cable and that the monitor is on) or the display drivers did not load.
+
+On the Versal designs, check the DVI output with `sudo dvi-status` and
+`sudo dvi-status pattern on`; see [Versal designs](versal.md#troubleshooting).
 
 ## Monitor goes dark when `modetest` picks a high-refresh mode
 

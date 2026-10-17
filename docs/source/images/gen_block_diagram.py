@@ -544,6 +544,80 @@ def fig_hdmi_display():
     save(fig, "rpi-camera-fmc-hdmi-display-pipe.png")
 
 
+# ---- 7. Versal display pipeline (DVI over HDMI, free IP only) ----------------
+def fig_versal_dvi_display():
+    fig, ax = new_fig(19.0, 7.4, 190, 74)
+    container(ax, 2, 2, 20, 62, C_PS_FILL, C_PS_EDGE, "CIPS + NoC")
+    container(ax, 26, 2, 116, 62, C_FAB_FILL, C_FAB_EDGE,
+              "display_pipeline + video_output  (PL, Versal designs)")
+    container(ax, 146, 2, 42, 62, C_FMC_FILL, C_FMC_EDGE, "On the board")
+
+    # CIPS / NoC
+    titled_box(ax, 4, 34, 16, 22, "#EAEAEA", C_PS_EDGE, "NoC → DDR",
+               "camera\nframe\nbuffers", title_fs=8.0, body_fs=6.6)
+    titled_box(ax, 4, 6, 16, 22, "#EAEAEA", C_PS_EDGE, "AXI-Lite\ncontrol",
+               "M_AXI_FPD:\nmixer\nM_AXI_LPD:\nVTC, IIC,\nGPIO", title_fs=7.6,
+               body_fs=6.2, title_dy=3.4)
+
+    # mixer + timing
+    titled_box(ax, 30, 26, 20, 32, C_IP_FILL, C_IP_EDGE, "Video Mixer",
+               "\nlayers 1-4: YUYV\n(one per camera)\nlayer 5: RGBA\n\nout: RGB 8 bpc\n"
+               "1920 x 1080\nbackground: blue", title_fs=8.6, body_fs=6.4)
+    harrow(ax, 20, 30, 45, fc=C_AXARR_FILL, ec=C_AXARR_EDGE, bh=1.0, hh=1.9, hl=1.4)
+    titled_box(ax, 30, 6, 20, 14, C_IP_FILL, C_IP_EDGE, "Video Timing\nController",
+               "1080p60 timing", title_fs=7.6, body_fs=6.4, title_dy=3.4)
+    titled_box(ax, 56, 32, 18, 16, C_IP_FILL, C_IP_EDGE, "AXI4-Stream\nto Video Out",
+               "VTG slave", title_fs=7.6, body_fs=6.4, title_dy=3.4)
+    harrow(ax, 50, 56, 40, bh=1.0, hh=1.9, hl=1.3)
+    route(ax, [(50, 13), (53, 13), (53, 36), (56, 36)], C_CTRL_LINE)
+    note(ax, 53, 24.5, "timing", fs=6.2, color=C_CTRL_LINE, rot=90)
+
+    # DVI encoder, gearbox, transceivers
+    titled_box(ax, 80, 30, 20, 20, C_IP_FILL, C_IP_EDGE, "DVI TMDS\nencoder",
+               "3x 8b/10b (DVI 1.0)\ncolour-bar test\npattern\n(open-source RTL)",
+               title_fs=7.6, body_fs=6.2, title_dy=3.4)
+    harrow(ax, 74, 80, 40, bh=1.0, hh=1.9, hl=1.3)
+    note(ax, 77, 45.5, "RGB +\nDE/HS/VS", fs=6.0)
+    titled_box(ax, 104, 30, 16, 20, C_IP_FILL, C_IP_EDGE, "TX gearbox",
+               "async FIFO\n10 bit @148.5 MHz\n→ 20 bit\n@74.25 MHz",
+               title_fs=7.6, body_fs=6.0)
+    harrow(ax, 100, 104, 40, bh=1.0, hh=1.9, hl=1.1)
+    titled_box(ax, 123, 24, 17, 32, C_HARD_FILL, C_HARD_EDGE, "Transceivers",
+               "gtwiz_versal\nTX only, 4 lanes\n1.485 Gb/s\nlanes 0-2: TMDS\ndata\n"
+               "lane 3: TMDS\nclock\n\nVCK190: GTY\nVEK280: GTYP", title_fs=7.6,
+               body_fs=5.9)
+    harrow(ax, 120, 123, 40, bh=1.0, hh=1.9, hl=1.0)
+
+    # control IP
+    titled_box(ax, 56, 6, 18, 14, C_CTRL_FILL, C_CTRL_EDGE, "AXI GPIO",
+               "DVI status and\ncontrol (dvi-status)", title_fs=7.6, body_fs=6.0)
+    route(ax, [(74, 13), (90, 13), (90, 30)], C_CTRL_LINE)
+    titled_box(ax, 100, 6, 18, 14, C_CTRL_FILL, C_CTRL_EDGE, "AXI IIC",
+               "HDMI control\nI2C bus", title_fs=7.6, body_fs=6.0)
+    route(ax, [(118, 13), (157, 13), (157, 18)], C_CTRL_LINE)
+    route(ax, [(144, 13), (144, 60), (149, 60)], C_CTRL_LINE)
+    note(ax, 131, 10.6, "I2C", fs=6.2, color=C_CTRL_LINE)
+
+    # board side
+    titled_box(ax, 149, 50, 18, 12, C_CLK_FILL, C_CLK_EDGE, "8T49N241",
+               "clock synthesiser\n148.5 MHz (Linux)", title_fs=7.6, body_fs=6.0)
+    route(ax, [(149, 54), (140, 54)], C_REFCLK_LINE)
+    note(ax, 144.5, 51.8, "refclk", fs=6.0, color=C_REFCLK_LINE)
+    note(ax, 131.5, 20.6, "pixel clock = refclk\n148.5 MHz → VTC, video out,\nencoder",
+         fs=5.9, color=C_REFCLK_LINE)
+    titled_box(ax, 149, 18, 18, 18, C_HARD_FILL, C_HARD_EDGE, "Retimer /\nredriver",
+               "VCK190: SN65DP159\nVEK280: TMDS1204\n(set up by dvi-init)",
+               title_fs=7.6, body_fs=5.9, title_dy=3.4)
+    harrow(ax, 140, 149, 30, fc=C_LINKARR_FILL, ec=C_LINKARR_EDGE, bh=1.0, hh=1.9,
+           hl=1.2)
+    titled_box(ax, 171, 18, 15, 18, C_EXT_FILL, C_FMC_EDGE, "HDMI TX\nconnector",
+               "→ HDMI\nmonitor\n1080p60\n(DVI mode)", title_fs=7.4, body_fs=6.0,
+               title_dy=3.4)
+    harrow(ax, 167, 171, 27, fc=C_LINKARR_FILL, ec=C_LINKARR_EDGE, bh=1.0, hh=1.9,
+           hl=1.1)
+    save(fig, "rpi-camera-fmc-versal-dvi-display.png")
+
+
 def main():
     fig_architecture()
     fig_mipi_pipeline()
@@ -551,6 +625,7 @@ def main():
     fig_end_to_end()
     fig_simple_pipeline()
     fig_hdmi_display()
+    fig_versal_dvi_display()
 
 
 if __name__ == "__main__":

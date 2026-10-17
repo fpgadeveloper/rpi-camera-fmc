@@ -1,5 +1,28 @@
 # Revision History
 
+## 2025.2 Versal designs
+
+* Added three Versal target designs, built with the Yocto (AMD EDF) flow:
+  `vck190_fmcp1` (VCK190 FMCP1, cameras `CAM0` and `CAM2`), `vck190_fmcp2` (VCK190 FMCP2,
+  `CAM1`, `CAM2` and `CAM3`) and `vek280` (VEK280 FMCP, `CAM0`, `CAM1` and `CAM3`). The camera
+  ports are limited by the MIPI D-PHY clocking rules of the Versal XPIO banks. See
+  [Versal designs](versal).
+* New DVI video output for the Versal designs (they have no DisplayPort): 1920x1080 at 60 Hz on
+  the board's HDMI TX connector, built from free IP (Transceivers Wizard, Video Timing
+  Controller, AXI4-Stream to Video Out) and an open-source TMDS encoder in this repository
+  (`Vivado/src/hdl/dvi/`), with no HDMI IP license. The Linux image has the `dvi-init` service and
+  the `dvi-status` command (status and colour-bar test pattern).
+* VCK190: U-Boot sets the FMC VADJ rail to 1.2V. VEK280: the board's fixed 1.5V VADJ is used, with
+  the `MIPI_DPHY` / `LVCMOS12` I/O standards as in AMD's VEK280 board file.
+* The `displaycams.sh` script of the Versal images selects the RGB primary plane format of the
+  Versal Video Mixer itself (the Zynq UltraScale+ designs use `NV16`).
+* Baremetal application for the Versal targets (Cortex-A72, `./build.sh standalone`): shows the
+  cameras in the quadrants of the HDMI monitor without Linux, and sets the VCK190 FMC VADJ itself.
+  The Vitis sources are now split into `Vitis/common/src/` (camera sensor drivers),
+  `Vitis/microblaze/src/` (AUBoard application) and `Vitis/versal/src/` (Versal application).
+  See [Versal designs: Baremetal application](versal.md#baremetal-application).
+* Documentation: new [Versal designs](versal) page and Versal display pipeline diagram.
+
 ## 2025.2 Yocto flow and fixes
 
 * Added the Yocto / AMD EDF build flow for all of the Zynq UltraScale+ targets

@@ -4,10 +4,10 @@
 	"app_template": "None",
 	"src": {
 		"all": "common/src",
-		"mb": "",
+		"mb": "microblaze/src",
 		"zynq": "",
 		"zynqmp": "",
-		"versal": ""
+		"versal": "versal/src"
 	},
 	"combine_bit_elf": false,
 	"stack_size": "0x10000",

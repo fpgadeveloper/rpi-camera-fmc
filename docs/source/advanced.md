@@ -31,7 +31,9 @@ it.
 │       └── pynqzu/, uzev/, zcu102/, zcu102_hpc1/, zcu104/, zcu106/
 ├── Yocto/
 │   ├── bsp/                   <- Per-board (and per-target) Yocto BSP layers
-│   │   └── pynqzu/, uzev/, zcu102/, zcu102_hpc1/, zcu104/, zcu106/
+│   │   ├── pynqzu/, uzev/, zcu102/, zcu102_hpc1/, zcu104/, zcu106/
+│   │   ├── vck190_fmcp1/, vck190_fmcp2/, vek280/   <- Versal targets (one BSP per target)
+│   │   └── dvi-out/           <- DVI output layer of the Versal targets (dvi-init, device tree)
 │   ├── scripts/               <- Engine of the Yocto flow (workspace, configure, build, package)
 │   └── README.md
 ├── submodules/                <- Vendor board definition files (BDFs), Vitis Libraries
@@ -44,16 +46,22 @@ it.
 │       ├── bd/
 │       │   ├── bd_mb.tcl      <- Block design for MicroBlaze targets
 │       │   ├── bd_zynqmp.tcl  <- Block design for Zynq UltraScale+ targets
+│       │   ├── bd_versal.tcl  <- Block design for Versal targets
+│       │   ├── dvi_out.tcl    <- DVI output hierarchy of the Versal targets
 │       │   └── mipi_locs.tcl  <- Per-target MIPI lane placement constants
-│       └── constraints/
-│           └── <target>.xdc   <- One XDC per target (pin assignments, timing)
+│       ├── constraints/
+│       │   ├── <target>.xdc   <- One XDC per target (pin assignments, timing)
+│       │   └── dvi_<board>.xdc <- HDMI TX pins of the Versal boards (added by dvi_out.tcl)
+│       └── hdl/dvi/           <- TMDS encoder, gearbox and transceiver reset RTL (Versal DVI output)
 └── Vitis/
     ├── py/
     │   ├── args.json          <- Repo-specific Vitis flow configuration
     │   ├── build-vitis.py     <- Universal Vitis Python build driver
     │   └── make-boot.py       <- BOOT.BIN packaging
     ├── common/
-    │   └── src/               <- Standalone application source (camera bring-up)
+    │   └── src/               <- Camera sensor drivers shared by the standalone applications
+    ├── microblaze/src/        <- AUBoard standalone application
+    ├── versal/src/            <- Versal standalone application (VCK190, VEK280)
     └── <target>_workspace/    <- Per-target Vitis workspace (generated)
 ```
 
@@ -164,6 +172,10 @@ The block-design scripts live under `Vivado/src/bd/`:
 
 * `bd_mb.tcl`     — MicroBlaze targets (`auboard`).
 * `bd_zynqmp.tcl` — Zynq UltraScale+ targets.
+* `bd_versal.tcl` — Versal targets (`vck190_fmcp1`, `vck190_fmcp2`, `vek280`). It sources
+  `dvi_out.tcl`, which builds the DVI output hierarchy and adds the RTL from `Vivado/src/hdl/dvi/`
+  and the board's `dvi_<board>.xdc` to the project. On Versal the MIPI pins come only from the
+  target's XDC (`mipi_locs.tcl` is not used).
 * `mipi_locs.tcl` — Tcl dictionary mapping each target to its MIPI
   lane placement, sourced by the family scripts.
 
@@ -226,20 +238,33 @@ each target's XDC.
 
 ## Vitis side
 
-The standalone (baremetal) build is a camera bring-up application —
-it programmes the on-FMC clock generator (IDT 8T49N24x), the HDMI-out
-re-driver (DP159), the camera sensor (IMX219 / OV5640), the
-frame-buffer IP, and the HDMI pipeline. The source files in
-`Vitis/common/src/` are grouped by device:
+The standalone (baremetal) build is a camera bring-up application. There are two
+applications, chosen by the processor in the hardware design (`src` in `args.json`):
+
+* **AUBoard (MicroBlaze)**, `Vitis/microblaze/src/`: programmes the on-board clock generator
+  (IDT 8T49N24x), the HDMI-out re-driver (DP159), the camera sensors, the frame-buffer IP and
+  the HDMI TX pipeline.
+* **Versal (Cortex-A72)**, `Vitis/versal/src/`: sets the FMC VADJ (VCK190), brings up the DVI
+  output (8T49N241 clock, SN65DP159 / TMDS1204, transceivers), the Video Mixer and VTC, and the
+  camera pipelines (ISP, scalers, frame buffers). See
+  [Versal designs: Baremetal application](versal.md#baremetal-application).
+
+The camera sensor drivers in `Vitis/common/src/` are shared by both applications:
 
 | File pair                  | Purpose                                |
 |----------------------------|----------------------------------------|
-| `i2c.[ch]`                 | Generic I²C helpers                    |
-| `idt_8t49n24x.[ch]`        | Clock-generator programming            |
-| `dp159.[ch]`               | HDMI re-driver programming             |
+| `i2c.h`                    | I²C interface used by the sensor drivers (each application has its own `i2c.c`) |
 | `imx219.[ch]`              | Raspberry Pi v2 camera sensor          |
 | `ov5640.[ch]`              | OmniVision sensor variant              |
-| `rpi_cam.[ch]`             | High-level camera initialisation       |
+| `rpi_cam.[ch]`             | Sensor detection and configuration     |
+
+AUBoard application (`Vitis/microblaze/src/`):
+
+| File pair                  | Purpose                                |
+|----------------------------|----------------------------------------|
+| `i2c.c`                    | Interrupt-driven AXI IIC / PS IIC back end |
+| `idt_8t49n24x.[ch]`        | Clock-generator programming            |
+| `dp159.[ch]`               | HDMI re-driver programming             |
 | `pipe.[ch]`                | Video-pipeline setup                   |
 | `frmbuf.[ch]`              | Frame-buffer IP control                |
 | `xhdmi_edid.[ch]`          | HDMI EDID handling                     |
@@ -247,6 +272,19 @@ frame-buffer IP, and the HDMI pipeline. The source files in
 | `reset_gpio.h`             | GPIO reset macros                      |
 | `platform*.[ch]`, `main.c` | Platform glue and entry point          |
 | `config.h`                 | Build-time configuration switches      |
+
+Versal application (`Vitis/versal/src/`):
+
+| File pair                  | Purpose                                |
+|----------------------------|----------------------------------------|
+| `main.c`                   | Bring-up order, frame-buffer polling, UART status |
+| `vadj.[ch]`                | FMC VADJ (VCK190 IR38164 over the PS I2C) |
+| `resets.[ch]`              | IP resets on the PMC GPIO EMIO         |
+| `dvi.[ch]`                 | 8T49N241, retimer/redriver, DVI status/control |
+| `display.[ch]`             | Video Mixer and VTC                    |
+| `cam_pipe.[ch]`            | Camera pipelines (ISP, scalers, frame buffers) |
+| `i2c.c`                    | Polled AXI IIC back end                |
+| `config.h`                 | Resolutions, buffers, ISP settings, reset bit map |
 
 ### Layout
 
@@ -257,7 +295,11 @@ Vitis/
 │   ├── build-vitis.py        <- Universal Vitis Python build driver
 │   └── make-boot.py          <- BOOT.BIN / .mcs packaging
 ├── common/
-│   └── src/                  <- Application source (see table above)
+│   └── src/                  <- Camera sensor drivers (all applications)
+├── microblaze/
+│   └── src/                  <- AUBoard application
+├── versal/
+│   └── src/                  <- Versal application
 ├── boot/<target>/            <- Per-target packaged boot files
 └── <target>_workspace/       <- Generated Vitis workspace per target
 ```
@@ -271,14 +313,15 @@ Key fields:
 * `app_template` — `"None"`: the build driver creates an empty
   application project and adds source files explicitly rather than
   scaffolding from a Vitis template.
-* `src` — `"all": "common/src"`.
+* `src` — `"all": "common/src"`, `"mb": "microblaze/src"`, `"versal": "versal/src"`:
+  the common files plus the files of the target's processor.
 * `combine_bit_elf` — `false`.
 * `stack_size` / `heap_size` — `0x10000` each, raised from the
   defaults so the camera-bring-up code has room.
 
 ### Modifying the standalone application
 
-Edit `Vitis/common/src/*.c` (or `.h`) directly. The next `./build.sh
+Edit the files in `Vitis/common/src/`, `Vitis/microblaze/src/` or `Vitis/versal/src/` directly. The next `./build.sh
 standalone --target <t>` rebuilds the application against the existing
 platform; if you've changed the hardware (XSA) you'll need a fresh
 workspace (`./build.sh clean --target <t> --stage standalone` first).
@@ -411,7 +454,15 @@ it in more detail.
 The runner uses `Yocto/bsp/<target>/` when that directory exists, and
 `Yocto/bsp/<board>/` otherwise. `zcu102_hpc1/` is a complete BSP for
 that target (the HPC1 design has only two capture pipelines); the
-other targets use their board's BSP.
+other Zynq UltraScale+ targets use their board's BSP. Each Versal
+target has its own BSP (`vck190_fmcp1/`, `vck190_fmcp2/`, `vek280/`),
+because the camera set differs per target; their `bblayers-extra.txt`
+adds the `Yocto/bsp/dvi-out/` layer (the `dvi-init` service and
+`dvi-status` tool, the DVI output device tree with the `panel-dpi`
+bridge and the 8T49N241 clock, and a Video Mixer kernel patch). On
+Versal the kernel command line is the `options` line of the
+systemd-boot entry; the BSP appends `BSP_EXTRA_BOOTARGS` to it, and
+the VCK190 BSPs add the U-Boot commands that set VADJ to 1.2V.
 
 ```
 Yocto/bsp/<board>/

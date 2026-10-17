@@ -1,7 +1,7 @@
 # Yocto
 
 The Yocto / EDF flow (AMD's Embedded Development Framework) is the announced successor to
-PetaLinux. It can be built for the Zynq UltraScale+ reference designs with the cross-platform
+PetaLinux. It can be built for the Zynq UltraScale+ and Versal reference designs with the cross-platform
 `build.py` runner at the root of the repository.
 
 ```{note}
@@ -32,8 +32,10 @@ are advised to use a Linux virtual machine to build the Yocto projects.
 ```
 
 The Yocto flow is provided for the **Zynq UltraScale+** reference designs (ZCU102, ZCU104, ZCU106,
-PYNQ-ZU and UltraZed-EV). The baremetal FPGA designs (AUBoard) are not Linux targets and are
-not built by this flow.
+PYNQ-ZU and UltraZed-EV) and the **Versal** reference designs (VCK190, VEK280). For the Versal
+designs it is the only Linux flow; their SD card, boot and display steps differ from the ones on
+this page and are described in [Versal designs](versal). The baremetal FPGA designs (AUBoard) are
+not Linux targets and are not built by this flow.
 
 A Yocto workspace is large: the first build of a target downloads several GB of sources, and each
 target's workspace needs several tens of GB of disk space.
@@ -103,6 +105,13 @@ partition: the BootROM loads `BOOT.BIN` from there, and the image does not put i
 All the targets, including the PYNQ-ZU (which has no Ethernet port), are prepared the same way:
 with the SD card in a card reader on your Linux PC.
 
+```{note}
+**Versal (VCK190, VEK280):** the disk image is 8 GiB, so use a card of 16 GB or more, and copy
+`BOOTAA64.EFI` to `EFI/BOOT/` on the first partition as well as `BOOT.BIN`. The boot-mode
+switches, the monitor connection and the boot output are also different. See
+[Versal designs](versal.md#prepare-the-sd-card).
+```
+
 ### Prepare the SD card
 
 ```{warning}
@@ -165,7 +174,8 @@ When you use the zip from `bootimages/`, the files are at the top level of the z
    [Boot from SD card](petalinux.md#boot-from-sd-card).
 3. Connect the [RPi Camera FMC] to the target board's FMC connector, and connect one or more
    [Raspberry Pi camera module v2] modules to the camera ports that the target supports.
-4. Connect a DisplayPort monitor that supports 1920x1080 at 60 Hz to the board's DisplayPort output.
+4. Connect a DisplayPort monitor that supports 1920x1080 at 60 Hz to the board's DisplayPort output
+   (Versal designs: an HDMI monitor on the HDMI TX connector, see [Versal designs](versal.md#boot)).
 5. Connect the board's Ethernet port to your network (optional; not on the PYNQ-ZU).
 6. Connect the USB-UART to your PC and open a terminal emulator at 115200 baud (8N1).
 
@@ -210,7 +220,8 @@ Retype new password:
 ```
 
 The hostname is `<board>-rpi-2025-2` (`zcu104-rpi-2025-2`, `zcu102-rpi-2025-2`,
-`zcu102-hpc1-rpi-2025-2`, `zcu106-rpi-2025-2`, `pynqzu-rpi-2025-2`, `uzev-rpi-2025-2`).
+`zcu102-hpc1-rpi-2025-2`, `zcu106-rpi-2025-2`, `pynqzu-rpi-2025-2`, `uzev-rpi-2025-2`,
+`vck190-rpi-2025-2`, `vek280-rpi-2025-2`).
 The `amd-edf` user can use `sudo`.
 
 The kernel command line is built by the boot script. Check it with `cat /proc/cmdline`; it ends with

@@ -1,12 +1,16 @@
 # Description
 
-This repository contains two flavours of reference design for the [RPi Camera FMC]:
+This repository contains three flavours of reference design for the [RPi Camera FMC]:
 
 * **Zynq UltraScale+ designs** — one MIPI capture pipeline per camera, each with the
   ISP Pipeline IP, plus a Video Mixer based display pipeline that drives the
   DisplayPort output of the Zynq UltraScale+ PS. They run embedded Linux, built with
   either PetaLinux or Yocto (AMD EDF), and are controlled from userspace with the
   standard V4L2 / media-ctl / DRM tools and [GStreamer].
+* **Versal designs** (VCK190, VEK280) — the same capture pipelines and Linux software as the
+  Zynq UltraScale+ designs, with a DVI (HDMI compatible) output on the board's HDMI TX connector,
+  built from free IP. They run embedded Linux built with Yocto (AMD EDF). See
+  [Versal designs](versal).
 * **FPGA designs** (Artix UltraScale+, AUBoard 15P) — a simpler MIPI capture pipeline
   per camera and an HDMI output, driven by a baremetal application running on a
   MicroBlaze.
@@ -38,12 +42,13 @@ boards. The repository contains all necessary scripts and code to build these de
 | Environment | Targets | Available applications |
 |-------------|---------|------------------------|
 | PetaLinux   | Zynq UltraScale+ designs | Built-in Linux commands, `init_cams.sh`, `displaycams.sh`<br>Additional tools: `v4l2-ctl` / `media-ctl` (v4l-utils), `modetest`, `yavta`, [GStreamer] |
-| Yocto (AMD EDF) | Zynq UltraScale+ designs | Built-in Linux commands, `init_cams.sh`, `displaycams.sh`<br>Additional tools: `v4l2-ctl` / `media-ctl` (v4l-utils), `modetest`, [GStreamer] (`v4l2src`, `kmssink`, compositor, videoconvertscale, videotestsrc), SSH server |
+| Yocto (AMD EDF) | Zynq UltraScale+ and Versal designs | Built-in Linux commands, `init_cams.sh`, `displaycams.sh`<br>Additional tools: `v4l2-ctl` / `media-ctl` (v4l-utils), `modetest`, [GStreamer] (`v4l2src`, `kmssink`, compositor, videoconvertscale, videotestsrc), SSH server |
 | Baremetal   | FPGA designs (AUBoard 15P) | Camera to HDMI example application |
 
 The PetaLinux and Yocto images are built from the same hardware design and contain the
 same camera and display drivers, kernel patches and example scripts, so the
-[usage and test guide](testing) applies to both.
+[usage and test guide](testing) applies to both. The Versal images use the same camera drivers
+and example scripts with a different display output (see [Versal designs](versal)).
 
 ## Architecture (Zynq UltraScale+ designs)
 
@@ -142,6 +147,15 @@ the output of the RPi camera and of the scaler (Video Processing Subsystem IP).
 For some of the target boards, the Zynq UltraScale+ device contains a hardened Video Codec Unit (VCU) that can be used to
 perform video encoding and decoding of multiple video standards. On those target designs, we have included the VCU to 
 enable these powerful features. Refer to the list of target designs to see which boards support this feature.
+
+## Architecture (Versal designs)
+
+The Versal designs (`Vivado/src/bd/bd_versal.tcl`) use the capture pipelines described above,
+writing to DDR through the Versal NoC, and the same Video Mixer with an RGB output. Versal has no
+DisplayPort controller in the processing system, so the mixer output goes to a DVI output in the
+PL: AXI4-Stream to Video Out, our own TMDS encoder and the transceivers drive the board's HDMI TX
+connector at 1920x1080, 60 Hz. The design and its camera ports are described in
+[Versal designs](versal).
 
 ## Architecture (FPGA designs)
 

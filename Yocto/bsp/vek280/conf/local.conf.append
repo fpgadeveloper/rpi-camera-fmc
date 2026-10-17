@@ -1,0 +1,26 @@
+# Copyright (C) 2025-2026, Opsero Electronic Design Inc.  All rights reserved.
+#
+# SPDX-License-Identifier: MIT
+
+# RPi Camera FMC overrides for vek280 (VEK280 FMCP, Versal), EDF flow.
+# bsp/vek280 gets its own MACHINE/SDT from its own Vivado XSA via
+# gen-machineconf parse-sdt (PS + PL device tree derived from hardware);
+# MACHINE is NOT pinned. Versal EDF wks partitions esp(vfat)/storage/root(ext4);
+# the console comes from the SDT (ttyAMA0).
+
+# Kernel command line. APPEND is NOT read by the EDF boot flow. On Versal the
+# cmdline is the `options` line of the systemd-boot entry (meta-amd-edf
+# versal/edf-linux.conf); BSP_EXTRA_BOOTARGS is appended to it by
+# meta-user/recipes-core/systemd/systemd-bootconf-edf_%.bbappend.
+# cma: frame buffers of the camera pipelines (same as the ZynqMP BSPs).
+# xlnx_mixer.connect_drm_bridge=1: the video mixer (CRTC) drives the DVI output
+# through a DRM bridge (panel-dpi, Yocto/bsp/dvi-out), as on the ZynqMP targets.
+BSP_EXTRA_BOOTARGS = "clk_ignore_unused cma=1536M xlnx_mixer.connect_drm_bridge=1"
+
+# Hostname. meta-amd-edf's distro conf sets hostname:pn-base-files:amd-edf =
+# "amd-edf"; it is parsed after local.conf and its extra override outranks a
+# plain hostname:pn-base-files, so use :forcevariable (last in OVERRIDES).
+hostname:pn-base-files:forcevariable = "vek280-rpi-2025-2"
+
+# Reserve space in the rootfs for image-time installs.
+IMAGE_ROOTFS_EXTRA_SPACE = "524288"

@@ -43,6 +43,9 @@ dict set target_dict pynqzu { tul.com.tw pynqzu { 1 2 } zynqmp 0 }
 dict set target_dict genesyszu { digilentinc.com gzu_5ev { 1 2 } zynqmp 1 }
 dict set target_dict uzev { avnet.com ultrazed_7ev_cc { 0 1 2 3 } zynqmp 1 }
 dict set target_dict auboard { avnet-tria auboard_15p { 0 2 } mb 0 }
+dict set target_dict vck190_fmcp1 { xilinx.com vck190 { 0 2 } versal 0 }
+dict set target_dict vck190_fmcp2 { xilinx.com vck190 { 1 2 3 } versal 0 }
+dict set target_dict vek280 { xilinx.com vek280 { 0 1 3 } versal 0 }
 # UPDATER END
 
 # Function to display the options and get user input
@@ -224,8 +227,13 @@ if {[string equal [get_runs -quiet impl_1] ""]} {
   set_property flow "Vivado Implementation 2025" [get_runs impl_1]
 }
 set obj [get_runs impl_1]
-set_property -name "steps.write_bitstream.args.readback_file" -value "0" -objects $obj
-set_property -name "steps.write_bitstream.args.verbose" -value "0" -objects $obj
+if {$bd_script == "versal"} {
+  set_property -name "steps.write_device_image.args.readback_file" -value "0" -objects $obj
+  set_property -name "steps.write_device_image.args.verbose" -value "0" -objects $obj
+} else {
+  set_property -name "steps.write_bitstream.args.readback_file" -value "0" -objects $obj
+  set_property -name "steps.write_bitstream.args.verbose" -value "0" -objects $obj
+}
 
 # set the current impl run
 current_run -implementation [get_runs impl_1]
@@ -252,6 +260,10 @@ if {[catch {source $bd_script_path} errmsg]} {
 # Generate the wrapper
 make_wrapper -files [get_files *${block_name}.bd] -top
 add_files -norecurse ${design_name}/${design_name}.gen/sources_1/bd/${block_name}/hdl/${block_name}_wrapper.v
+# Re-assert the top: the block design script may add RTL sources (Versal DVI output)
+# before the wrapper exists, and automatic hierarchy update then picks one of them.
+set_property top ${block_name}_wrapper [get_filesets sources_1]
+set_property top ${block_name}_wrapper [get_filesets sim_1]
 
 # Update the compile order
 update_compile_order -fileset sources_1

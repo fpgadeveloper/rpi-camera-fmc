@@ -21,6 +21,15 @@ Additional design-specific requirements:
   * An SD card and a card reader for your PC
   * Optional: an Ethernet network for SSH access (Wi-Fi on the PYNQ-ZU)
 
+* **Versal designs** (VCK190, VEK280; embedded Linux):
+  * [Google's repo tool](https://gerrit.googlesource.com/git-repo/) and the Yocto host packages
+    for the [Yocto](yocto) flow, on a native Linux build machine
+  * A Vivado ML Enterprise Edition license (a 30-day evaluation license is available)
+  * One HDMI monitor supporting 1920x1080 at 60 Hz (connected to the board's HDMI TX connector;
+    the output is DVI, no audio)
+  * A microSD card of 16 GB or more, and a card reader for your PC
+  * Optional: an Ethernet network for SSH access
+
 * **FPGA designs** (AUBoard 15P, baremetal flow):
   * One HDMI monitor supporting 1080p video
   * [License for the HDMI IP](https://www.amd.com/en/products/adaptive-socs-and-fpgas/intellectual-property/hdmi.html)

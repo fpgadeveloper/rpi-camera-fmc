@@ -1,0 +1,44 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Opsero <noreply@opsero.com>
+Date: Fri, 16 Oct 2026 17:06:30 -0400
+Subject: [PATCH] drm: xlnx: mixer: accept MEDIA_BUS_FMT_FIXED from the bridge
+ chain
+
+With xlnx_mixer.connect_drm_bridge=1 and a bridge chain that carries no
+bus format information (for example a panel-dpi panel bridge: its
+connector reports no bus format, so the chain offers only
+MEDIA_BUS_FMT_FIXED), xlnx_mix_crtc_select_output_bus_format() finds no
+match for the mixer's output format and returns 0. The bridge chain
+atomic check then fails with -ENOTSUPP (-524) and no mode can be set:
+
+  Bridge atomic check failed: -524
+
+A FIXED input format means the format is fixed by the hardware behind
+the bridge, so return the mixer's own output bus format in that case.
+
+Signed-off-by: Opsero <noreply@opsero.com>
+---
+ drivers/gpu/drm/xlnx/xlnx_mixer.c | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/drivers/gpu/drm/xlnx/xlnx_mixer.c b/drivers/gpu/drm/xlnx/xlnx_mixer.c
+index 1e0a129..61ff653 100644
+--- a/drivers/gpu/drm/xlnx/xlnx_mixer.c
++++ b/drivers/gpu/drm/xlnx/xlnx_mixer.c
+@@ -3093,6 +3093,16 @@ xlnx_mix_crtc_select_output_bus_format(struct drm_crtc *crtc,
+ 		if (in_bus_fmts[i] == mixer->mixer_hw.out_bus_format)
+ 			return mixer->mixer_hw.out_bus_format;
+ 
++	/*
++	 * A bridge chain without bus format information (e.g. a panel-dpi
++	 * panel bridge, whose connector reports no bus format) only offers
++	 * MEDIA_BUS_FMT_FIXED: the format is fixed by the hardware, so keep
++	 * the mixer's own output format instead of failing the atomic check.
++	 */
++	for (i = 0; i < num_in_bus_fmts; ++i)
++		if (in_bus_fmts[i] == MEDIA_BUS_FMT_FIXED)
++			return mixer->mixer_hw.out_bus_format;
++
+ 	return 0;
+ }
+ 

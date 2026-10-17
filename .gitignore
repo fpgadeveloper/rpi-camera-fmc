@@ -33,6 +33,12 @@ Vivado/uzev/
 PetaLinux/uzev/
 Vivado/auboard/
 PetaLinux/auboard/
+Vivado/vck190_fmcp1/
+PetaLinux/vck190_fmcp1/
+Vivado/vck190_fmcp2/
+PetaLinux/vck190_fmcp2/
+Vivado/vek280/
+PetaLinux/vek280/
 # UPDATER END
 dfx_runtime.txt
 .repo.yaml

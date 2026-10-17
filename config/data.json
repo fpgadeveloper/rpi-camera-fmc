@@ -209,6 +209,77 @@
       "license": false,
       "flashsize": "0",
       "flashintf": "0"
+    },
+    {
+      "publish": true,
+      "label": "vck190_fmcp1",
+      "board": "VCK190",
+      "link": "https://www.xilinx.com/vck190",
+      "url": "xilinx.com",
+      "boardname": "vck190",
+      "cams": [
+        0,
+        2
+      ],
+      "vcu": false,
+      "accel": false,
+      "cfg": "prj_config",
+      "connector": "FMCP1",
+      "group": "versal",
+      "petalinux": false,
+      "yocto": true,
+      "baremetal": true,
+      "license": true,
+      "flashsize": "0",
+      "flashintf": "0"
+    },
+    {
+      "publish": true,
+      "label": "vck190_fmcp2",
+      "board": "VCK190",
+      "link": "https://www.xilinx.com/vck190",
+      "url": "xilinx.com",
+      "boardname": "vck190",
+      "cams": [
+        1,
+        2,
+        3
+      ],
+      "vcu": false,
+      "accel": false,
+      "cfg": "prj_config",
+      "connector": "FMCP2",
+      "group": "versal",
+      "petalinux": false,
+      "yocto": true,
+      "baremetal": true,
+      "license": true,
+      "flashsize": "0",
+      "flashintf": "0"
+    },
+    {
+      "publish": true,
+      "label": "vek280",
+      "board": "VEK280",
+      "link": "https://www.xilinx.com/vek280",
+      "url": "xilinx.com",
+      "boardname": "vek280",
+      "cams": [
+        0,
+        1,
+        3
+      ],
+      "vcu": false,
+      "accel": false,
+      "cfg": "prj_config",
+      "connector": "FMCP",
+      "group": "versal",
+      "petalinux": false,
+      "yocto": true,
+      "baremetal": true,
+      "license": true,
+      "flashsize": "0",
+      "flashintf": "0"
     }
   ]
 }

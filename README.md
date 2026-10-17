@@ -6,9 +6,9 @@ This project demonstrates the Opsero [RPi Camera FMC] (OP068) used to
 connect up to 4x Raspberry Pi cameras (or compatible cameras) to one of the target FPGA/MPSoC boards listed below. The 
 designs contain:
 
-* 4x MIPI CSI-2 capture pipelines
-* Video Mixer IP based display pipeline to DisplayPort/HDMI output
-* Video Codec Unit ([VCU])
+* Up to 4x MIPI CSI-2 capture pipelines
+* Video Mixer IP based display pipeline to DisplayPort/HDMI output (DVI over HDMI on Versal)
+* Video Codec Unit ([VCU]) on the boards whose device has one
 
 ![RPi Camera FMC](https://www.fpgadeveloper.com/camera-fmc-connecting-mipi-cameras-to-fpgas/images/rpi-camera-fmc-pynq-zu-1.jpg "RPi Camera FMC")
 
@@ -20,11 +20,14 @@ Important links:
 
 ## Architectures
 
-The designs in this repository fall into two main architectural categories:
+The designs in this repository fall into three main architectural categories:
 
 1. **Zynq UltraScale+ designs** – These designs integrate the ISP Pipeline IP, run embedded Linux built
    with PetaLinux or Yocto (AMD EDF), and output video to a DisplayPort monitor.
-2. **FPGA designs** – These designs implement a simpler video pipeline, are controlled by a bare-metal application, 
+2. **Versal designs** (VCK190, VEK280) – The same capture pipelines and Linux software as the Zynq
+   UltraScale+ designs, built with Yocto (AMD EDF), with a DVI output (1080p60) on the board's HDMI TX
+   connector made from free IP and an open-source TMDS encoder (no HDMI IP license needed).
+3. **FPGA designs** – These designs implement a simpler video pipeline, are controlled by a bare-metal application, 
    and output video to an HDMI monitor.
 
 ### Zynq UltraScale+ designs
@@ -34,6 +37,11 @@ The high level block diagram below illustrates the design:
 
 The video pipe sub-blocks are illustrated below:
 ![RPi Camera FMC video pipe](docs/source/images/rpi-camera-fmc-mipi-pipeline.png "RPi Camera FMC video pipeline")
+
+### Versal designs
+
+Display pipeline of the Versal designs:
+![RPi Camera FMC Versal DVI display pipeline](docs/source/images/rpi-camera-fmc-versal-dvi-display.png "RPi Camera FMC Versal DVI display pipeline")
 
 ### FPGA designs
 
@@ -65,6 +73,11 @@ In order to test this design on hardware, you will need the following:
   * PetaLinux Tools 2025.2 (PetaLinux flow), or Google's `repo` tool and the Yocto host packages (Yocto flow)
   * 1x DisplayPort monitor that supports 1920x1080 at 60 Hz
   * Linux build PC (or virtual machine)
+
+* **Versal designs**:
+  * Google's `repo` tool and the Yocto host packages (Yocto flow), on a native Linux build PC
+  * 1x HDMI monitor that supports 1920x1080 at 60 Hz (on the board's HDMI TX connector)
+  * A microSD card of 16 GB or more
   
 * **FPGA designs**:
   * 1x HDMI monitor that supports 1080p video
@@ -90,12 +103,22 @@ In order to test this design on hardware, you will need the following:
 | [PYNQ-ZU]             | `pynqzu`        | LPC      | 2     | :x:                | :x:                | :white_check_mark: | :white_check_mark: | Standard :free: | -     |
 | [UltraZed-EV Carrier] | `uzev`          | HPC      | 4     | :white_check_mark: | :x:                | :white_check_mark: | :white_check_mark: | Standard :free: | -     |
 
+### Versal designs
+
+| Target board          | Target design   | FMC Slot | Cameras | VCU   | Baremetal<br> App | PetaLinux<br> Build | Yocto<br> Build | Vivado<br> Edition | IP<br>License |
+|-----------------------|-----------------|----------|---------|-------|-------|-------|-------|-------|-------|
+| [VCK190]              | `vck190_fmcp1`  | FMCP1    | 2     | :x:                | :white_check_mark: | :x:                | :white_check_mark: | Enterprise | -     |
+| [VCK190]              | `vck190_fmcp2`  | FMCP2    | 3     | :x:                | :white_check_mark: | :x:                | :white_check_mark: | Enterprise | -     |
+| [VEK280]              | `vek280`        | FMCP     | 3     | :x:                | :white_check_mark: | :x:                | :white_check_mark: | Enterprise | -     |
+
 [AUBoard 15P]: https://www.avnet.com/americas/products/avnet-boards/avnet-board-families/auboard-15p-fpga-development-kit/
 [ZCU104]: https://www.xilinx.com/zcu104
 [ZCU102]: https://www.xilinx.com/zcu102
 [ZCU106]: https://www.xilinx.com/zcu106
 [PYNQ-ZU]: https://www.amd.com/en/corporate/university-program/aup-boards/pynq-zu.html
 [UltraZed-EV Carrier]: https://www.xilinx.com/products/boards-and-kits/1-1s78dxb.html
+[VCK190]: https://www.xilinx.com/vck190
+[VEK280]: https://www.xilinx.com/vek280
 <!-- updater end -->
 
 Notes:
@@ -108,6 +131,14 @@ Notes:
    labelled on the RPi Camera FMC. This is due to the resource limitations of the devices on this board.
 4. The `auboard` target design has video pipelines for only 2 cameras: `CAM0` and `CAM2` as labelled
    on the RPi Camera FMC. This is due to the resource limitations of the Artix UltraScale+ device on this board.
+5. The Versal designs support 2 or 3 cameras per FMC slot (`vck190_fmcp1`: `CAM0`, `CAM2`;
+   `vck190_fmcp2`: `CAM1`, `CAM2`, `CAM3`; `vek280`: `CAM0`, `CAM1`, `CAM3`) due to the Versal XPIO
+   (XPHY) clocking rules for the MIPI D-PHY. On the VCK190, U-Boot sets the FMC VADJ to 1.2V. The
+   VEK280 has a fixed 1.5V VADJ: like AMD's own VEK280 board file, the design uses the 1.2V
+   `MIPI_DPHY` / `LVCMOS12` I/O standards on these banks, outside AMD's specified 1.2V VCCO for
+   `MIPI_DPHY` (the RPi Camera FMC tolerates up to 1.8V). The `vck190_fmcp1` design has been tested on
+   hardware; `vck190_fmcp2` and `vek280` have not yet been tested on hardware by Opsero. See the
+   [Versal designs](https://rpi.camerafmc.com) page of the user guide.
 
 ## Software
 
@@ -119,7 +150,8 @@ and combine their video outputs into a single 1080p stream.
 ### Embedded Linux (PetaLinux and Yocto)
 
 The Zynq UltraScale+ based reference designs can be driven within an embedded Linux environment,
-built either with PetaLinux or with Yocto (AMD Embedded Development Framework). The repository
+built either with PetaLinux or with Yocto (AMD Embedded Development Framework). The Versal designs
+are built with Yocto only. The repository
 includes all necessary scripts and code to build both. The two images contain the same camera and
 display drivers and the same example scripts. The table below outlines the corresponding applications
 available:
@@ -209,17 +241,20 @@ update.
 Launch Vitis, open the workspace that was generated using the make command. Select the test application and run it on the target
 board.
 
-### Zynq UltraScale+ designs
+### Zynq UltraScale+ and Versal designs
 
 Log in on the console (PetaLinux: user `petalinux`; Yocto: user `amd-edf`; both ask you to set a
 password at the first login), then run the following command to stream video from all *connected*
-cameras to the 4 quadrants of the 1080p DisplayPort monitor:
+cameras to the 4 quadrants of the 1080p monitor (DisplayPort on Zynq UltraScale+, HDMI TX on Versal):
 
 ```
 sudo displaycams.sh
 ```
 
 If less than 4 cameras are physically connected, the unused quadrants of the monitor will be blue.
+On the Versal boards, the SD card needs `BOOTAA64.EFI` in `EFI/BOOT/` of the first partition as well as
+`BOOT.BIN` (both are in the boot image zip), and the monitor goes on the HDMI TX connector (the top port of
+the stacked HDMI connector on the VCK190); the `dvi-status` command checks the DVI output.
 The [user guide](https://rpi.camerafmc.com) describes how to configure the cameras with `init_cams.sh`,
 capture frames with `v4l2-ctl`, and adjust the ISP settings.
 
@@ -237,7 +272,6 @@ Thank you to everyone who supports us!
 
 * Develop PYNQ support
 * Add a standalone application for the Zynq and ZynqMP designs
-* Add support for some Versal boards
 * Add VCU example scripts
 * Get a Genesys-ZU board and test the design on hardware.
 * Software support for more cameras (this will be an ongoing task due to the number of cameras available).

@@ -1,0 +1,125 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Opsero Electronic Design Inc.
+//
+// DVI (HDMI-compatible) output of the RPi Camera FMC Versal designs
+// (VCK190 / VEK280 on-board HDMI TX, Vivado/src/bd/dvi_out.tcl).
+//
+// Included into the Linux device tree by this layer's device-tree.bbappend
+// (EXTRA_DT_INCLUDE_FILES). The target's system-user.dtsi must not disable
+// display_pipeline_v_mix_0 / display_pipeline_v_tc_0. It expects these labels from the SDT (sdtgen/lopper) pl.dtsi of the
+// rpi-camera-fmc Versal block design:
+//     display_pipeline_v_mix_0, mixer_crtcdisplay_pipeline_v_mix_0 (mixer
+//     port@0 endpoint), display_pipeline_v_tc_0, video_output_axi_iic_hdmi,
+//     video_output_axi_gpio_dvi
+// and the kernel command line option  xlnx_mixer.connect_drm_bridge=1
+// (BSP_EXTRA_BOOTARGS), as on the ZynqMP targets.
+//
+// Display chain (no new kernel driver):
+//   xlnx_mixer (CRTC + planes) --DRM bridge--> panel-dpi (fixed 1080p60 mode,
+//   connector "DPI-1") ; VTC programmed by the mixer through xlnx,bridge.
+// The panel-dpi node only describes the fixed mode; the DVI encoder and the
+// transceivers in the PL need no software apart from the reference clock
+// (8T49N241, below) and the retimer/redriver setup (dvi-init.service).
+
+/ {
+	/* 40 MHz crystal of the 8T49N241 (free-run / synthesizer mode) */
+	dvi_refclk_xtal: dvi-refclk-xtal {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <40000000>;
+	};
+
+	/* Fixed 1080p60 (CEA-861 VIC 16) output, the only mode the PL generates */
+	dvi_out: dvi-output {
+		compatible = "panel-dpi";
+		label = "DVI 1080p60";
+		panel-timing {
+			clock-frequency = <148500000>;
+			hactive = <1920>;
+			vactive = <1080>;
+			hfront-porch = <88>;
+			hsync-len = <44>;
+			hback-porch = <148>;
+			vfront-porch = <4>;
+			vsync-len = <5>;
+			vback-porch = <36>;
+			hsync-active = <1>;
+			vsync-active = <1>;
+			de-active = <1>;
+			pixelclk-active = <1>;
+		};
+		port {
+			dvi_out_in: endpoint {
+				remote-endpoint = <&mixer_crtcdisplay_pipeline_v_mix_0>;
+			};
+		};
+	};
+};
+
+&mixer_crtcdisplay_pipeline_v_mix_0 {
+	remote-endpoint = <&dvi_out_in>;
+};
+
+&display_pipeline_v_mix_0 {
+	status = "okay";
+	/* 2025.2 xlnx-mixer: VTC timing bridge + output format (0 = RGB) */
+	xlnx,bridge = <&display_pipeline_v_tc_0>;
+	xlnx,video-format = <0>;
+	/delete-property/ xlnx,disp-bridge;
+};
+
+&display_pipeline_v_tc_0 {
+	status = "okay";
+	compatible = "xlnx,bridge-v-tc-6.1";
+	xlnx,pixels-per-clock = <1>;
+};
+
+&video_output_axi_iic_hdmi {
+	/* Renesas 8T49N241: transceiver reference clock, output Q2 = 148.5 MHz.
+	 * Register map (40 MHz crystal, free-run) from the AMD VCK190 Base TRD
+	 * (display.dtsi); the driver then sets Q2 from assigned-clock-rates. */
+	dvi_clkgen: clock-generator@6c {
+		compatible = "idt,idt8t49n241";
+		reg = <0x6c>;
+		#clock-cells = <1>;
+		clocks = <&dvi_refclk_xtal>;
+		clock-names = "input-xtal";
+		assigned-clocks = <&dvi_clkgen 2>;
+		assigned-clock-rates = <148500000>;
+		settings = [
+			09 50 00 60 67 c5 6c 01 03 00 31 00 01 40 00 01 40 00 74 04 00 74 04 77 6d 00 00 00 00 00 00 ff
+			ff ff ff 01 3f 00 2e 00 0d 00 00 00 01 00 00 d0 08 00 00 00 00 00 08 00 00 00 00 00 00 44 44 00
+			00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00 e9 0a 2b 20 00 00 00 0f 00 00 00 0e 00 00 0e 00 00 00 27 00 00 00 00 00
+			00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			e3 00 08 01 00 00 00 00 00 00 00 00 00 b0 00 00 00 0a 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00 00 00 00 85 00 00 9c 01 d4 02 71 07 00 00 00 00 83 00 10 02 08 8c
+		];
+	};
+	/* the retimer/redriver at 0x5e is configured from user space (dvi-init) */
+};
+
+/* DVI status/control register (dual AXI GPIO): accessed by dvi-status via
+ * /dev/mem, so keep the GPIO driver off it. */
+&video_output_axi_gpio_dvi {
+	status = "disabled";
+	opsero,dvi-ctrl;
+};
